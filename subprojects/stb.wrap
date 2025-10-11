@@ -1,0 +1,9 @@
+[wrap-file]
+directory = stb-fede005abaf93d9d7f3a679d1999b2db341b360f
+source_url = https://github.com/nothings/stb/archive/fede005abaf93d9d7f3a679d1999b2db341b360f.zip
+source_filename = fede005abaf93d9d7f3a679d1999b2db341b360f.zip
+source_hash = 8acb0193e3f2e8a8e7dd05ab5d5e27db3625123ca45d4db6b51c7fbe55bc7130
+diff_files = stb.patch
+
+[provide]
+stb = stb_dep

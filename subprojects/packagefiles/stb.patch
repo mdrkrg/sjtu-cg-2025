@@ -1,0 +1,11 @@
+diff --git a/meson.build b/meson.build
+new file mode 100644
+index 0000000..0c5fe3b
+--- /dev/null
++++ b/meson.build
+@@ -0,0 +1,5 @@
++project('stb', 'c')
++
++stb_dep = declare_dependency(
++  include_directories: include_directories('.')
++)
