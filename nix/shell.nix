@@ -1,8 +1,10 @@
-let
-  pkgs = import (fetchTarball("https://github.com/NixOS/nixpkgs/archive/d0fc30899600b9b3466ddb260fd83deb486c32f1.tar.gz")) {
+{
+  pkgs ? import (fetchTarball("https://github.com/NixOS/nixpkgs/archive/d0fc30899600b9b3466ddb260fd83deb486c32f1.tar.gz")) {
     config.allowUnfree = true;
-  };
+  }
+}:
 
+let
   nixGLSource = pkgs.fetchFromGitHub {
     owner = "nix-community";
     repo = "nixGL";

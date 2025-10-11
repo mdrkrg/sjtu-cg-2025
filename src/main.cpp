@@ -96,48 +96,49 @@ int main() {
 
   // 统一设置用到的坐标信息(每一行前三个数字为点的坐标，后三个为法向量)
   // ------------------------------------------------------------------
+  // WARN: normal dir
   float vertices[] = {
-      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
-      0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f, //
-      0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, //
-      0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, //
-      -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 1.0f, //
-      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
+      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  1.0f,  0.0f, 0.0f, //
+      0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  1.0f,  1.0f, 0.0f, //
+      0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  1.0f,  1.0f, 1.0f, //
+      0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  1.0f,  1.0f, 1.0f, //
+      -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  1.0f,  0.0f, 1.0f, //
+      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  1.0f,  0.0f, 0.0f, //
 
-      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f, //
-      -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f, //
-      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, //
+      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
+      0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
+      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, //
+      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, //
+      -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 1.0f, //
+      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
 
-      -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
-      -0.5f, 0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
-      -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f, //
-      -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f, //
-      -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 1.0f, //
-      -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
+      -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
+      -0.5f, 0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
+      -0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f, //
+      -0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f, //
+      -0.5f, -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f, //
+      -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
 
-      0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f, //
-      0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f, //
-      0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f, //
-      0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
+      0.5f,  0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
+      0.5f,  0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
+      0.5f,  -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f, //
+      0.5f,  -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f, //
+      0.5f,  -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 1.0f, //
+      0.5f,  0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
 
-      -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 1.0f, //
-      0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 1.0f, //
-      -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 1.0f, //
-      -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
+      -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
+      0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
+      0.5f,  -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
+      0.5f,  -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
+      -0.5f, -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, //
+      -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
 
-      -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
-      -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, //
-      -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
+      -0.5f, 0.5f,  -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
+      0.5f,  0.5f,  -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
+      0.5f,  0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 1.0f, //
+      0.5f,  0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 1.0f, //
+      -0.5f, 0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 1.0f, //
+      -0.5f, 0.5f,  -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
   };
 
   // 获取各个平面的数据
@@ -320,39 +321,44 @@ int main() {
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec3 lightColor{1.0, 1.0, 1.0};
 
-    // 绘制天花板
-    {
-      // 设置光照参数
-      lightingShader.setVec3("objectColor", 0.5, 0.5f, 0.5f);
-      lightingShader.setVec3("lightColor", lightColor);
-      lightingShader.setVec3("lightPos", lightPos);
-      lightingShader.setVec3("viewPos", camera.Position);
+    // view/projection
+    lightingShader.setMat4("projection", projection);
+    lightingShader.setMat4("view", view);
 
-      // view/projection 变换
-      lightingShader.setMat4("projection", projection);
-      lightingShader.setMat4("view", view);
+    lightingShader.setVec3("viewPos", camera.Position);
 
-      // 世界坐标变换
+    glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+    glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
+    glm::vec3 specularColor = glm::vec3(1.f);
+
+    lightingShader.setVec3("light.ambient", ambientColor);
+    lightingShader.setVec3("light.diffuse", diffuseColor);
+    lightingShader.setVec3("light.specular", specularColor);
+    lightingShader.setVec3("light.position", lightPos);
+
+    { // top
+      // material
+      lightingShader.setVec3("material.ambient", {0.2, 0.2, 0.2});
+      lightingShader.setVec3("material.diffuse", {1.0, 1.0, 1.0});
+      lightingShader.setVec3("material.specular", {0.1f, 0.1f, 0.1f});
+      lightingShader.setFloat("material.shininess", 64.0f);
+
+      // model
       model = glm::translate(model, cubePos);
       model = glm::scale(model, {2.0f, 1.0f, 1.0f});
       lightingShader.setMat4("model", model);
 
-      // 渲染
+      // draw
       glBindVertexArray(CeilingVAO);
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // 绘制地板
-    {
-      // 设置光照参数
-      lightingShader.setVec3("objectColor", 0.5f, 0.5f, 0.5f);
-      lightingShader.setVec3("lightColor", lightColor);
-      lightingShader.setVec3("lightPos", lightPos);
-      lightingShader.setVec3("viewPos", camera.Position);
-
-      // view/projection 变换
-      lightingShader.setMat4("projection", projection);
-      lightingShader.setMat4("view", view);
+    { // bottom
+      // material
+      lightingShader.setVec3("material.ambient", {0.2, 0.2, 0.2});
+      lightingShader.setVec3("material.diffuse", {0.5, 0.5, 0.5});
+      lightingShader.setVec3("material.specular", {0.3, 0.3, 0.3});
+      lightingShader.setFloat("material.shininess", 64.0f);
 
       // 世界坐标变换
       model = glm::mat4(1.0f);
@@ -365,17 +371,12 @@ int main() {
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // 绘制左墙
-    {
-      // 设置光照参数
-      lightingShader.setVec3("objectColor", 1.0f, 0.0f, 0.31f);
-      lightingShader.setVec3("lightColor", lightColor);
-      lightingShader.setVec3("lightPos", lightPos);
-      lightingShader.setVec3("viewPos", camera.Position);
-
-      // view/projection 变换
-      lightingShader.setMat4("projection", projection);
-      lightingShader.setMat4("view", view);
+    { // left
+      // material
+      lightingShader.setVec3("material.ambient", {0.2, 0.2, 0.2});
+      lightingShader.setVec3("material.diffuse", {1.0, 0.0, 0.31});
+      lightingShader.setVec3("material.specular", {1.0, 0.0, 0.31});
+      lightingShader.setFloat("material.shininess", 64.0f);
 
       // 世界坐标变换
       model = glm::mat4(1.0f);
@@ -389,17 +390,13 @@ int main() {
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // 绘制右墙
-    {
+    { // right
       // 设置光照参数
-      lightingShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-      lightingShader.setVec3("lightColor", lightColor);
-      lightingShader.setVec3("lightPos", lightPos);
-      lightingShader.setVec3("viewPos", camera.Position);
-
-      // view/projection 变换
-      lightingShader.setMat4("projection", projection);
-      lightingShader.setMat4("view", view);
+      // material
+      lightingShader.setVec3("material.ambient", {0.2, 0.2, 0.2});
+      lightingShader.setVec3("material.diffuse", {1.0, 0.0, 0.31});
+      lightingShader.setVec3("material.specular", {1.0, 0.0, 0.31});
+      lightingShader.setFloat("material.shininess", 64.0f);
 
       // 世界坐标变换
       model = glm::mat4(1.0f);
@@ -413,20 +410,26 @@ int main() {
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // 绘制前墙
-    {
+    { // front
       windowShader.use();
 
       // 设置光照参数
       // lightingShader.setVec3("objectColor", 1.0f, 1.0f, 1.0f);
       windowShader.setVec3("objectColor", 0.3f, 0.3f, 0.3f);
-      // lightingShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-      // lightingShader.setVec3("lightPos", lightPos);
-      // lightingShader.setVec3("viewPos", camera.Position);
 
-      // view/projection 变换
-      // lightingShader.setMat4("projection", projection);
-      // lightingShader.setMat4("view", view);
+      windowShader.setVec3("light.ambient", ambientColor);
+      windowShader.setVec3("light.diffuse", diffuseColor);
+      windowShader.setVec3("light.specular", specularColor);
+      windowShader.setVec3("light.position", lightPos);
+
+      windowShader.setVec3("material.ambient", {0.5, 0.25, 0.});
+      windowShader.setVec3("material.diffuse", {0.5, 0.25, 0.});
+      windowShader.setVec3("material.specular", {0.5, 0.25, 0.});
+      windowShader.setFloat("material.shininess", 64.0f);
+
+      windowShader.setVec3("viewPos", camera.Position);
+      windowShader.setVec3("lightPos", lightPos);
+
       windowShader.setMat4("projection", projection);
       windowShader.setMat4("view", view);
 

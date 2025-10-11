@@ -18,8 +18,8 @@ pkgs.stdenv.mkDerivation rec {
   pname = "simple-opengl";
   version = "0.1.0";
 
-  # Use the current directory as the source
-  src = ./.;
+  # Use the parent directory as the source
+  src = ../.;
 
   # Build inputs needed at compile and runtime
   buildInputs = with pkgs; [
@@ -30,6 +30,7 @@ pkgs.stdenv.mkDerivation rec {
     wayland
     libxkbcommon
     xorg.libX11
+    assimp.dev
   ];
 
   # Tools needed for building
@@ -41,27 +42,25 @@ pkgs.stdenv.mkDerivation rec {
     nixGL.nixGLIntel
   ];
 
-  # 1. Configure Phase: Run `meson setup`
   configurePhase = ''
     runHook preConfigure
     meson setup build . --prefix=$out
     runHook postConfigure
   '';
 
-  # 2. Build Phase: Run `meson compile`
   buildPhase = ''
     runHook preBuild
     meson compile -C build
     runHook postBuild
   '';
 
-  # 3. Install Phase: Run `meson install`
   installPhase = ''
     runHook preInstall
     meson install -C build
 
     mkdir -p $out/share
     cp -r $src/shaders $out/share/shaders
+    cp -r $src/resources $out/share/resources
 
     runHook postInstall
   '';

@@ -21,7 +21,7 @@ assimp_dep = dependency('assimp', required: true)
 
 glad_incdir = include_directories('contrib')
 
-glad = library(
+glad = static_library(
   'glad',
   'contrib/glad.c',
   include_directories: glad_incdir,
