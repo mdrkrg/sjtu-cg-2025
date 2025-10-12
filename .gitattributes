@@ -1,2 +1,2 @@
 resources filter=lfs diff=lfs merge=lfs -text
-docs/scene.png filter=lfs diff=lfs merge=lfs -text
+docs/resources filter=lfs diff=lfs merge=lfs -text
