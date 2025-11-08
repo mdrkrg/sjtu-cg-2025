@@ -32,7 +32,13 @@ incdir = include_directories('include')
 # C++
 executable(
   'simple-opengl',
-  'src/main.cpp',
+  sources: [
+    'src/main.cpp',
+    'src/core/application.cpp',
+    'src/core/input_handler.cpp',
+    'src/graphics/graphics_renderer.cpp',
+    'src/utils/gl_utils.cpp',
+  ],
   dependencies: [
     gl_dep,
     glm_dep,

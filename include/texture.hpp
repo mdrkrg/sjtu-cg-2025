@@ -1,6 +1,3 @@
-#ifndef STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#endif // !STB_IMAGE_IMPLEMENTATION
 #ifndef TEXTURE_H
 #define TEXTURE_H
 #include <stb_image.h>
