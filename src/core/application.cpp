@@ -58,12 +58,18 @@ bool Application::initialize() {
   // Enable depth testing
   glEnable(GL_DEPTH_TEST);
 
+  // Enable blending for transparency
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   // Initialize renderer
   renderer = std::make_unique<GraphicsRenderer>();
   if (!renderer->initialize()) {
     std::cout << "Failed to initialize renderer" << std::endl;
     return false;
   }
+
+  inputHandler->initCloud(renderer->getCloud());
 
   return true;
 }
@@ -73,6 +79,9 @@ void Application::run() {
   while (!glfwWindowShouldClose(window)) {
     updateDeltaTime();
     inputHandler->processInput(window, deltaTime);
+
+    // Update scene
+    renderer->update(deltaTime);
 
     // Clear screen
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);

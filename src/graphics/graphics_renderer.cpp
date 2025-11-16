@@ -24,7 +24,8 @@ GraphicsRenderer::GraphicsRenderer()
       rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
                                                    weatherPosition, 100000)},
       snowSystem{ParticleFactory::createSnowSystem(terrainMesh, terrainModel,
-                                                   weatherPosition, 1000000)} {
+                                                   weatherPosition, 1000000)},
+      cloud(nullptr) {
   // Initialize geometry components
   ceiling = {0, 0, 0};
   floor = {0, 0, 0};
@@ -57,6 +58,17 @@ bool GraphicsRenderer::initialize() {
     return false;
   }
 
+  // Initialize cloud
+  cloud = std::make_shared<Cloud>();
+  if (not cloud->initialize()) {
+    std::println(std::cerr, "Failed to initialize volumetric cloud");
+    return false;
+  }
+
+  // Position the cloud above the table
+  cloud->setPosition(glm::vec3(0.0f, 0.75f, 2.0f));
+  cloud->setScale(glm::vec3(2.0f, 0.5f, 2.0f));
+
   return true;
 }
 
@@ -67,8 +79,18 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
   renderRoom(projection, view, cameraPosition, lightPosition);
   renderTable(projection, view, cameraPosition, lightPosition);
   renderLightCube(projection, view, lightPosition);
+  // Render cloud
+  if (cloud && cloud->isInitialized()) {
+    cloud->render(projection, view, lightPosition, cameraPosition);
+  }
   renderTerrain(projection, view, cameraPosition, lightPosition);
   renderParticles(projection, view, cameraPosition, lightPosition);
+}
+
+void GraphicsRenderer::update(float deltaTime) {
+  if (cloud && cloud->isInitialized()) {
+    cloud->update(deltaTime);
+  }
 }
 
 void GraphicsRenderer::cleanup() {
@@ -90,6 +112,12 @@ void GraphicsRenderer::cleanup() {
   // Cleanup models
   tableModel.reset();
   terrainMesh.reset();
+
+  // Cleanup cloud
+  if (cloud) {
+    cloud->cleanup();
+    cloud.reset();
+  }
 }
 
 bool GraphicsRenderer::setupShaders() {

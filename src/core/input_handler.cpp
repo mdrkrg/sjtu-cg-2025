@@ -10,6 +10,31 @@ void InputHandler::processInput(GLFWwindow *window, float deltaTime) {
     glfwSetWindowShouldClose(window, true);
   }
 
+  // TODO: eliminate key flickering and unify key-bind
+  if (cloud and not cloudToggled and
+      glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
+    cloudToggled = true;
+    cloud->toggle(cloudToggled);
+  }
+
+  if (cloud and cloudToggled and glfwGetKey(window, GLFW_KEY_END)) {
+    cloudToggled = false;
+    cloud->toggle(cloudToggled);
+  }
+
+  if (not cloud) {
+    processCameraInput(window, deltaTime);
+    return;
+  }
+
+  if (cloudToggled) {
+    processCloudInput(window, deltaTime);
+  } else {
+    processCameraInput(window, deltaTime);
+  }
+}
+
+void InputHandler::processCameraInput(GLFWwindow *window, float deltaTime) {
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
     camera.ProcessKeyboard(FORWARD, deltaTime);
   }
@@ -21,6 +46,24 @@ void InputHandler::processInput(GLFWwindow *window, float deltaTime) {
   }
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
     camera.ProcessKeyboard(RIGHT, deltaTime);
+  }
+}
+
+void InputHandler::processCloudInput(GLFWwindow *window, float deltaTime) {
+  if (not cloud) {
+    return;
+  }
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    cloud->processKeyboard(Cloud::FORWARD, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+    cloud->processKeyboard(Cloud::BACKWARD, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    cloud->processKeyboard(Cloud::LEFT, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    cloud->processKeyboard(Cloud::RIGHT, deltaTime);
   }
 }
 

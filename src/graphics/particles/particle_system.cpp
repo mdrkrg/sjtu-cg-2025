@@ -78,10 +78,6 @@ void ParticleSystem::render(Shader &shader, const glm::mat4 &model,
     shader.setInt("particleTexture", 0);
   }
 
-  // Enable blending for transparency
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
   // Update buffer data before rendering
   updateBuffers();
 
@@ -89,9 +85,6 @@ void ParticleSystem::render(Shader &shader, const glm::mat4 &model,
   glBindVertexArray(VAO);
   glDrawArrays(GL_POINTS, 0, activeParticles.size());
   glBindVertexArray(0);
-
-  // Disable blending
-  glDisable(GL_BLEND);
 }
 
 void ParticleSystem::emitParticle() {

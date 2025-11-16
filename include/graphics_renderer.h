@@ -10,6 +10,7 @@
 #include "shader.h"
 #include "model.hpp"
 #include "terrain_mesh.hpp"
+#include "cloud.h"
 
 class GraphicsRenderer {
 public:
@@ -19,7 +20,11 @@ public:
   bool initialize();
   void render(const glm::mat4 &projection, const glm::mat4 &view,
               const glm::vec3 &cameraPosition, const glm::vec3 &lightPosition);
+  void update(float deltaTime);
   void cleanup();
+
+  // Pass to the input handler
+  std::shared_ptr<Cloud> getCloud() { return cloud; }
 
 private:
   // Shaders
@@ -39,6 +44,9 @@ private:
 
   std::unique_ptr<ParticleSystem> rainSystem;
   std::unique_ptr<ParticleSystem> snowSystem;
+
+  // Cloud
+  std::shared_ptr<Cloud> cloud;
 
   // Vertex data for room geometry
   struct RoomGeometry {

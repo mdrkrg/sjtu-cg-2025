@@ -37,6 +37,7 @@ executable(
     'src/core/application.cpp',
     'src/core/input_handler.cpp',
     'src/graphics/graphics_renderer.cpp',
+    'src/graphics/cloud.cpp',
     'src/utils/gl_utils.cpp',
     'src/graphics/terrain_mesh.cpp',
     'src/graphics/particles/particle_system.cpp',

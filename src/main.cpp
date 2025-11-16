@@ -5,14 +5,14 @@
 #include <stb_image.h>
 
 int main() {
-    const auto app = Application::getInstance();
+  const auto app = Application::getInstance();
 
-    if (!app->initialize()) {
-        return -1;
-    }
+  if (!app->initialize()) {
+      return -1;
+  }
 
-    app->run();
-    app->cleanup();
+  app->run();
+  app->cleanup();
 
-    return 0;
+  return 0;
 }
