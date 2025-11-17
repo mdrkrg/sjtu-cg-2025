@@ -33,21 +33,17 @@ bool Application::initialize() {
 #endif
 
   // Create window
-  window =
-      glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr);
+  window.reset(
+      glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr),
+      [](GLFWwindow *window) { glfwDestroyWindow(window); });
   if (window == nullptr) {
     std::cout << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
     return false;
   }
 
-  glfwMakeContextCurrent(window);
-  glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-  glfwSetCursorPosCallback(window, mouseCallback);
-  glfwSetScrollCallback(window, scrollCallback);
-
-  // Capture mouse
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  glfwMakeContextCurrent(window.get());
+  inputHandler->install(window);
 
   // Initialize GLAD
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -77,9 +73,11 @@ bool Application::initialize() {
 
 void Application::run() {
   // Render loop
-  while (!glfwWindowShouldClose(window)) {
+  while (!glfwWindowShouldClose(window.get())) {
     updateDeltaTime();
-    inputHandler->processInput(window, deltaTime);
+
+    // Handle input
+    inputHandler->update(deltaTime);
 
     // Update scene
     renderer->update(deltaTime);
@@ -98,17 +96,14 @@ void Application::run() {
     renderer->render(projection, view, camera.Position, lightPos);
 
     // Swap buffers and poll events
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(window.get());
     glfwPollEvents();
   }
 }
 
 void Application::cleanup() {
   renderer.reset();
-
-  if (window) {
-    glfwDestroyWindow(window);
-  }
+  window.reset();
   glfwTerminate();
 }
 
@@ -116,20 +111,4 @@ void Application::updateDeltaTime() {
   float currentFrame = static_cast<float>(glfwGetTime());
   deltaTime = currentFrame - lastFrame;
   lastFrame = currentFrame;
-}
-
-// Static callback functions
-void Application::framebufferSizeCallback(GLFWwindow *window, int width,
-                                          int height) {
-  glViewport(0, 0, width, height);
-}
-
-void Application::mouseCallback(GLFWwindow *window, double xposIn,
-                                double yposIn) {
-  singleton->inputHandler->mouseCallback(xposIn, yposIn);
-}
-
-void Application::scrollCallback(GLFWwindow *window, double xoffset,
-                                 double yoffset) {
-  singleton->inputHandler->scrollCallback(yoffset);
 }

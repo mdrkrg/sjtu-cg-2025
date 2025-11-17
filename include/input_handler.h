@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <memory>
+#include <unordered_set>
 
 #include "camera.h"
 #include "cloud.h"
@@ -12,7 +13,13 @@ class InputHandler {
 public:
   InputHandler(Camera &camera, float screenWidth, float screenHeight);
 
-  void processInput(GLFWwindow *window, float deltaTime);
+  void install(std::shared_ptr<GLFWwindow> window);
+
+  bool pressed(int key) { return pressedKeys.contains(key); }
+
+  void keyCallback(GLFWwindow *window, int key, int scancode, int action,
+                   int mods);
+  void update(float deltaTime);
   void mouseCallback(double xpos, double ypos);
   void scrollCallback(double yoffset);
   void framebufferSizeCallback(int width, int height);
@@ -26,11 +33,14 @@ public:
   }
 
 private:
+  std::weak_ptr<GLFWwindow> window;
   Camera &camera;
 
   std::shared_ptr<Cloud> cloud;
   std::shared_ptr<ParticleSystem> rainSystem;
   std::shared_ptr<ParticleSystem> snowSystem;
+
+  std::unordered_set<int> pressedKeys{};
 
   bool cloudToggled = false;
   bool rainToggled = false;
@@ -44,8 +54,8 @@ private:
   float lastY;
   bool firstMouse;
 
-  void processCameraInput(GLFWwindow *window, float deltaTime);
-  void processCloudInput(GLFWwindow *window, float deltaTime);
-  void processRainInput(GLFWwindow *window, float deltaTime);
-  void processSnowInput(GLFWwindow *window, float deltaTime);
+  void processCameraInput(float deltaTime);
+  void processCloudInput(float deltaTime);
+  void processRainInput(float deltaTime);
+  void processSnowInput(float deltaTime);
 };

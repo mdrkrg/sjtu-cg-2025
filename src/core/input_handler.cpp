@@ -5,122 +5,159 @@ InputHandler::InputHandler(Camera &camera, float screenWidth,
     : camera(camera), screenWidth(screenWidth), screenHeight(screenHeight),
       lastX(screenWidth / 2.0f), lastY(screenHeight / 2.0f), firstMouse(true) {}
 
-void InputHandler::processInput(GLFWwindow *window, float deltaTime) {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-    glfwSetWindowShouldClose(window, true);
+void InputHandler::install(std::shared_ptr<GLFWwindow> window) {
+  this->window = window;
+  glfwSetWindowUserPointer(window.get(), this);
+  glfwSetKeyCallback(window.get(), [](GLFWwindow *w, int key, int scancode,
+                                      int action, int mods) {
+    static_cast<InputHandler *>(glfwGetWindowUserPointer(w))
+        ->keyCallback(w, key, scancode, action, mods);
+  });
+
+  glfwSetCursorPosCallback(
+      window.get(), [](GLFWwindow *w, double xposIn, double yposIn) {
+        static_cast<InputHandler *>(glfwGetWindowUserPointer(w))
+            ->mouseCallback(xposIn, yposIn);
+      });
+
+  // Capture mouse
+  glfwSetInputMode(window.get(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+  glfwSetFramebufferSizeCallback(window.get(),
+                                 [](GLFWwindow *w, int width, int height) {
+                                   glViewport(0, 0, width, height);
+                                 });
+  glfwSetScrollCallback(
+      window.get(), [](GLFWwindow *w, double xoffset, double yoffset) {
+        static_cast<InputHandler *>(glfwGetWindowUserPointer(w))
+            ->scrollCallback(yoffset);
+      });
+}
+
+void InputHandler::keyCallback(GLFWwindow *window, int key, int scancode,
+                               int action, int mods) {
+  if (action == GLFW_PRESS) {
+    pressedKeys.insert(key);
+  } else if (action == GLFW_RELEASE) {
+    pressedKeys.erase(key);
+  }
+}
+
+void InputHandler::update(float deltaTime) {
+  if (pressed(GLFW_KEY_ESCAPE) and not window.expired()) {
+    const auto w = window.lock();
+    glfwSetWindowShouldClose(w.get(), true);
+  }
+
+  if (not cloud) {
+    processCameraInput(deltaTime);
+    return;
   }
 
   // TODO: eliminate key flickering and unify key-bind
-  if (cloud and not cloudToggled and
-      glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
-    cloudToggled = true;
-    cloud->toggle(cloudToggled);
-  }
-
-  if (cloud and cloudToggled and glfwGetKey(window, GLFW_KEY_END)) {
-    cloudToggled = false;
+  if (cloud and pressed(GLFW_KEY_M)) {
+    cloudToggled = not cloudToggled;
     snowToggled = false;
     rainToggled = false;
     cloud->toggle(cloudToggled);
     rainSystem->toggle(rainToggled);
     snowSystem->toggle(snowToggled);
+    pressedKeys.erase(GLFW_KEY_M);
   }
 
-  if (cloud and cloudToggled and glfwGetKey(window, GLFW_KEY_S)) {
-    snowToggled = not snowToggled;
-    snowSystem->toggle(snowToggled);
-  }
-
-  if (cloud and cloudToggled and glfwGetKey(window, GLFW_KEY_R)) {
-    rainToggled = not rainToggled;
-    rainSystem->toggle(rainToggled);
-  }
-
-  if (not cloud) {
-    processCameraInput(window, deltaTime);
+  if (not cloudToggled) {
+    processCameraInput(deltaTime);
     return;
   }
 
-  if (cloudToggled) {
-    processCloudInput(window, deltaTime);
-    // TODO: Make this consistant with the cloud.
-    // Logically, the control should be on the cloud side.
-    if (snowToggled) {
-      processSnowInput(window, deltaTime);
-    }
-    if (rainToggled) {
-      processRainInput(window, deltaTime);
-    }
-  } else {
-    processCameraInput(window, deltaTime);
+  if (cloud and cloudToggled and pressed(GLFW_KEY_S)) {
+    snowToggled = not snowToggled;
+    snowSystem->toggle(snowToggled);
+    pressedKeys.erase(GLFW_KEY_S);
+  }
+
+  if (cloud and cloudToggled and pressed(GLFW_KEY_R)) {
+    rainToggled = not rainToggled;
+    rainSystem->toggle(rainToggled);
+    pressedKeys.erase(GLFW_KEY_R);
+  }
+
+  processCloudInput(deltaTime);
+  // TODO: Make this consistant with the cloud.
+  // Logically, the control should be on the cloud side.
+  if (snowToggled) {
+    processSnowInput(deltaTime);
+  }
+  if (rainToggled) {
+    processRainInput(deltaTime);
   }
 }
 
-void InputHandler::processCameraInput(GLFWwindow *window, float deltaTime) {
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+void InputHandler::processCameraInput(float deltaTime) {
+  if (pressed(GLFW_KEY_W)) {
     camera.ProcessKeyboard(FORWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_S)) {
     camera.ProcessKeyboard(BACKWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_A)) {
     camera.ProcessKeyboard(LEFT, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_D)) {
     camera.ProcessKeyboard(RIGHT, deltaTime);
   }
 }
 
-void InputHandler::processCloudInput(GLFWwindow *window, float deltaTime) {
+void InputHandler::processCloudInput(float deltaTime) {
   if (not cloud) {
     return;
   }
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_W)) {
     cloud->processKeyboard(FORWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_X)) {
     cloud->processKeyboard(BACKWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_A)) {
     cloud->processKeyboard(LEFT, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_D)) {
     cloud->processKeyboard(RIGHT, deltaTime);
   }
 }
 
-void InputHandler::processRainInput(GLFWwindow *window, float deltaTime) {
+void InputHandler::processRainInput(float deltaTime) {
   if (not rainSystem) {
     return;
   }
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_W)) {
     rainSystem->processKeyboard(FORWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_X)) {
     rainSystem->processKeyboard(BACKWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_A)) {
     rainSystem->processKeyboard(LEFT, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_D)) {
     rainSystem->processKeyboard(RIGHT, deltaTime);
   }
 }
 
-void InputHandler::processSnowInput(GLFWwindow *window, float deltaTime) {
+void InputHandler::processSnowInput(float deltaTime) {
   if (not snowSystem) {
     return;
   }
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_W)) {
     snowSystem->processKeyboard(FORWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_X)) {
     snowSystem->processKeyboard(BACKWARD, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_A)) {
     snowSystem->processKeyboard(LEFT, deltaTime);
   }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+  if (pressed(GLFW_KEY_D)) {
     snowSystem->processKeyboard(RIGHT, deltaTime);
   }
 }

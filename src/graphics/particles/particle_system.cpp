@@ -13,10 +13,6 @@ void ParticleSystem::init() {
 }
 
 void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
-  if (not toggled) {
-    return;
-  }
-
   // Update existing particles
   auto it = activeParticles.begin();
   while (it != activeParticles.end()) {
@@ -50,7 +46,7 @@ void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
   }
 
   // Automatic emission
-  if (emitter) {
+  if (emitter and toggled) {
     int emitCount = emitter->updateEmission(deltaTime);
     for (int i = 0; i < emitCount && activeParticles.size() < maxParticles;
          ++i) {
@@ -66,10 +62,6 @@ void ParticleSystem::render(Shader &shader, const glm::mat4 &model,
                             const glm::mat4 &view,
                             const glm::mat4 &projection) {
   if (activeParticles.empty()) {
-    return;
-  }
-
-  if (not toggled) {
     return;
   }
 

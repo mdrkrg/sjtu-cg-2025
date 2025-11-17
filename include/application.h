@@ -31,13 +31,6 @@ public:
   void run();
   void cleanup();
 
-  // Callback functions
-  static void framebufferSizeCallback(GLFWwindow *window, int width,
-                                      int height);
-  static void mouseCallback(GLFWwindow *window, double xpos, double ypos);
-  static void scrollCallback(GLFWwindow *window, double xoffset,
-                             double yoffset);
-
 private:
   Application();
   static std::shared_ptr<Application> singleton;
@@ -48,7 +41,7 @@ private:
   static constexpr unsigned int SCR_HEIGHT = 1080;
 
   // Window and context
-  GLFWwindow *window;
+  std::shared_ptr<GLFWwindow> window;
 
   // Camera
   Camera camera;

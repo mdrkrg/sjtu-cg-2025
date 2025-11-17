@@ -41,12 +41,7 @@ public:
 
   void processKeyboard(Movement direction, float deltaTime);
 
-  inline void toggle(bool toggled) {
-    this->toggled = toggled;
-    if (not toggled) {
-      reset();
-    }
-  }
+  inline void toggle(bool toggled) { this->toggled = toggled; }
 
 private:
   std::shared_ptr<ParticleEmitter> emitter;
