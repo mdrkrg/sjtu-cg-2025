@@ -19,7 +19,21 @@ void InputHandler::processInput(GLFWwindow *window, float deltaTime) {
 
   if (cloud and cloudToggled and glfwGetKey(window, GLFW_KEY_END)) {
     cloudToggled = false;
+    snowToggled = false;
+    rainToggled = false;
     cloud->toggle(cloudToggled);
+    rainSystem->toggle(rainToggled);
+    snowSystem->toggle(snowToggled);
+  }
+
+  if (cloud and cloudToggled and glfwGetKey(window, GLFW_KEY_S)) {
+    snowToggled = not snowToggled;
+    snowSystem->toggle(snowToggled);
+  }
+
+  if (cloud and cloudToggled and glfwGetKey(window, GLFW_KEY_R)) {
+    rainToggled = not rainToggled;
+    rainSystem->toggle(rainToggled);
   }
 
   if (not cloud) {
@@ -29,6 +43,14 @@ void InputHandler::processInput(GLFWwindow *window, float deltaTime) {
 
   if (cloudToggled) {
     processCloudInput(window, deltaTime);
+    // TODO: Make this consistant with the cloud.
+    // Logically, the control should be on the cloud side.
+    if (snowToggled) {
+      processSnowInput(window, deltaTime);
+    }
+    if (rainToggled) {
+      processRainInput(window, deltaTime);
+    }
   } else {
     processCameraInput(window, deltaTime);
   }
@@ -54,16 +76,52 @@ void InputHandler::processCloudInput(GLFWwindow *window, float deltaTime) {
     return;
   }
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    cloud->processKeyboard(Cloud::FORWARD, deltaTime);
+    cloud->processKeyboard(FORWARD, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
-    cloud->processKeyboard(Cloud::BACKWARD, deltaTime);
+    cloud->processKeyboard(BACKWARD, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    cloud->processKeyboard(Cloud::LEFT, deltaTime);
+    cloud->processKeyboard(LEFT, deltaTime);
   }
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-    cloud->processKeyboard(Cloud::RIGHT, deltaTime);
+    cloud->processKeyboard(RIGHT, deltaTime);
+  }
+}
+
+void InputHandler::processRainInput(GLFWwindow *window, float deltaTime) {
+  if (not rainSystem) {
+    return;
+  }
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    rainSystem->processKeyboard(FORWARD, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+    rainSystem->processKeyboard(BACKWARD, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    rainSystem->processKeyboard(LEFT, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    rainSystem->processKeyboard(RIGHT, deltaTime);
+  }
+}
+
+void InputHandler::processSnowInput(GLFWwindow *window, float deltaTime) {
+  if (not snowSystem) {
+    return;
+  }
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    snowSystem->processKeyboard(FORWARD, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+    snowSystem->processKeyboard(BACKWARD, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    snowSystem->processKeyboard(LEFT, deltaTime);
+  }
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    snowSystem->processKeyboard(RIGHT, deltaTime);
   }
 }
 

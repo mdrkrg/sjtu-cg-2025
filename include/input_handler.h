@@ -2,9 +2,11 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <memory>
 
 #include "camera.h"
 #include "cloud.h"
+#include "particles/particle_system.hpp"
 
 class InputHandler {
 public:
@@ -15,15 +17,24 @@ public:
   void scrollCallback(double yoffset);
   void framebufferSizeCallback(int width, int height);
 
-  void initCloud(std::shared_ptr<Cloud> &&cloud) {
+  void initWeather(std::shared_ptr<Cloud> &&cloud,
+                   std::shared_ptr<ParticleSystem> &&rainSystem,
+                   std::shared_ptr<ParticleSystem> &&snowSystem) {
     this->cloud = std::move(cloud);
+    this->rainSystem = std::move(rainSystem);
+    this->snowSystem = std::move(snowSystem);
   }
 
 private:
   Camera &camera;
 
   std::shared_ptr<Cloud> cloud;
-  bool cloudToggled;
+  std::shared_ptr<ParticleSystem> rainSystem;
+  std::shared_ptr<ParticleSystem> snowSystem;
+
+  bool cloudToggled = false;
+  bool rainToggled = false;
+  bool snowToggled = false;
 
   float screenWidth;
   float screenHeight;
@@ -35,4 +46,6 @@ private:
 
   void processCameraInput(GLFWwindow *window, float deltaTime);
   void processCloudInput(GLFWwindow *window, float deltaTime);
+  void processRainInput(GLFWwindow *window, float deltaTime);
+  void processSnowInput(GLFWwindow *window, float deltaTime);
 };

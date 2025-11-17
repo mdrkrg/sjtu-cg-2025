@@ -69,7 +69,8 @@ bool Application::initialize() {
     return false;
   }
 
-  inputHandler->initCloud(renderer->getCloud());
+  inputHandler->initWeather(renderer->getCloud(), renderer->getRainSystem(),
+                            renderer->getSnowSystem());
 
   return true;
 }

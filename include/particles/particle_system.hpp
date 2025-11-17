@@ -2,6 +2,7 @@
 
 #include "particle_emitter.hpp"
 #include "particle.hpp"
+#include "movement.hpp"
 #include <shader.h>
 #include <glm/glm.hpp>
 #include <memory>
@@ -38,11 +39,22 @@ public:
   /// Initialize OpenGL resources
   void init();
 
+  void processKeyboard(Movement direction, float deltaTime);
+
+  inline void toggle(bool toggled) {
+    this->toggled = toggled;
+    if (not toggled) {
+      reset();
+    }
+  }
+
 private:
   std::shared_ptr<ParticleEmitter> emitter;
   std::vector<Particle> activeParticles;
   std::queue<Particle> particlePool; // For reuse
   size_t maxParticles = 1000;
+
+  bool toggled = false;
 
   // OpenGL resources
   unsigned int VAO = 0, VBO = 0;

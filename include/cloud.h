@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
+#include "movement.hpp"
 #include "shader.h"
 
 const float CLOUD_SPEED = 1.0f;
@@ -14,8 +15,6 @@ class Cloud {
 public:
   Cloud();
   ~Cloud();
-
-  enum Movement { FORWARD, BACKWARD, LEFT, RIGHT };
 
   bool initialize();
   void render(const glm::mat4 &projection, const glm::mat4 &view,

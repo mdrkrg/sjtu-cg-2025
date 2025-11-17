@@ -1,5 +1,6 @@
 #pragma once
 
+#include "movement.hpp"
 #include "particle_behaviour.hpp"
 #include "particle.hpp"
 #include <glm/glm.hpp>
@@ -57,6 +58,9 @@ public:
     timeSinceLastEmission = 0.0f;
     timeSinceLastBurst = 0.0f;
   }
+
+  /// Process emitter movement. Subclasses can override.
+  virtual void handleMovement(Movement movement, float deltaTime) {}
 
 protected:
   std::shared_ptr<ParticleBehaviour> behaviour;

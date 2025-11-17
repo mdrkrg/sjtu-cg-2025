@@ -8,7 +8,7 @@
 
 static glm::mat4 weatherModel = glm::scale(glm::mat4(1.0), glm::vec3(0.04));
 
-static glm::vec3 weatherPosition = {0.0f, 18.0f, 50.0f};
+static glm::vec3 weatherPosition = {0.0f, 15.0f, 50.0f};
 
 static glm::mat4 terrainModel = glm::translate( // Position terrain on the table
     glm::scale( // Scale terrain to fit on the table
@@ -66,7 +66,7 @@ bool GraphicsRenderer::initialize() {
   }
 
   // Position the cloud above the table
-  cloud->setPosition(glm::vec3(0.0f, 0.75f, 2.0f));
+  cloud->setPosition(glm::vec3(0.0f, 0.65f, 2.0f));
   cloud->setScale(glm::vec3(2.0f, 0.5f, 2.0f));
 
   return true;

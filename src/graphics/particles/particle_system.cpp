@@ -13,6 +13,10 @@ void ParticleSystem::init() {
 }
 
 void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
+  if (not toggled) {
+    return;
+  }
+
   // Update existing particles
   auto it = activeParticles.begin();
   while (it != activeParticles.end()) {
@@ -61,8 +65,13 @@ void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
 void ParticleSystem::render(Shader &shader, const glm::mat4 &model,
                             const glm::mat4 &view,
                             const glm::mat4 &projection) {
-  if (activeParticles.empty())
+  if (activeParticles.empty()) {
     return;
+  }
+
+  if (not toggled) {
+    return;
+  }
 
   shader.use();
 
@@ -88,6 +97,9 @@ void ParticleSystem::render(Shader &shader, const glm::mat4 &model,
 }
 
 void ParticleSystem::emitParticle() {
+  if (not toggled) {
+    return;
+  }
   if (activeParticles.size() >= maxParticles) {
     // Maximum particles exceeded
     return;
@@ -113,6 +125,10 @@ void ParticleSystem::emitParticle() {
 }
 
 void ParticleSystem::emitBurst(int count) {
+  if (not toggled) {
+    return;
+  }
+
   for (int i = 0; i < count && activeParticles.size() < maxParticles; ++i) {
     emitParticle();
   }
@@ -197,4 +213,8 @@ void ParticleSystem::updateBuffers() {
   glBufferSubData(GL_ARRAY_BUFFER, 0, activeParticles.size() * sizeof(Particle),
                   activeParticles.data());
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void ParticleSystem::processKeyboard(Movement movement, float deltaTime) {
+  emitter->handleMovement(movement, deltaTime);
 }

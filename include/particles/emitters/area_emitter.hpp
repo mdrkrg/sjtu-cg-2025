@@ -24,6 +24,23 @@ public:
     particle.position = glm::vec3(x, y, z);
   }
 
+  void handleMovement(Movement movement, float deltaTime) override {
+    // Move along X or Z
+    static glm::vec3 front{0.0, 0.0, -1.0};
+    static glm::vec3 right{1.0, 0.0, 0.0};
+
+    float velocity = movementSpeed * deltaTime;
+
+    if (movement == FORWARD)
+      center += front * velocity;
+    if (movement == BACKWARD)
+      center -= front * velocity;
+    if (movement == LEFT)
+      center -= right * velocity;
+    if (movement == RIGHT)
+      center += right * velocity;
+  }
+
   /// Set area parameters
   void setArea(const glm::vec3 &center, const glm::vec3 &size) {
     this->center = center;

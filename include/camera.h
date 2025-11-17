@@ -1,18 +1,11 @@
 #pragma once
+#include "movement.hpp"
 #ifndef CAMERA_H
 #define CAMERA_H
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-enum Camera_Movement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT
-};
 
 // Default camera values
 const float YAW = -90.0f;
@@ -66,7 +59,7 @@ public:
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    void ProcessKeyboard(Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
         if (direction == FORWARD)

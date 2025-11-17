@@ -25,6 +25,8 @@ public:
 
   // Pass to the input handler
   std::shared_ptr<Cloud> getCloud() { return cloud; }
+  std::shared_ptr<ParticleSystem> getRainSystem() { return rainSystem; }
+  std::shared_ptr<ParticleSystem> getSnowSystem() { return snowSystem; }
 
 private:
   // Shaders
@@ -42,8 +44,8 @@ private:
 
   std::shared_ptr<TerrainMesh> terrainMesh;
 
-  std::unique_ptr<ParticleSystem> rainSystem;
-  std::unique_ptr<ParticleSystem> snowSystem;
+  std::shared_ptr<ParticleSystem> rainSystem;
+  std::shared_ptr<ParticleSystem> snowSystem;
 
   // Cloud
   std::shared_ptr<Cloud> cloud;
