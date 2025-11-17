@@ -6,8 +6,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <memory>
 
+#include "particles/particle_system.hpp"
 #include "shader.h"
 #include "model.hpp"
+#include "terrain_mesh.hpp"
 
 class GraphicsRenderer {
 public:
@@ -25,12 +27,18 @@ private:
   std::unique_ptr<Shader> modelShader;
   std::unique_ptr<Shader> lightCubeShader;
   std::unique_ptr<Shader> windowShader;
+  std::unique_ptr<Shader> particleShader;
 
   // Textures
   unsigned int windowDiffuseMap;
 
   // Models
   std::unique_ptr<Model> tableModel;
+
+  std::shared_ptr<TerrainMesh> terrainMesh;
+
+  std::unique_ptr<ParticleSystem> rainSystem;
+  std::unique_ptr<ParticleSystem> snowSystem;
 
   // Vertex data for room geometry
   struct RoomGeometry {
@@ -67,5 +75,11 @@ private:
                    const glm::vec3 &cameraPosition,
                    const glm::vec3 &lightPosition);
   void renderLightCube(const glm::mat4 &projection, const glm::mat4 &view,
+                       const glm::vec3 &lightPosition);
+  void renderTerrain(const glm::mat4 &projection, const glm::mat4 &view,
+                     const glm::vec3 &cameraPosition,
+                     const glm::vec3 &lightPosition);
+  void renderParticles(const glm::mat4 &projection, const glm::mat4 &view,
+                       const glm::vec3 &cameraPosition,
                        const glm::vec3 &lightPosition);
 };

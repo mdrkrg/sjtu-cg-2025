@@ -38,6 +38,9 @@ executable(
     'src/core/input_handler.cpp',
     'src/graphics/graphics_renderer.cpp',
     'src/utils/gl_utils.cpp',
+    'src/graphics/terrain_mesh.cpp',
+    'src/graphics/particles/particle_system.cpp',
+    'src/graphics/particles/particle_factory.cpp',
   ],
   dependencies: [
     gl_dep,

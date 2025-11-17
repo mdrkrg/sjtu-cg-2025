@@ -1,14 +1,30 @@
 #include "graphics_renderer.h"
+#include <GLFW/glfw3.h>
+#include "particles/particle_factory.hpp"
 #include "texture.hpp"
 #include <filesystem>
 #include <iostream>
-#include <vector>
-#include <array>
 #include <cstring>
+
+static glm::mat4 weatherModel = glm::scale(glm::mat4(1.0), glm::vec3(0.04));
+
+static glm::vec3 weatherPosition = {0.0f, 18.0f, 50.0f};
+
+static glm::mat4 terrainModel = glm::translate( // Position terrain on the table
+    glm::scale( // Scale terrain to fit on the table
+        glm::mat4(1.0f), glm::vec3(0.5f)),
+    glm::vec3(0.0f, 0.2f, 4.0f));
 
 GraphicsRenderer::GraphicsRenderer()
     : lightingShader(nullptr), modelShader(nullptr), lightCubeShader(nullptr),
-      windowShader(nullptr), windowDiffuseMap(0), tableModel(nullptr) {
+      windowShader(nullptr), particleShader(nullptr), windowDiffuseMap(0),
+      tableModel(nullptr),
+      terrainMesh(std::make_shared<TerrainMesh>(
+          "resources/textures/iceland_heightmap.png", 1.f)),
+      rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
+                                                   weatherPosition, 100000)},
+      snowSystem{ParticleFactory::createSnowSystem(terrainMesh, terrainModel,
+                                                   weatherPosition, 1000000)} {
   // Initialize geometry components
   ceiling = {0, 0, 0};
   floor = {0, 0, 0};
@@ -51,6 +67,8 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
   renderRoom(projection, view, cameraPosition, lightPosition);
   renderTable(projection, view, cameraPosition, lightPosition);
   renderLightCube(projection, view, lightPosition);
+  renderTerrain(projection, view, cameraPosition, lightPosition);
+  renderParticles(projection, view, cameraPosition, lightPosition);
 }
 
 void GraphicsRenderer::cleanup() {
@@ -67,9 +85,11 @@ void GraphicsRenderer::cleanup() {
   modelShader.reset();
   lightCubeShader.reset();
   windowShader.reset();
+  particleShader.reset();
 
   // Cleanup models
   tableModel.reset();
+  terrainMesh.reset();
 }
 
 bool GraphicsRenderer::setupShaders() {
@@ -82,6 +102,8 @@ bool GraphicsRenderer::setupShaders() {
                                                "shaders/lightcube.fs.glsl");
     windowShader = std::make_unique<Shader>("shaders/window.vs.glsl",
                                             "shaders/window.fs.glsl");
+    particleShader = std::make_unique<Shader>("shaders/particle.vs.glsl",
+                                              "shaders/particle.fs.glsl");
     return true;
   } catch (const std::exception &e) {
     std::cout << "Shader initialization failed: " << e.what() << std::endl;
@@ -384,4 +406,59 @@ void GraphicsRenderer::renderLightCube(const glm::mat4 &projection,
 
   glBindVertexArray(lightCube.VAO);
   glDrawArrays(GL_TRIANGLES, 0, lightCube.vertexCount);
+}
+
+void GraphicsRenderer::renderTerrain(const glm::mat4 &projection,
+                                     const glm::mat4 &view,
+                                     const glm::vec3 &cameraPosition,
+                                     const glm::vec3 &lightPosition) {
+  if (!terrainMesh)
+    return;
+
+  modelShader->use();
+
+  glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+  glm::vec3 diffuseColor = lightColor * glm::vec3(0.8f);
+  glm::vec3 ambientColor = lightColor * glm::vec3(0.2f);
+
+  modelShader->setVec3("light.position", lightPosition);
+  modelShader->setVec3("viewPos", cameraPosition);
+  modelShader->setVec3("light.ambient", ambientColor);
+  modelShader->setVec3("light.diffuse", diffuseColor);
+  modelShader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+  modelShader->setFloat("light.constant", 1.0f);
+  modelShader->setFloat("light.linear", 0.09f);
+  modelShader->setFloat("light.quadratic", 0.032f);
+  modelShader->setFloat("material.shininess", 32.0f);
+  modelShader->setMat4("projection", projection);
+  modelShader->setMat4("view", view);
+
+  modelShader->setMat4("model", terrainModel);
+
+  terrainMesh->Draw(*modelShader);
+}
+
+void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
+                                       const glm::mat4 &view,
+                                       const glm::vec3 &cameraPosition,
+                                       const glm::vec3 &lightPosition) {
+
+  {
+    static float lastTime = 0.0f;
+    float currentTime = static_cast<float>(glfwGetTime());
+    float deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    // Update particle systems (includes automatic emission)
+    snowSystem->update(deltaTime, weatherModel);
+    rainSystem->update(deltaTime, weatherModel);
+  }
+
+  glEnable(GL_PROGRAM_POINT_SIZE);
+  particleShader->use();
+  particleShader->setVec3("viewPos", cameraPosition);
+
+  snowSystem->render(*particleShader, weatherModel, view, projection);
+  rainSystem->render(*particleShader, weatherModel, view, projection);
+  glDisable(GL_PROGRAM_POINT_SIZE);
 }
