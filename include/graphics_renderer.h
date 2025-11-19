@@ -32,6 +32,7 @@ private:
   // Shaders
   std::unique_ptr<Shader> lightingShader;
   std::unique_ptr<Shader> modelShader;
+  std::unique_ptr<Shader> modelSimpleShader;
   std::unique_ptr<Shader> lightCubeShader;
   std::unique_ptr<Shader> windowShader;
   std::unique_ptr<Shader> particleShader;

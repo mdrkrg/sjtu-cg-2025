@@ -3,6 +3,7 @@
 #include "particles/behaviours/base_behaviour.hpp"
 #include <glm/glm.hpp>
 #include <memory>
+#include <optional>
 #include "terrain_mesh.hpp"
 
 /// Behaviour that triggers a callback when on collision with a terrain.
@@ -19,8 +20,9 @@ public:
     BaseBehaviour::update(particle, deltaTime, model);
 
     // Check for collision with terrain
-    if (terrain && checkCollision(particle, model)) {
-      onCollision(particle);
+    if (const auto heightResult = getCollisionHeight(particle, model);
+        heightResult) {
+      onCollision(particle, heightResult.value());
     }
   }
 
@@ -44,17 +46,18 @@ public:
 
 protected:
   /// Child classes should implement
-  virtual void onCollision(Particle &) const {
+  virtual void onCollision(Particle &, float) const {
     // Default no behaviour
   };
 
 private:
   std::shared_ptr<TerrainMesh> terrain;
   glm::mat4 terrainModel;
-  inline bool checkCollision(const Particle &particle,
-                             const glm::mat4 &model) const {
+
+  inline std::optional<float> getCollisionHeight(const Particle &particle,
+                                                 const glm::mat4 &model) const {
     if (!terrain) {
-      return false;
+      return std::nullopt;
     }
 
     // Transform particle position to world space
@@ -67,8 +70,11 @@ private:
     // Get terrain height at particle's X,Z position
     float terrainHeight = terrain->getHeightAt(localPos.x, localPos.z);
 
-    // Check if particle has hit or gone below the terrain
-    return localPos.y <= terrainHeight;
+    // Check if particle has hit or gone below the terrain, or out of bound
+    if (isnan(terrainHeight) or localPos.y <= terrainHeight) {
+      return terrainHeight;
+    }
+    return std::nullopt;
   }
 };
 
@@ -80,7 +86,11 @@ public:
       : CollisionBehaviour(terrain, terrainModel) {}
 
 protected:
-  inline void onCollision(Particle &particle) const {
+  inline void onCollision(Particle &particle, float height) const {
+    if (isnan(height)) {
+      particle.life = 0.0f;
+      return;
+    }
     // Stop particle movement when it hits the terrain
     particle.velocity = glm::vec3(0.0f);
     particle.life += 5.0f;
@@ -96,7 +106,7 @@ public:
       : CollisionBehaviour(terrain, terrainModel) {}
 
 protected:
-  inline void onCollision(Particle &particle) const {
+  inline void onCollision(Particle &particle, float) const {
     // Eliminate the particle if touching terrain
     particle.life = 0.0f;
   }

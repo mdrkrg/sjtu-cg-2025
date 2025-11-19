@@ -10,17 +10,17 @@ static glm::mat4 weatherModel = glm::scale(glm::mat4(1.0), glm::vec3(0.04));
 
 static glm::vec3 weatherPosition = {0.0f, 15.0f, 50.0f};
 
-static glm::mat4 terrainModel = glm::translate( // Position terrain on the table
-    glm::scale( // Scale terrain to fit on the table
-        glm::mat4(1.0f), glm::vec3(0.5f)),
-    glm::vec3(0.0f, 0.2f, 4.0f));
+// Scale terrain to fit on the table
+static glm::mat4 terrainModel = glm::scale(
+    // Position terrain on the table
+    glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.2f, 2.0f)),
+    glm::vec3(0.4f));
 
 GraphicsRenderer::GraphicsRenderer()
-    : lightingShader(nullptr), modelShader(nullptr), lightCubeShader(nullptr),
-      windowShader(nullptr), particleShader(nullptr), windowDiffuseMap(0),
-      tableModel(nullptr),
-      terrainMesh(std::make_shared<TerrainMesh>(
-          "resources/textures/iceland_heightmap.png", 1.f)),
+    : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
+      lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
+      windowDiffuseMap(0), tableModel(nullptr),
+      terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
       rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
                                                    weatherPosition, 100000)},
       snowSystem{ParticleFactory::createSnowSystem(terrainMesh, terrainModel,
@@ -126,6 +126,8 @@ bool GraphicsRenderer::setupShaders() {
                                               "shaders/lighting.fs.glsl");
     modelShader = std::make_unique<Shader>("shaders/model.vs.glsl",
                                            "shaders/model.fs.glsl");
+    modelSimpleShader = std::make_unique<Shader>(
+        "shaders/model.vs.glsl", "shaders/model-simple.fs.glsl");
     lightCubeShader = std::make_unique<Shader>("shaders/lightcube.vs.glsl",
                                                "shaders/lightcube.fs.glsl");
     windowShader = std::make_unique<Shader>("shaders/window.vs.glsl",
@@ -443,27 +445,30 @@ void GraphicsRenderer::renderTerrain(const glm::mat4 &projection,
   if (!terrainMesh)
     return;
 
-  modelShader->use();
+  modelSimpleShader->use();
 
   glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
   glm::vec3 diffuseColor = lightColor * glm::vec3(0.8f);
   glm::vec3 ambientColor = lightColor * glm::vec3(0.2f);
 
-  modelShader->setVec3("light.position", lightPosition);
-  modelShader->setVec3("viewPos", cameraPosition);
-  modelShader->setVec3("light.ambient", ambientColor);
-  modelShader->setVec3("light.diffuse", diffuseColor);
-  modelShader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-  modelShader->setFloat("light.constant", 1.0f);
-  modelShader->setFloat("light.linear", 0.09f);
-  modelShader->setFloat("light.quadratic", 0.032f);
-  modelShader->setFloat("material.shininess", 32.0f);
-  modelShader->setMat4("projection", projection);
-  modelShader->setMat4("view", view);
+  modelSimpleShader->setVec3("light.position", lightPosition);
+  modelSimpleShader->setVec3("viewPos", cameraPosition);
+  modelSimpleShader->setVec3("light.ambient", ambientColor);
+  modelSimpleShader->setVec3("light.diffuse", diffuseColor);
+  modelSimpleShader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+  modelSimpleShader->setFloat("light.constant", 1.0f);
+  modelSimpleShader->setFloat("light.linear", 0.09f);
+  modelSimpleShader->setFloat("light.quadratic", 0.032f);
+  modelSimpleShader->setFloat("material.shininess", 2.0f);
+  modelSimpleShader->setMat4("projection", projection);
+  modelSimpleShader->setMat4("view", view);
+  modelSimpleShader->setVec3("material.ambient", glm::vec3(0.8, 1.0, 0.8));
+  modelSimpleShader->setVec3("material.diffuse", glm::vec3(0.8, 1.0, 0.8));
+  modelSimpleShader->setVec3("material.specular", glm::vec3(0.2, 0.4, 0.2));
 
-  modelShader->setMat4("model", terrainModel);
+  modelSimpleShader->setMat4("model", terrainModel);
 
-  terrainMesh->Draw(*modelShader);
+  terrainMesh->render(*modelSimpleShader);
 }
 
 void GraphicsRenderer::renderParticles(const glm::mat4 &projection,

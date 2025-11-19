@@ -9,34 +9,27 @@
 #include <shader.h>
 #include <mesh.hpp>
 
-#include <string>
 #include <vector>
 
 class TerrainMesh {
 public:
   // Constructor
-  TerrainMesh(const std::string &heightMapPath, float maxHeight);
+  TerrainMesh(int width, int height, float maxHeight);
 
   // Destructor
   ~TerrainMesh();
 
   // Render the terrain
-  void Draw(Shader &shader);
+  void render(Shader &shader);
 
   // Get height at a specific point
   float getHeightAt(float x, float z) const;
-
-  // Get terrain dimensions
-  int getWidth() const { return width; }
-  int getHeight() const { return height; }
-  float getMaxHeight() const { return maxHeight; }
 
 private:
   // Terrain data
   int width, height;
   float maxHeight;
   std::vector<float> heightData;
-  std::string heightMapPath;
 
   // Mesh data
   std::vector<Vertex> vertices;
@@ -46,17 +39,17 @@ private:
   // OpenGL buffers
   unsigned int VAO, VBO, EBO;
 
-  // Load height map data
-  bool loadHeightMap(const std::string &path);
+  /// Generate height map data
+  void generateHeightMap(float frequency, size_t octaves, size_t seed);
 
-  // Generate terrain mesh
+  /// Generate terrain mesh
   void generateTerrainMesh();
 
-  // Setup OpenGL buffers
-  void setupMesh();
+  /// Calculate normals from geometry
+  void calculateNormals();
 
-  // Normalize coordinates
-  float normalizeCoordinate(float coord, int maxCoord) const;
+  /// Setup OpenGL buffers
+  void setupMesh();
 };
 
 #endif

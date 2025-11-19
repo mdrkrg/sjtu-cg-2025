@@ -1,2 +1,4 @@
 /stb-*
+/PerlinNoise-*
 /packagecache
+.wraplock

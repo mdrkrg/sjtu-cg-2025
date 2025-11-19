@@ -27,6 +27,12 @@ glad = static_library(
   include_directories: glad_incdir,
 )
 
+perlin_noise_dep = dependency('PerlinNoise', required: false)
+if not perlin_noise_dep.found()
+  perlin_noise_proj = subproject('PerlinNoise')
+  perlin_noise_dep = perlin_noise_proj.get_variable('perlin_noise_dep')
+endif
+
 incdir = include_directories('include')
 
 # C++
@@ -49,6 +55,7 @@ executable(
     glfw_dep,
     stb_dep,
     assimp_dep,
+    perlin_noise_dep,
   ],
   link_args: ['-Wl,--no-as-needed'],
   link_with: glad,
