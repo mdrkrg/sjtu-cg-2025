@@ -44,13 +44,16 @@ public:
   vector<unsigned int> indices;
   vector<Texture> textures;
   unsigned int VAO;
+  glm::vec3 ambientColor;
+  glm::vec3 diffuseColor;
+  glm::vec3 specularColor;
 
   // constructor
-  Mesh(vector<Vertex> vertices, vector<unsigned int> indices,
-       vector<Texture> textures) {
-    this->vertices = vertices;
-    this->indices = indices;
-    this->textures = textures;
+  Mesh(vector<Vertex> &&vertices, vector<unsigned int> &&indices,
+       vector<Texture> &&textures,
+       std::tuple<glm::vec3, glm::vec3, glm::vec3> &&colors)
+      : vertices{vertices}, indices{indices}, textures{textures} {
+    std::tie(ambientColor, diffuseColor, specularColor) = colors;
 
     // now that we have all the required data, set the vertex buffers and its
     // attribute pointers.
@@ -85,6 +88,10 @@ public:
       // and finally bind the texture
       glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
+
+    shader.setVec3("material.ambient", ambientColor);
+    shader.setVec3("material.diffuse", diffuseColor);
+    shader.setVec3("material.specular", specularColor);
 
     // draw mesh
     glBindVertexArray(VAO);

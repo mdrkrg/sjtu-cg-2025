@@ -147,6 +147,19 @@ private:
     }
     // process materials
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+
+    // get color
+    const auto getColor = [](aiMaterial *material, const char *pKey,
+                             unsigned int type, unsigned int idx) {
+      aiColor3D color{};
+      material->Get(pKey, type, idx, color);
+      return glm::vec3(color.r, color.g, color.b);
+    };
+
+    const auto ambientColor = getColor(material, AI_MATKEY_COLOR_AMBIENT);
+    const auto diffuseColor = getColor(material, AI_MATKEY_COLOR_DIFFUSE);
+    const auto specularColor = getColor(material, AI_MATKEY_COLOR_SPECULAR);
+
     // we assume a convention for sampler names in the shaders. Each diffuse
     // texture should be named as 'texture_diffuseN' where N is a sequential
     // number ranging from 1 to MAX_SAMPLER_NUMBER. Same applies to other
@@ -172,7 +185,8 @@ private:
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
     // return a mesh object created from the extracted mesh data
-    return Mesh(vertices, indices, textures);
+    return Mesh(std::move(vertices), std::move(indices), std::move(textures),
+                std::make_tuple(ambientColor, diffuseColor, specularColor));
   }
 
   // checks all material textures of a given type and loads the textures if
