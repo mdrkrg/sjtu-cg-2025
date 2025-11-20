@@ -42,6 +42,7 @@ private:
 
   // Models
   std::unique_ptr<Model> tableModel;
+  std::unique_ptr<Model> sandboxModel;
 
   std::shared_ptr<TerrainMesh> terrainMesh;
 

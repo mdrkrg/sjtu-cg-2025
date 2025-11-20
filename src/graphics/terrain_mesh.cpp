@@ -1,12 +1,13 @@
 #include "terrain_mesh.hpp"
 #include <PerlinNoise.hpp>
 #include <cmath>
+#include <cstdlib>
 
 TerrainMesh::TerrainMesh(int width, int height, float maxHeight)
     : width(width), height(height), maxHeight(maxHeight) {
 
   // Generate height map data
-  generateHeightMap(2.0f, 8ZU, 420ZU);
+  generateHeightMap(1.8f, 8ZU, std::rand());
 
   // Generate terrain mesh
   generateTerrainMesh();

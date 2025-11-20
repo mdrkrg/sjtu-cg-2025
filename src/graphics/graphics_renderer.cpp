@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <cstring>
+#include <memory>
 
 static glm::mat4 weatherModel = glm::scale(glm::mat4(1.0), glm::vec3(0.04));
 
@@ -13,13 +14,13 @@ static glm::vec3 weatherPosition = {0.0f, 15.0f, 50.0f};
 // Scale terrain to fit on the table
 static glm::mat4 terrainModel = glm::scale(
     // Position terrain on the table
-    glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.2f, 2.0f)),
-    glm::vec3(0.4f));
+    glm::translate(glm::mat4(1.0f), glm::vec3(0.15f, 0.15f, 2.0f)),
+    glm::vec3(0.24f));
 
 GraphicsRenderer::GraphicsRenderer()
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
-      windowDiffuseMap(0), tableModel(nullptr),
+      windowDiffuseMap(0), tableModel(nullptr), sandboxModel(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
       rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
                                                    weatherPosition, 100000)},
@@ -111,6 +112,7 @@ void GraphicsRenderer::cleanup() {
 
   // Cleanup models
   tableModel.reset();
+  sandboxModel.reset();
   terrainMesh.reset();
 
   // Cleanup cloud
@@ -151,6 +153,8 @@ bool GraphicsRenderer::loadModels() {
   try {
     tableModel = std::make_unique<Model>(
         std::filesystem::path("resources/objects/table/table3.obj"));
+    sandboxModel = std::make_unique<Model>(
+        std::filesystem::path("resources/objects/sandbox/sandbox.obj"));
     return true;
   } catch (const std::exception &e) {
     std::cout << "Model loading failed: " << e.what() << std::endl;
@@ -412,13 +416,42 @@ void GraphicsRenderer::renderTable(const glm::mat4 &projection,
   modelShader->setMat4("projection", projection);
   modelShader->setMat4("view", view);
 
-  glm::mat4 model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, -0.2f, 2.0f));
-  model = glm::scale(model, glm::vec3(0.1f));
-  modelShader->setMat4("model", model);
+  { // table
 
-  if (tableModel) {
-    tableModel->Draw(*modelShader);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, -0.2f, 2.0f));
+    model = glm::scale(model, glm::vec3(0.1f));
+    modelShader->setMat4("model", model);
+
+    if (tableModel) {
+      tableModel->Draw(*modelShader);
+    }
+  }
+
+  { // sandbox
+    modelSimpleShader->use();
+    modelSimpleShader->setVec3("light.position", lightPosition);
+    modelSimpleShader->setVec3("viewPos", cameraPosition);
+    modelSimpleShader->setVec3("light.ambient", ambientColor);
+    modelSimpleShader->setVec3("light.diffuse", diffuseColor);
+    modelSimpleShader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+    modelSimpleShader->setFloat("light.constant", 1.0f);
+    modelSimpleShader->setFloat("light.linear", 0.09f);
+    modelSimpleShader->setFloat("light.quadratic", 0.032f);
+    modelSimpleShader->setFloat("material.shininess", 2.0f);
+    modelSimpleShader->setMat4("projection", projection);
+    modelSimpleShader->setMat4("view", view);
+    modelSimpleShader->setVec3("material.ambient", glm::vec3(1.0, 0.8, 0.4));
+    modelSimpleShader->setVec3("material.diffuse", glm::vec3(0.8, 0.8, 0.4));
+    modelSimpleShader->setVec3("material.specular", glm::vec3(0.4, 0.4, 0.2));
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.15f, 0.13f, 2.0f));
+    model = glm::scale(model, glm::vec3(0.13f));
+    modelSimpleShader->setMat4("model", model);
+
+    if (sandboxModel) {
+      sandboxModel->Draw(*modelSimpleShader);
+    }
   }
 }
 
