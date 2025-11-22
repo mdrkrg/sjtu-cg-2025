@@ -36,16 +36,18 @@ private:
   float movementSpeed = CLOUD_SPEED;
 
   // Graphics
+
   unsigned int VAO, VBO;
   unsigned int volumeTexture;
   std::unique_ptr<Shader> cloudShader;
 
-  // Layered billboard
+  /// Layered billboard slice count
   static const int SLICE_COUNT = 16;
   unsigned int sliceVAOs[SLICE_COUNT];
   unsigned int sliceVBOs[SLICE_COUNT];
 
   // State
+
   bool initialized;
   bool toggled = false;
   float animationTime;

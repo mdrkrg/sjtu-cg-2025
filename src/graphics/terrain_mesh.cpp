@@ -1,18 +1,11 @@
 #include "terrain_mesh.hpp"
 #include <PerlinNoise.hpp>
 #include <cmath>
-#include <cstdlib>
 
 TerrainMesh::TerrainMesh(int width, int height, float maxHeight)
     : width(width), height(height), maxHeight(maxHeight) {
-
-  // Generate height map data
   generateHeightMap(1.8f, 8ZU, std::rand());
-
-  // Generate terrain mesh
   generateTerrainMesh();
-
-  // Setup OpenGL buffers
   setupMesh();
 }
 
@@ -47,33 +40,34 @@ void TerrainMesh::generateHeightMap(float frequency, size_t octaves,
 
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
-      // Normalize to [-0.5, 0.5]
-      float nx = (float)x / width - 0.5f;
-      float ny = (float)y / height - 0.5f;
-
-      // Absolute distances from center
-      float absNx = std::abs(nx);
-      float absNy = std::abs(ny);
-
-      // if distance < falloffStart, round to 0
-      // else calculate distance from the edge to the box
-      float dx = std::max(0.0f, absNx - falloffStart);
-      float dy = std::max(0.0f, absNy - falloffStart);
-
-      // Inner box: 0 distance
-      // Edge: linear distance
-      // Corner: euclidean distance (rounded square)
-      float falloffDist = std::sqrt(dx * dx + dy * dy);
-
-      float t = falloffDist / falloffRange;
-      float falloffModifier = 1.0f - smoothstep(0.0f, 1.0f, t);
-
-      // Apply modifier
       double noiseValue =
           (perlin.octave2D(x * fx, y * fy, octaves) + 0.2) * maxHeight;
-      noiseValue *= falloffModifier;
 
-      heightData[x + y * width] = noiseValue;
+      float falloffModifier = [&] {
+        // Normalize to [-0.5, 0.5]
+        float nx = (float)x / width - 0.5f;
+        float ny = (float)y / height - 0.5f;
+
+        // Absolute distances from center
+        float absNx = std::abs(nx);
+        float absNy = std::abs(ny);
+
+        // if distance < falloffStart, round to 0
+        // else calculate distance from the edge to the box
+        float dx = std::max(0.0f, absNx - falloffStart);
+        float dy = std::max(0.0f, absNy - falloffStart);
+
+        // Inner box: 0 distance
+        // Edge: linear distance
+        // Corner: euclidean distance (rounded square)
+        float falloffDist = std::sqrt(dx * dx + dy * dy);
+
+        float t = falloffDist / falloffRange;
+        return 1.0f - smoothstep(0.0f, 1.0f, t);
+      }();
+
+      // Apply modifier
+      heightData[x + y * width] = noiseValue * falloffModifier;
     }
   }
 }
@@ -97,18 +91,18 @@ void TerrainMesh::generateTerrainMesh() {
                     (float)z / (height - 1) - 0.5f // Normalize z to [-0.5, 0.5]
           );
 
-      // Initialize normal to zero (calculated later)
+      // Init normal to zero (calculated later)
       vertex.Normal = glm::vec3(0.0f, 0.0f, 0.0f);
 
-      // Texture coordinates
+      // Texture coords
       vertex.TexCoords =
           glm::vec2((float)x / (width - 1), (float)z / (height - 1));
 
-      // Initialize other attributes
+      // Init other attrs
       vertex.Tangent = glm::vec3(1.0f, 0.0f, 0.0f);
       vertex.Bitangent = glm::vec3(0.0f, 0.0f, 1.0f);
 
-      // Initialize bone data
+      // Init bone data
       for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
         vertex.m_BoneIDs[i] = 0;
         vertex.m_Weights[i] = 0.0f;
@@ -138,7 +132,6 @@ void TerrainMesh::generateTerrainMesh() {
     }
   }
 
-  // Calculate normals from geometry
   calculateNormals();
 }
 
@@ -163,12 +156,11 @@ void TerrainMesh::calculateNormals() {
     const auto v1 = vertices[idx1].Position;
     const auto v2 = vertices[idx2].Position;
 
-    // Cross product to calculate normal of the face
+    // normal = edge1 x edge2
     const auto edge1 = v1 - v0;
     const auto edge2 = v2 - v0;
     const auto faceNormal = glm::normalize(glm::cross(edge1, edge2));
 
-    // Accumulate face normal to each vertex
     vertices[idx0].Normal += faceNormal;
     vertices[idx1].Normal += faceNormal;
     vertices[idx2].Normal += faceNormal;
@@ -179,7 +171,7 @@ void TerrainMesh::calculateNormals() {
     if (glm::length(vertex.Normal) > 0.0f) {
       vertex.Normal = glm::normalize(vertex.Normal);
     } else {
-      // Fallback to upward normal if no faces contributed
+      // Fallback to upward
       vertex.Normal = glm::vec3(0.0f, 1.0f, 0.0f);
     }
   }
@@ -247,9 +239,8 @@ void TerrainMesh::render(Shader &shader) {
   glBindVertexArray(0);
 }
 
-/// Returns nan when out of bound
 float TerrainMesh::getHeightAt(float x, float z) const {
-  // Convert normalized coordinates to height map indices
+  // Convert normalized coords to height map indices
   int xIndex = static_cast<int>((x + 0.5f) * (width - 1));
   int zIndex = static_cast<int>((z + 0.5f) * (height - 1));
 

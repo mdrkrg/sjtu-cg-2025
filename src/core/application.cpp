@@ -10,9 +10,7 @@
 Application::Application()
     : window(nullptr), camera(glm::vec3(0.0f, 0.3f, 3.3f)), deltaTime(0.0f),
       lastFrame(0.0f), inputHandler(std::make_unique<InputHandler>(
-                           camera, SCR_WIDTH, SCR_HEIGHT)),
-      lightPos(0.0f, 0.75f, 1.65f), cubePos(0.0f, 0.3f, 2.0f),
-      tablePos(0.0f, -0.2f, 2.0f) {}
+                           camera, SCR_WIDTH, SCR_HEIGHT)) {}
 
 Application::~Application() {
   cleanup();
@@ -20,25 +18,25 @@ Application::~Application() {
 }
 
 bool Application::initialize() {
-  // Initialize GLFW
-  glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-  // Set texture loading flag
-  stbi_set_flip_vertically_on_load(true);
-
+  { // Init GLFW
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef __APPLE__
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+  }
+
+  // For texture loading flag
+  stbi_set_flip_vertically_on_load(true);
 
   // Create window
   window.reset(
       glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr),
       [](GLFWwindow *window) { glfwDestroyWindow(window); });
   if (window == nullptr) {
-    std::cout << "Failed to create GLFW window" << std::endl;
+    std::println(std::cerr, "Failed to create GLFW window");
     glfwTerminate();
     return false;
   }
@@ -46,9 +44,9 @@ bool Application::initialize() {
   glfwMakeContextCurrent(window.get());
   inputHandler->install(window);
 
-  // Initialize GLAD
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    std::cout << "Failed to initialize GLAD" << std::endl;
+  // Init GLAD
+  if (not gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    std::println(std::cerr, "Failed to initialize GLAD");
     return false;
   }
 
@@ -61,11 +59,12 @@ bool Application::initialize() {
 
   // Initialize renderer
   renderer = std::make_unique<GraphicsRenderer>();
-  if (!renderer->initialize()) {
-    std::cout << "Failed to initialize renderer" << std::endl;
+  if (not renderer->initialize()) {
+    std::println(std::cerr, "Failed to initialize renderer");
     return false;
   }
 
+  // Pass weather into input handler
   inputHandler->initWeather(renderer->getCloud(), renderer->getRainSystem(),
                             renderer->getSnowSystem());
 
@@ -74,7 +73,7 @@ bool Application::initialize() {
 
 void Application::run() {
   // Render loop
-  while (!glfwWindowShouldClose(window.get())) {
+  while (not glfwWindowShouldClose(window.get())) {
     updateDeltaTime();
 
     // Handle input
@@ -94,9 +93,8 @@ void Application::run() {
 
     glm::mat4 view = camera.GetViewMatrix();
 
-    renderer->render(projection, view, camera.Position, lightPos);
+    renderer->render(projection, view, camera.Position);
 
-    // Swap buffers and poll events
     glfwSwapBuffers(window.get());
     glfwPollEvents();
   }

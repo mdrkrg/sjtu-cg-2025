@@ -10,13 +10,13 @@
 
 #include "camera.h"
 
-// Forward declarations
 class GraphicsRenderer;
 class InputHandler;
 
 class Application : public std::enable_shared_from_this<Application> {
 public:
-  static std::shared_ptr<Application> getInstance() {
+  /// Get the application instance
+  inline static std::shared_ptr<Application> getInstance() {
     // called once, return the singleton in subsequent calls
     std::call_once(init_flag, []() {
       singleton = std::shared_ptr<Application>(new Application());
@@ -27,37 +27,42 @@ public:
   Application(const Application &) = delete;
   Application &operator=(const Application &) = delete;
 
+  /// Initialize the application
   bool initialize();
+
+  /// Run the application
   void run();
+
+  /// Clean up resources
   void cleanup();
 
+  /// Take a screenshot
   void screenshot();
 
 private:
   Application();
+  /// Application singleton
   static std::shared_ptr<Application> singleton;
   static std::once_flag init_flag;
 
-  // Window settings
+  /// Screen width
   static constexpr unsigned int SCR_WIDTH = 1920;
+  /// Screen height
   static constexpr unsigned int SCR_HEIGHT = 1080;
 
-  // Window and context
+  /// Window and context
   std::shared_ptr<GLFWwindow> window;
 
   // Camera
   Camera camera;
 
-  // Timing
+  /// Time delta between frames
   float deltaTime;
+
+  /// Time of last frame
   float lastFrame;
 
   std::unique_ptr<InputHandler> inputHandler;
-
-  // Light and object positions
-  glm::vec3 lightPos;
-  glm::vec3 cubePos;
-  glm::vec3 tablePos;
 
   // Graphics components
   std::unique_ptr<GraphicsRenderer> renderer;

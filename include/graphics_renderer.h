@@ -19,7 +19,7 @@ public:
 
   bool initialize();
   void render(const glm::mat4 &projection, const glm::mat4 &view,
-              const glm::vec3 &cameraPosition, const glm::vec3 &lightPosition);
+              const glm::vec3 &cameraPosition);
   void update(float deltaTime);
   void cleanup();
 
@@ -36,6 +36,14 @@ private:
   std::unique_ptr<Shader> lightCubeShader;
   std::unique_ptr<Shader> windowShader;
   std::unique_ptr<Shader> particleShader;
+
+  // TODO: Normally we would use an object manager to handle position stuff
+  // For simplicity we define it here
+
+  constexpr static glm::vec3 lightPosition{0.0f, 0.75f, 1.65f};
+  const static glm::mat4 weatherModel;
+  const static glm::vec3 weatherPosition;
+  const static glm::mat4 terrainModel;
 
   // Textures
   unsigned int windowDiffuseMap;
@@ -81,17 +89,12 @@ private:
   void cleanupGeometryComponent(RoomGeometry &geometry);
 
   void renderRoom(const glm::mat4 &projection, const glm::mat4 &view,
-                  const glm::vec3 &cameraPosition,
-                  const glm::vec3 &lightPosition);
+                  const glm::vec3 &cameraPosition);
   void renderTable(const glm::mat4 &projection, const glm::mat4 &view,
-                   const glm::vec3 &cameraPosition,
-                   const glm::vec3 &lightPosition);
-  void renderLightCube(const glm::mat4 &projection, const glm::mat4 &view,
-                       const glm::vec3 &lightPosition);
+                   const glm::vec3 &cameraPosition);
+  void renderLightCube(const glm::mat4 &projection, const glm::mat4 &view);
   void renderTerrain(const glm::mat4 &projection, const glm::mat4 &view,
-                     const glm::vec3 &cameraPosition,
-                     const glm::vec3 &lightPosition);
+                     const glm::vec3 &cameraPosition);
   void renderParticles(const glm::mat4 &projection, const glm::mat4 &view,
-                       const glm::vec3 &cameraPosition,
-                       const glm::vec3 &lightPosition);
+                       const glm::vec3 &cameraPosition);
 };

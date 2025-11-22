@@ -26,22 +26,14 @@ public:
     }
   }
 
-  // Check if particle is alive
   inline virtual bool isAlive(const Particle &particle,
                               const glm::mat4 &model) const override {
     if (!BaseBehaviour::isAlive(particle, model)) {
       return false;
     }
 
-    // Particle has fallen too far below terrain
+    // Fallen too far below
     return particle.position.y > -10.0f;
-  }
-
-  // Set terrain and its model matrix
-  void setTerrain(std::shared_ptr<TerrainMesh> terrain,
-                  const glm::mat4 &terrainModel) {
-    this->terrain = terrain;
-    this->terrainModel = terrainModel;
   }
 
 protected:
@@ -54,24 +46,24 @@ private:
   std::shared_ptr<TerrainMesh> terrain;
   glm::mat4 terrainModel;
 
+  /// Get height on collision, otherwise returns nullopt
   inline std::optional<float> getCollisionHeight(const Particle &particle,
                                                  const glm::mat4 &model) const {
     if (!terrain) {
       return std::nullopt;
     }
 
-    // Transform particle position to world space
-    glm::vec4 worldPos = model * glm::vec4(particle.position, 1.0f);
+    // Transform to world space
+    const auto worldPos = model * glm::vec4(particle.position, 1.0f);
 
-    // Transform world position to terrain local space for height lookup
-    glm::mat4 invTerrainModel = glm::inverse(terrainModel);
-    glm::vec4 localPos = invTerrainModel * worldPos;
+    // Transform to terrain local space
+    const auto invTerrainModel = glm::inverse(terrainModel);
+    const auto localPos = invTerrainModel * worldPos;
 
-    // Get terrain height at particle's X,Z position
-    float terrainHeight = terrain->getHeightAt(localPos.x, localPos.z);
+    const auto terrainHeight = terrain->getHeightAt(localPos.x, localPos.z);
 
     // Check if particle has hit or gone below the terrain, or out of bound
-    if (isnan(terrainHeight) or localPos.y <= terrainHeight) {
+    if (std::isnan(terrainHeight) or localPos.y <= terrainHeight) {
       return terrainHeight;
     }
     return std::nullopt;
@@ -87,11 +79,11 @@ public:
 
 protected:
   inline void onCollision(Particle &particle, float height) const {
-    if (isnan(height)) {
+    if (std::isnan(height)) {
       particle.life = 0.0f;
       return;
     }
-    // Stop particle movement when it hits the terrain
+    // Stop movement when hitting terrain
     particle.velocity = glm::vec3(0.0f);
     particle.life += 5.0f;
   }
@@ -107,7 +99,7 @@ public:
 
 protected:
   inline void onCollision(Particle &particle, float) const {
-    // Eliminate the particle if touching terrain
+    // Eliminate if touching terrain
     particle.life = 0.0f;
   }
 };

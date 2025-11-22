@@ -7,12 +7,13 @@
 #include <cstring>
 #include <memory>
 
-static glm::mat4 weatherModel = glm::scale(glm::mat4(1.0), glm::vec3(0.04));
+const glm::mat4 GraphicsRenderer::weatherModel =
+    glm::scale(glm::mat4(1.0), glm::vec3(0.04));
 
-static glm::vec3 weatherPosition = {0.0f, 15.0f, 50.0f};
+const glm::vec3 GraphicsRenderer::weatherPosition = {0.0f, 15.0f, 50.0f};
 
 // Scale terrain to fit on the table
-static glm::mat4 terrainModel = glm::scale(
+const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
     // Position terrain on the table
     glm::translate(glm::mat4(1.0f), glm::vec3(0.15f, 0.15f, 2.0f)),
     glm::vec3(0.24f));
@@ -75,17 +76,16 @@ bool GraphicsRenderer::initialize() {
 
 void GraphicsRenderer::render(const glm::mat4 &projection,
                               const glm::mat4 &view,
-                              const glm::vec3 &cameraPosition,
-                              const glm::vec3 &lightPosition) {
-  renderRoom(projection, view, cameraPosition, lightPosition);
-  renderTable(projection, view, cameraPosition, lightPosition);
-  renderLightCube(projection, view, lightPosition);
+                              const glm::vec3 &cameraPosition) {
+  renderRoom(projection, view, cameraPosition);
+  renderTable(projection, view, cameraPosition);
+  renderLightCube(projection, view);
   // Render cloud
   if (cloud && cloud->isInitialized()) {
     cloud->render(projection, view, lightPosition, cameraPosition);
   }
-  renderTerrain(projection, view, cameraPosition, lightPosition);
-  renderParticles(projection, view, cameraPosition, lightPosition);
+  renderTerrain(projection, view, cameraPosition);
+  renderParticles(projection, view, cameraPosition);
 }
 
 void GraphicsRenderer::update(float deltaTime) {
@@ -284,8 +284,7 @@ void GraphicsRenderer::cleanupGeometryComponent(RoomGeometry &geometry) {
 
 void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
                                   const glm::mat4 &view,
-                                  const glm::vec3 &cameraPosition,
-                                  const glm::vec3 &lightPosition) {
+                                  const glm::vec3 &cameraPosition) {
   lightingShader->use();
 
   // Set common uniforms
@@ -396,8 +395,7 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
 
 void GraphicsRenderer::renderTable(const glm::mat4 &projection,
                                    const glm::mat4 &view,
-                                   const glm::vec3 &cameraPosition,
-                                   const glm::vec3 &lightPosition) {
+                                   const glm::vec3 &cameraPosition) {
   modelShader->use();
 
   glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
@@ -456,8 +454,7 @@ void GraphicsRenderer::renderTable(const glm::mat4 &projection,
 }
 
 void GraphicsRenderer::renderLightCube(const glm::mat4 &projection,
-                                       const glm::mat4 &view,
-                                       const glm::vec3 &lightPosition) {
+                                       const glm::mat4 &view) {
   lightCubeShader->use();
   lightCubeShader->setMat4("projection", projection);
   lightCubeShader->setMat4("view", view);
@@ -473,8 +470,7 @@ void GraphicsRenderer::renderLightCube(const glm::mat4 &projection,
 
 void GraphicsRenderer::renderTerrain(const glm::mat4 &projection,
                                      const glm::mat4 &view,
-                                     const glm::vec3 &cameraPosition,
-                                     const glm::vec3 &lightPosition) {
+                                     const glm::vec3 &cameraPosition) {
   if (!terrainMesh)
     return;
 
@@ -506,8 +502,7 @@ void GraphicsRenderer::renderTerrain(const glm::mat4 &projection,
 
 void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
                                        const glm::mat4 &view,
-                                       const glm::vec3 &cameraPosition,
-                                       const glm::vec3 &lightPosition) {
+                                       const glm::vec3 &cameraPosition) {
 
   {
     static float lastTime = 0.0f;

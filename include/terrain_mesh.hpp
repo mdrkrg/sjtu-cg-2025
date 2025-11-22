@@ -1,10 +1,4 @@
-#ifndef TERRAIN_MESH_H
-#define TERRAIN_MESH_H
-
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <stb_image.h>
+#pragma once
 
 #include <shader.h>
 #include <mesh.hpp>
@@ -13,25 +7,20 @@
 
 class TerrainMesh {
 public:
-  // Constructor
   TerrainMesh(int width, int height, float maxHeight);
-
-  // Destructor
   ~TerrainMesh();
 
-  // Render the terrain
+  /// Render the terrain
   void render(Shader &shader);
 
-  // Get height at a specific point
+  /// Get height at a specific point, returns nan when out of bound
   float getHeightAt(float x, float z) const;
 
 private:
-  // Terrain data
   int width, height;
   float maxHeight;
   std::vector<float> heightData;
 
-  // Mesh data
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
@@ -51,5 +40,3 @@ private:
   /// Setup OpenGL buffers
   void setupMesh();
 };
-
-#endif

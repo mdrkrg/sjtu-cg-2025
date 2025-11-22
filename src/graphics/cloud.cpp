@@ -6,8 +6,6 @@
 #include "cloud.h"
 #include "PerlinNoise.hpp"
 
-float lerp(float t, float a, float b);
-
 Cloud::Cloud()
     : position(0.0f, 0.0f, 0.0f), scale(1.0f, 0.5f, 1.0f), VAO(0), VBO(0),
       volumeTexture(0), initialized(false), animationTime(0.0f) {
@@ -58,19 +56,17 @@ void Cloud::render(const glm::mat4 &projection, const glm::mat4 &view,
 
   cloudShader->use();
 
-  { // Uniforms
+  {
     cloudShader->setMat4("projection", projection);
     cloudShader->setMat4("view", view);
-  }
 
-  { // Model matrix
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, position);
     model = glm::scale(model, scale);
     cloudShader->setMat4("model", model);
   }
 
-  { // Light and camera positions
+  {
     cloudShader->setVec3("lightPos", lightPosition);
     cloudShader->setVec3("cameraPos", cameraPosition);
   }
@@ -81,7 +77,7 @@ void Cloud::render(const glm::mat4 &projection, const glm::mat4 &view,
     cloudShader->setInt("volumeTexture", 0);
   }
 
-  { // Transparency
+  { // Alphas
     cloudShader->setFloat("alpha", 0.8f);
   }
 
@@ -138,7 +134,7 @@ bool Cloud::setupGeometry() {
                           (void *)0);
     glEnableVertexAttribArray(0);
 
-    // Texture coordinate
+    // TexCoords
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
                           (void *)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
@@ -149,8 +145,6 @@ bool Cloud::setupGeometry() {
   return true;
 }
 
-float lerp(float t, float a, float b) { return a + t * (b - a); }
-
 bool Cloud::generateVolumeTexture() {
   const int width = 32;
   const int height = 32;
@@ -159,37 +153,47 @@ bool Cloud::generateVolumeTexture() {
   // Create 3D texture data
   std::vector<uint8_t> data(width * height * depth);
 
+  const siv::PerlinNoise perlin{42};
+
   for (int z = 0; z < depth; z++) {
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
-        // Normalize coordinates
-        float nx = static_cast<float>(x) / width;
-        float ny = static_cast<float>(y) / height;
-        float nz = static_cast<float>(z) / depth;
-
-        // Center coordinates
-        float cx = nx - 0.5f;
-        float cy = ny - 0.5f;
-        float cz = nz - 0.5f;
+        // Normalize coords
+        const auto nx = static_cast<float>(x) / width;
+        const auto ny = static_cast<float>(y) / height;
+        const auto nz = static_cast<float>(z) / depth;
 
         // Distance from center
-        float distance = sqrt(cx * cx + cy * cy + cz * cz);
+        const float distance = [nx, ny, nz] {
+          // Center coords
+          float cx = nx - 0.5f;
+          float cy = ny - 0.5f;
+          float cz = nz - 0.5f;
+
+          return static_cast<float>(std::sqrt(cx * cx + cy * cy + cz * cz));
+        }();
 
         // Create spherical cloud shape
-        float shape = 1.0f - (distance * 2.0f);
-        if (shape < 0.0f)
-          shape = 0.0f;
+        const auto shape = [&distance] {
+          const auto shape = 1.0f - (distance * 2.0f);
+          if (shape < 0.0f) {
+            return 0.0f;
+          }
+          return shape;
+        }();
 
-        const siv::PerlinNoise perlin{42};
+        const auto densityData = [&] {
+          const auto noiseValue =
+              perlin.octave3D_01(nx * 4.0f, ny * 4.0f, nz * 4.0f, 3);
+          float density = shape * noiseValue;
 
-        // Add noise for detail
-        float noiseValue =
-            perlin.octave3D_01(nx * 4.0f, ny * 4.0f, nz * 4.0f, 3);
-        float density = shape * noiseValue;
+          // clamp
+          density = std::max(0.0f, std::min(1.0f, density));
+          // scale
+          return static_cast<uint8_t>(density * 255);
+        }();
 
-        // Clamp and scale
-        density = std::max(0.0f, std::min(1.0f, density));
-        data[z * width * height + y * width + x] = (uint8_t)(density * 255);
+        data[z * width * height + y * width + x] = densityData;
       }
     }
   }

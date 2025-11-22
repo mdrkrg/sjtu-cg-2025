@@ -22,12 +22,13 @@ void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
     p.life -= deltaTime;
 
     // Check if particle should be removed
-    bool shouldRemove = false;
-    if (emitter && emitter->getBehaviour()) {
-      shouldRemove = !emitter->getBehaviour()->isAlive(p, model);
-    } else {
-      shouldRemove = p.life <= 0.0f;
-    }
+    const bool shouldRemove = [&, this] {
+      if (emitter && emitter->getBehaviour()) {
+        return not emitter->getBehaviour()->isAlive(p, model);
+      } else {
+        return p.life <= 0.0f;
+      }
+    }();
 
     if (shouldRemove) {
       // Add to pool for reuse
