@@ -31,6 +31,8 @@ public:
   void run();
   void cleanup();
 
+  void screenshot();
+
 private:
   Application();
   static std::shared_ptr<Application> singleton;

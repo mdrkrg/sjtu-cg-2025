@@ -1,4 +1,5 @@
 #include "input_handler.h"
+#include "application.h"
 
 InputHandler::InputHandler(Camera &camera, float screenWidth,
                            float screenHeight)
@@ -49,12 +50,16 @@ void InputHandler::update(float deltaTime) {
     glfwSetWindowShouldClose(w.get(), true);
   }
 
+  if (pressed(GLFW_KEY_F12)) {
+    Application::getInstance()->screenshot();
+  }
+
   if (not cloud) {
     processCameraInput(deltaTime);
     return;
   }
 
-  // TODO: eliminate key flickering and unify key-bind
+  // TODO: make control more human
   if (cloud and pressed(GLFW_KEY_M)) {
     cloudToggled = not cloudToggled;
     snowToggled = false;
