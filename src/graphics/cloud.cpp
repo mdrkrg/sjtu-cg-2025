@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include "cloud.h"
+#include "PerlinNoise.hpp"
 
 float lerp(float t, float a, float b);
 
@@ -86,7 +87,8 @@ void Cloud::render(const glm::mat4 &projection, const glm::mat4 &view,
 
   // for each slice, do render
   for (int i = 0; i < SLICE_COUNT; i++) {
-    float sliceDepth = (float)i / (float)(SLICE_COUNT - 1) - 0.5f;
+    float sliceDepth =
+        static_cast<float>(i) / static_cast<float>(SLICE_COUNT - 1) - 0.5f;
     cloudShader->setFloat("sliceDepth", sliceDepth);
 
     glBindVertexArray(sliceVAOs[i]);
@@ -147,54 +149,7 @@ bool Cloud::setupGeometry() {
   return true;
 }
 
-// Simple noise function (value noise)
-float Cloud::noise(float x, float y, float z) {
-  // Simple hash function
-  int X = (int)(floor(x)) & 255;
-  int Y = (int)(floor(y)) & 255;
-  int Z = (int)(floor(z)) & 255;
-
-  x -= floor(x);
-  y -= floor(y);
-  z -= floor(z);
-
-  // Fade function
-  float u = x * x * x * (x * (x * 6 - 15) + 10);
-  float v = y * y * y * (y * (y * 6 - 15) + 10);
-  float w = z * z * z * (z * (z * 6 - 15) + 10);
-
-  // Simple gradient values (simple hash)
-  float a = (X + Y * 57 + Z * 103) & 255;
-  float b = (X + 1 + Y * 57 + Z * 103) & 255;
-  float c = (X + (Y + 1) * 57 + Z * 103) & 255;
-  float d = (X + 1 + (Y + 1) * 57 + Z * 103) & 255;
-  float e = (X + Y * 57 + (Z + 1) * 103) & 255;
-  float f = (X + 1 + Y * 57 + (Z + 1) * 103) & 255;
-  float g = (X + (Y + 1) * 57 + (Z + 1) * 103) & 255;
-  float h = (X + 1 + (Y + 1) * 57 + (Z + 1) * 103) & 255;
-
-  // Interpolate
-  float res = lerp(w, lerp(v, lerp(u, a, b), lerp(u, c, d)),
-                   lerp(v, lerp(u, e, f), lerp(u, g, h)));
-
-  return res / 255.0f;
-}
-
 float lerp(float t, float a, float b) { return a + t * (b - a); }
-
-float Cloud::fractalNoise(float x, float y, float z, int octaves) {
-  float value = 0.0f;
-  float amplitude = 0.5f;
-  float frequency = 1.0f;
-
-  for (int i = 0; i < octaves; i++) {
-    value += amplitude * noise(x * frequency, y * frequency, z * frequency);
-    amplitude *= 0.5f;
-    frequency *= 2.0f;
-  }
-
-  return value;
-}
 
 bool Cloud::generateVolumeTexture() {
   const int width = 32;
@@ -202,15 +157,15 @@ bool Cloud::generateVolumeTexture() {
   const int depth = 32;
 
   // Create 3D texture data
-  std::vector<unsigned char> data(width * height * depth);
+  std::vector<uint8_t> data(width * height * depth);
 
   for (int z = 0; z < depth; z++) {
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
         // Normalize coordinates
-        float nx = (float)x / width;
-        float ny = (float)y / height;
-        float nz = (float)z / depth;
+        float nx = static_cast<float>(x) / width;
+        float ny = static_cast<float>(y) / height;
+        float nz = static_cast<float>(z) / depth;
 
         // Center coordinates
         float cx = nx - 0.5f;
@@ -225,14 +180,16 @@ bool Cloud::generateVolumeTexture() {
         if (shape < 0.0f)
           shape = 0.0f;
 
+        const siv::PerlinNoise perlin{42};
+
         // Add noise for detail
-        float noiseValue = fractalNoise(nx * 4.0f, ny * 4.0f, nz * 4.0f, 3);
+        float noiseValue =
+            perlin.octave3D_01(nx * 4.0f, ny * 4.0f, nz * 4.0f, 3);
         float density = shape * noiseValue;
 
         // Clamp and scale
         density = std::max(0.0f, std::min(1.0f, density));
-        data[z * width * height + y * width + x] =
-            (unsigned char)(density * 255);
+        data[z * width * height + y * width + x] = (uint8_t)(density * 255);
       }
     }
   }
@@ -259,10 +216,9 @@ bool Cloud::generateVolumeTexture() {
 void Cloud::setupShader() {
   try {
     cloudShader = std::make_unique<Shader>("shaders/cloud.vs.glsl",
-                                            "shaders/cloud.fs.glsl");
+                                           "shaders/cloud.fs.glsl");
   } catch (const std::exception &e) {
-    std::println(std::cerr, "Failed to load cloud shaders: {}",
-                 e.what());
+    std::println(std::cerr, "Failed to load cloud shaders: {}", e.what());
     throw;
   }
 }

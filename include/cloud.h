@@ -54,8 +54,4 @@ private:
   bool generateVolumeTexture();
   void setupShader();
   void cleanupGeometry();
-
-  // Noise generation for procedural cloud texture
-  float noise(float x, float y, float z);
-  float fractalNoise(float x, float y, float z, int octaves);
 };
