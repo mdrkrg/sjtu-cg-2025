@@ -6,26 +6,11 @@ project('simple-opengl', 'cpp', 'c',
   ],
 )
 
-# OpenGL
-gl_dep = dependency('OpenGL', required: true)
-glm_dep = dependency('glm', required: true)
-glfw_dep = dependency('glfw3', required: true)
-
 stb_dep = dependency('stb', required: false)
 if not stb_dep.found()
   stb_proj = subproject('stb')
   stb_dep = stb_proj.get_variable('stb_dep')
 endif
-
-assimp_dep = dependency('assimp', required: true)
-
-glad_incdir = include_directories('contrib')
-
-glad = static_library(
-  'glad',
-  'contrib/glad.c',
-  include_directories: glad_incdir,
-)
 
 perlin_noise_dep = dependency('PerlinNoise', required: false)
 if not perlin_noise_dep.found()
@@ -33,7 +18,21 @@ if not perlin_noise_dep.found()
   perlin_noise_dep = perlin_noise_proj.get_variable('perlin_noise_dep')
 endif
 
+dependencies = [
+  dependency('OpenGL', required: true),
+  dependency('epoxy', required: true),
+  dependency('glm', required: true),
+  dependency('glfw3', required: true),
+  stb_dep,
+  dependency('assimp', required: true),
+  perlin_noise_dep,
+]
+
 incdir = include_directories('include')
+
+includes = [
+  incdir,
+]
 
 # C++
 executable(
@@ -49,17 +48,9 @@ executable(
     'src/graphics/particles/particle_system.cpp',
     'src/graphics/particles/particle_factory.cpp',
   ],
-  dependencies: [
-    gl_dep,
-    glm_dep,
-    glfw_dep,
-    stb_dep,
-    assimp_dep,
-    perlin_noise_dep,
-  ],
+  dependencies: dependencies,
   link_args: ['-Wl,--no-as-needed'],
-  link_with: glad,
-  include_directories: [incdir, glad_incdir],
+  include_directories: includes,
   install: true,
 )
 

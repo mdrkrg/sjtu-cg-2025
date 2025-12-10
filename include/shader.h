@@ -2,7 +2,8 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include <glad/glad.h>
+#include <epoxy/gl.h>
+#include <epoxy/glx.h>
 #include <glm/glm.hpp>
 
 #include <string>

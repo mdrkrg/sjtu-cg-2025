@@ -1,7 +1,8 @@
 #pragma once
 
-#include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <epoxy/gl.h>
+#include <epoxy/glx.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 

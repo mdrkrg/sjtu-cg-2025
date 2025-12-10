@@ -21,6 +21,7 @@ in pkgs.mkShell {
     glm
     libGL
     libGLU
+    libepoxy.dev
     mesa # Provides DRI drivers and debugging tools like glxinfo
     assimp.dev # Model loading
 

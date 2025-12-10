@@ -1,5 +1,4 @@
 #include "particles/particle_system.hpp"
-#include <glad/glad.h>
 #include <algorithm>
 
 ParticleSystem::ParticleSystem(std::shared_ptr<ParticleEmitter> emitter)

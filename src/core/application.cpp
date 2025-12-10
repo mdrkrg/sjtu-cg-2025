@@ -44,12 +44,6 @@ bool Application::initialize() {
   glfwMakeContextCurrent(window.get());
   inputHandler->install(window);
 
-  // Init GLAD
-  if (not gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    std::println(std::cerr, "Failed to initialize GLAD");
-    return false;
-  }
-
   // Enable depth testing
   glEnable(GL_DEPTH_TEST);
 
