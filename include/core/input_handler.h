@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <unordered_set>
+#include <functional>
 
 #include "camera.h"
 #include "graphics/cloud.h"
@@ -22,6 +23,8 @@ public:
                    int mods);
   void update(float deltaTime);
   void mouseCallback(double xpos, double ypos);
+  void mouseButtonCallback(GLFWwindow *window, int button, int action,
+                           int mods);
   void scrollCallback(double yoffset);
   void framebufferSizeCallback(int width, int height);
 
@@ -32,6 +35,13 @@ public:
     this->rainSystem = std::move(rainSystem);
     this->snowSystem = std::move(snowSystem);
   }
+
+  // Mouse interaction
+  void setMouseClickCallback(
+      std::function<void(const glm::vec3 &, const glm::vec3 &)> callback) {
+    onMouseClick = callback;
+  }
+  void toggleCursor();
 
 private:
   std::weak_ptr<GLFWwindow> window;
@@ -54,9 +64,15 @@ private:
   float lastX;
   float lastY;
   bool firstMouse;
+  bool cursorCaptured = true;
+  std::function<void(const glm::vec3 &, const glm::vec3 &)> onMouseClick;
 
   void processCameraInput(float deltaTime);
   void processCloudInput(float deltaTime);
   void processRainInput(float deltaTime);
   void processSnowInput(float deltaTime);
+
+  /// Get mouse ray at a certain screen positions from the camera position
+  void getMouseRay(float x, float y, glm::vec3 &rayOrigin,
+                   glm::vec3 &rayDir) const;
 };

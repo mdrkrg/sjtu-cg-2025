@@ -1,6 +1,7 @@
 #include "core/application.h"
 #include "core/input_handler.h"
 #include "graphics/graphics_renderer.h"
+#include "scene/game_manager.hpp"
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -10,7 +11,8 @@
 Application::Application()
     : window(nullptr), camera(glm::vec3(0.0f, 0.3f, 3.3f)), deltaTime(0.0f),
       lastFrame(0.0f), inputHandler(std::make_unique<InputHandler>(
-                           camera, SCR_WIDTH, SCR_HEIGHT)) {}
+                           camera, SCR_WIDTH, SCR_HEIGHT)),
+      gameManager(std::make_unique<GameManager>()) {}
 
 Application::~Application() {
   cleanup();
@@ -52,7 +54,7 @@ bool Application::initialize() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Initialize renderer
-  renderer = std::make_unique<GraphicsRenderer>();
+  renderer = std::make_unique<GraphicsRenderer>(*gameManager);
   if (not renderer->initialize()) {
     std::println(std::cerr, "Failed to initialize renderer");
     return false;
@@ -61,6 +63,12 @@ bool Application::initialize() {
   // Pass weather into input handler
   inputHandler->initWeather(renderer->getCloud(), renderer->getRainSystem(),
                             renderer->getSnowSystem());
+
+  // Set mouse click callback for object interaction
+  inputHandler->setMouseClickCallback(
+      [this](const glm::vec3 &origin, const glm::vec3 &dir) {
+        renderer->handleMouseClick(origin, dir);
+      });
 
   return true;
 }

@@ -3,6 +3,7 @@
 #include <epoxy/gl.h>
 #include <epoxy/glx.h>
 #include "camera.h"
+#include "graphics/graphics_renderer.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,6 +13,7 @@
 
 class GraphicsRenderer;
 class InputHandler;
+class GameManager;
 
 class Application : public std::enable_shared_from_this<Application> {
 public:
@@ -63,6 +65,9 @@ private:
   float lastFrame;
 
   std::unique_ptr<InputHandler> inputHandler;
+
+  // Game management
+  std::unique_ptr<GameManager> gameManager;
 
   // Graphics components
   std::unique_ptr<GraphicsRenderer> renderer;

@@ -2,6 +2,8 @@
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
 #include "graphics/texture.hpp"
+#include "scene/game_object.hpp"
+#include "scene/game_manager.hpp"
 #include <filesystem>
 #include <iostream>
 #include <cstring>
@@ -18,10 +20,11 @@ const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
     glm::translate(glm::mat4(1.0f), glm::vec3(0.15f, 0.15f, 2.0f)),
     glm::vec3(0.24f));
 
-GraphicsRenderer::GraphicsRenderer()
+GraphicsRenderer::GraphicsRenderer(GameManager &gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
-      windowDiffuseMap(0), tableModel(nullptr), sandboxModel(nullptr),
+      windowDiffuseMap(0), gameManager(gameManager), tableObject(nullptr),
+      sandboxObject(nullptr), selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
       rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
                                                    weatherPosition, 100000)},
@@ -89,9 +92,27 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
 }
 
 void GraphicsRenderer::update(float deltaTime) {
+  // Update game objects (animations) via GameManager
+  gameManager.update(deltaTime);
+
+  // Update cloud
   if (cloud && cloud->isInitialized()) {
     cloud->update(deltaTime);
   }
+}
+
+void GraphicsRenderer::handleMouseClick(const glm::vec3 &rayOrigin,
+                                        const glm::vec3 &rayDir) {
+  // Use GameManager for ray casting and selection
+  GameObject *selected = gameManager.handleRayCast(rayOrigin, rayDir);
+  if (selected) {
+    std::cout << "Selected object: " << selected->getName() << std::endl;
+    // TODO: Trigger object-specific behavior (e.g., lamp toggle)
+  } else {
+    std::cout << "No object selected" << std::endl;
+  }
+  // Update local selectedObject pointer for consistency
+  selectedObject = gameManager.getSelectedObject();
 }
 
 void GraphicsRenderer::cleanup() {
@@ -110,9 +131,9 @@ void GraphicsRenderer::cleanup() {
   windowShader.reset();
   particleShader.reset();
 
-  // Cleanup models
-  tableModel.reset();
-  sandboxModel.reset();
+  // Cleanup game objects
+  tableObject = nullptr;
+  sandboxObject = nullptr;
   terrainMesh.reset();
 
   // Cleanup cloud
@@ -151,10 +172,26 @@ bool GraphicsRenderer::loadTextures() {
 
 bool GraphicsRenderer::loadModels() {
   try {
-    tableModel = std::make_unique<Model>(
+    // Load table
+    auto tableModel = std::make_unique<Model>(
         std::filesystem::path("resources/objects/table/table3.obj"));
-    sandboxModel = std::make_unique<Model>(
+    auto tableObj =
+        std::make_unique<GameObject>(std::move(tableModel), true, "table");
+    tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
+    tableObj->scale = glm::vec3(0.1f);
+    // Add to GameManager and get pointer
+    tableObject = gameManager.addObject(std::move(tableObj));
+
+    // Load sandbox
+    auto sandboxModel = std::make_unique<Model>(
         std::filesystem::path("resources/objects/sandbox/sandbox.obj"));
+    auto sandboxObj =
+        std::make_unique<GameObject>(std::move(sandboxModel), true, "sandbox");
+    sandboxObj->position = glm::vec3(0.15f, 0.13f, 2.0f);
+    sandboxObj->scale = glm::vec3(0.13f);
+    // Add to GameManager and get pointer
+    sandboxObject = gameManager.addObject(std::move(sandboxObj));
+
     return true;
   } catch (const std::exception &e) {
     std::cout << "Model loading failed: " << e.what() << std::endl;
@@ -414,16 +451,8 @@ void GraphicsRenderer::renderTable(const glm::mat4 &projection,
   modelShader->setMat4("projection", projection);
   modelShader->setMat4("view", view);
 
-  { // table
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, -0.2f, 2.0f));
-    model = glm::scale(model, glm::vec3(0.1f));
-    modelShader->setMat4("model", model);
-
-    if (tableModel) {
-      tableModel->Draw(*modelShader);
-    }
+  if (tableObject) {
+    tableObject->render(*modelShader);
   }
 
   { // sandbox
@@ -447,8 +476,8 @@ void GraphicsRenderer::renderTable(const glm::mat4 &projection,
     model = glm::scale(model, glm::vec3(0.13f));
     modelSimpleShader->setMat4("model", model);
 
-    if (sandboxModel) {
-      sandboxModel->Draw(*modelSimpleShader);
+    if (sandboxObject) {
+      sandboxObject->render(*modelSimpleShader);
     }
   }
 }

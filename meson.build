@@ -46,6 +46,7 @@ executable(
     'src/graphics/terrain_mesh.cpp',
     'src/graphics/particles/particle_system.cpp',
     'src/graphics/particles/particle_factory.cpp',
+    'src/scene/game_manager.cpp',
   ],
   dependencies: dependencies,
   link_args: ['-Wl,--no-as-needed'],

@@ -9,13 +9,15 @@
 
 #include "particles/particle_system.hpp"
 #include "shader.h"
-#include "model.hpp"
 #include "terrain_mesh.hpp"
 #include "cloud.h"
+#include "scene/game_object.hpp"
+
+class GameManager;
 
 class GraphicsRenderer {
 public:
-  GraphicsRenderer();
+  GraphicsRenderer(GameManager &gameManager);
   ~GraphicsRenderer();
 
   bool initialize();
@@ -28,6 +30,10 @@ public:
   std::shared_ptr<Cloud> getCloud() { return cloud; }
   std::shared_ptr<ParticleSystem> getRainSystem() { return rainSystem; }
   std::shared_ptr<ParticleSystem> getSnowSystem() { return snowSystem; }
+
+  // Mouse interaction
+  void handleMouseClick(const glm::vec3 &rayOrigin, const glm::vec3 &rayDir);
+  GameObject *getSelectedObject() const { return selectedObject; }
 
 private:
   // Shaders
@@ -49,9 +55,13 @@ private:
   // Textures
   unsigned int windowDiffuseMap;
 
-  // Models
-  std::unique_ptr<Model> tableModel;
-  std::unique_ptr<Model> sandboxModel;
+  // Game manager reference
+  GameManager &gameManager;
+
+  // Game objects (pointers for shader selection)
+  GameObject *tableObject;
+  GameObject *sandboxObject;
+  GameObject *selectedObject;
 
   std::shared_ptr<TerrainMesh> terrainMesh;
 
