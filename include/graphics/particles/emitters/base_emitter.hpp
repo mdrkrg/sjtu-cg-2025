@@ -1,6 +1,6 @@
 #pragma once
 
-#include "particles/particle_emitter.hpp"
+#include "graphics/particles/particle_emitter.hpp"
 #include <glm/glm.hpp>
 #include <random>
 

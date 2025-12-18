@@ -1,7 +1,7 @@
 #pragma once
 
-#include <shader.h>
-#include <mesh.hpp>
+#include <graphics/shader.h>
+#include <graphics/mesh.hpp>
 
 #include <vector>
 

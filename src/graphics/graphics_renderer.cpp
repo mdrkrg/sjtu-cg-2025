@@ -1,7 +1,7 @@
-#include "graphics_renderer.h"
+#include "graphics/graphics_renderer.h"
 #include <GLFW/glfw3.h>
-#include "particles/particle_factory.hpp"
-#include "texture.hpp"
+#include "graphics/particles/particle_factory.hpp"
+#include "graphics/texture.hpp"
 #include <filesystem>
 #include <iostream>
 #include <cstring>

@@ -7,8 +7,8 @@
 #include <unordered_set>
 
 #include "camera.h"
-#include "cloud.h"
-#include "particles/particle_system.hpp"
+#include "graphics/cloud.h"
+#include "graphics/particles/particle_system.hpp"
 
 class InputHandler {
 public:

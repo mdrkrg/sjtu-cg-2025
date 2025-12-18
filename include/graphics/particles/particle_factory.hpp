@@ -1,7 +1,7 @@
 #pragma once
 
-#include "particles/particle_system.hpp"
-#include "terrain_mesh.hpp"
+#include "graphics/particles/particle_system.hpp"
+#include "graphics/terrain_mesh.hpp"
 #include <memory>
 
 class ParticleFactory {

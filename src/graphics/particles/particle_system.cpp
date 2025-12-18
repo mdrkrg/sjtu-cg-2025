@@ -1,4 +1,4 @@
-#include "particles/particle_system.hpp"
+#include "graphics/particles/particle_system.hpp"
 #include <algorithm>
 
 ParticleSystem::ParticleSystem(std::shared_ptr<ParticleEmitter> emitter)

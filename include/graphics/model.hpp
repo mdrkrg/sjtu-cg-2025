@@ -10,8 +10,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <mesh.hpp>
-#include <shader.h>
+#include <graphics/mesh.hpp>
+#include <graphics/shader.h>
 
 #include <string>
 #include <iostream>

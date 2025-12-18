@@ -6,7 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 
-#include "movement.hpp"
+#include "core/movement.hpp"
 #include "shader.h"
 
 const float CLOUD_SPEED = 1.0f;

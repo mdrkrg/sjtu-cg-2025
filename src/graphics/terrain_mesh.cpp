@@ -1,4 +1,4 @@
-#include "terrain_mesh.hpp"
+#include "graphics/terrain_mesh.hpp"
 #include <PerlinNoise.hpp>
 #include <cmath>
 

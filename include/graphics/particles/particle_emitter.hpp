@@ -1,6 +1,6 @@
 #pragma once
 
-#include "movement.hpp"
+#include "core/movement.hpp"
 #include "particle_behaviour.hpp"
 #include "particle.hpp"
 #include <glm/glm.hpp>

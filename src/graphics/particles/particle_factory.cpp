@@ -1,8 +1,8 @@
-#include "particles/particle_factory.hpp"
-#include "particles/behaviours/collision_behaviour.hpp"
-#include "particles/behaviours/gravity_behaviour.hpp"
-#include "particles/behaviours/wind_behaviour.hpp"
-#include "particles/emitters/area_emitter.hpp"
+#include "graphics/particles/particle_factory.hpp"
+#include "graphics/particles/behaviours/collision_behaviour.hpp"
+#include "graphics/particles/behaviours/gravity_behaviour.hpp"
+#include "graphics/particles/behaviours/wind_behaviour.hpp"
+#include "graphics/particles/emitters/area_emitter.hpp"
 #include <glm/glm.hpp>
 
 std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(

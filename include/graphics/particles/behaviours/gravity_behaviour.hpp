@@ -1,6 +1,6 @@
 #pragma once
 
-#include "particles/behaviours/base_behaviour.hpp"
+#include "graphics/particles/behaviours/base_behaviour.hpp"
 #include <glm/glm.hpp>
 
 class GravityBehaviour : public BaseBehaviour {

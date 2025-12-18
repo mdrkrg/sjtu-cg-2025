@@ -1,6 +1,6 @@
 #pragma once
 
-#include "particles/emitters/base_emitter.hpp"
+#include "base_emitter.hpp"
 #include <glm/glm.hpp>
 
 /// Emitter that emits particle from a single point.

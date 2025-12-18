@@ -1,5 +1,5 @@
-#include "input_handler.h"
-#include "application.h"
+#include "core/input_handler.h"
+#include "core/application.h"
 
 InputHandler::InputHandler(Camera &camera, float screenWidth,
                            float screenHeight)

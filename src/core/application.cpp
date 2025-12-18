@@ -1,6 +1,6 @@
-#include "application.h"
-#include "input_handler.h"
-#include "graphics_renderer.h"
+#include "core/application.h"
+#include "core/input_handler.h"
+#include "graphics/graphics_renderer.h"
 #include <filesystem>
 #include <iostream>
 #include <memory>

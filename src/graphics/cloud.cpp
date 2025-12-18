@@ -3,8 +3,8 @@
 #include <print>
 #include <vector>
 #include <algorithm>
-#include "cloud.h"
-#include "PerlinNoise.hpp"
+#include <PerlinNoise.hpp>
+#include "graphics/cloud.h"
 
 Cloud::Cloud()
     : position(0.0f, 0.0f, 0.0f), scale(1.0f, 0.5f, 1.0f), VAO(0), VBO(0),

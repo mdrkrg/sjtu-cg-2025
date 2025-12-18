@@ -2,8 +2,8 @@
 
 #include "particle_emitter.hpp"
 #include "particle.hpp"
-#include "movement.hpp"
-#include <shader.h>
+#include "core/movement.hpp"
+#include <graphics/shader.h>
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "particles/behaviours/base_behaviour.hpp"
+#include "graphics/particles/behaviours/base_behaviour.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
-#include "terrain_mesh.hpp"
+#include "graphics/terrain_mesh.hpp"
 
 /// Behaviour that triggers a callback when on collision with a terrain.
 class CollisionBehaviour : public BaseBehaviour {
