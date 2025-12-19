@@ -35,6 +35,8 @@ public:
   void handleMouseClick(const glm::vec3 &rayOrigin, const glm::vec3 &rayDir);
   GameObject *getSelectedObject() const { return selectedObject; }
 
+  void toggleDebug() { debugAABBsEnabled = not debugAABBsEnabled; }
+
 private:
   // Shaders
   std::unique_ptr<Shader> lightingShader;
@@ -43,6 +45,7 @@ private:
   std::unique_ptr<Shader> lightCubeShader;
   std::unique_ptr<Shader> windowShader;
   std::unique_ptr<Shader> particleShader;
+  std::unique_ptr<Shader> debugShader;
 
   // TODO: Normally we would use an object manager to handle position stuff
   // For simplicity we define it here
@@ -84,6 +87,9 @@ private:
   RoomGeometry rightWall;
   RoomGeometry frontWall;
   RoomGeometry lightCube;
+  RoomGeometry debugCubeLines;
+
+  bool debugAABBsEnabled = false;
 
   // Vertex data
   static constexpr size_t VERTEX_SIZE = 8;
@@ -108,4 +114,5 @@ private:
                      const glm::vec3 &cameraPosition);
   void renderParticles(const glm::mat4 &projection, const glm::mat4 &view,
                        const glm::vec3 &cameraPosition);
+  void renderDebugAABBs(const glm::mat4 &projection, const glm::mat4 &view);
 };

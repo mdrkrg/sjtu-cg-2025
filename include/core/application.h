@@ -41,6 +41,9 @@ public:
   /// Take a screenshot
   void screenshot();
 
+  /// Toggle debug
+  void debug() { renderer->toggleDebug(); }
+
 private:
   Application();
   /// Application singleton

@@ -61,6 +61,11 @@ void InputHandler::update(float deltaTime) {
     pressedKeys.erase(GLFW_KEY_F12);
   }
 
+  if (pressed(GLFW_KEY_F3)) {
+    Application::getInstance()->debug();
+    pressedKeys.erase(GLFW_KEY_F3);
+  }
+
   if (pressed(GLFW_KEY_TAB)) {
     toggleCursor();
     pressedKeys.erase(GLFW_KEY_TAB);

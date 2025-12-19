@@ -23,8 +23,8 @@ const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
 GraphicsRenderer::GraphicsRenderer(GameManager &gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
-      windowDiffuseMap(0), gameManager(gameManager), tableObject(nullptr),
-      sandboxObject(nullptr), selectedObject(nullptr),
+      debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
+      tableObject(nullptr), sandboxObject(nullptr), selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
       rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
                                                    weatherPosition, 100000)},
@@ -38,6 +38,7 @@ GraphicsRenderer::GraphicsRenderer(GameManager &gameManager)
   rightWall = {0, 0, 0};
   frontWall = {0, 0, 0};
   lightCube = {0, 0, 0};
+  debugCubeLines = {0, 0, 0};
 }
 
 GraphicsRenderer::~GraphicsRenderer() { cleanup(); }
@@ -89,6 +90,7 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
   }
   renderTerrain(projection, view, cameraPosition);
   renderParticles(projection, view, cameraPosition);
+  renderDebugAABBs(projection, view);
 }
 
 void GraphicsRenderer::update(float deltaTime) {
@@ -123,6 +125,7 @@ void GraphicsRenderer::cleanup() {
   cleanupGeometryComponent(rightWall);
   cleanupGeometryComponent(frontWall);
   cleanupGeometryComponent(lightCube);
+  cleanupGeometryComponent(debugCubeLines);
 
   // Cleanup shaders
   lightingShader.reset();
@@ -130,6 +133,7 @@ void GraphicsRenderer::cleanup() {
   lightCubeShader.reset();
   windowShader.reset();
   particleShader.reset();
+  debugShader.reset();
 
   // Cleanup game objects
   tableObject = nullptr;
@@ -157,6 +161,8 @@ bool GraphicsRenderer::setupShaders() {
                                             "shaders/window.fs.glsl");
     particleShader = std::make_unique<Shader>("shaders/particle.vs.glsl",
                                               "shaders/particle.fs.glsl");
+    debugShader = std::make_unique<Shader>("shaders/debug.vs.glsl",
+                                           "shaders/debug.fs.glsl");
     return true;
   } catch (const std::exception &e) {
     std::cout << "Shader initialization failed: " << e.what() << std::endl;
@@ -273,6 +279,36 @@ bool GraphicsRenderer::setupRoomGeometry() {
   setupGeometryComponent(frontWall, frontWallVertices, VERTEX_COUNT);
   setupGeometryComponent(lightCube, vertices,
                          VERTEX_COUNT * 6); // All vertices for the light cube
+
+  // Generate line geometry for unit cube (for AABB debug visualization)
+  // 12 lines, 24 vertices, each vertex 3 floats (x, y, z)
+  float debugLineVertices[] = {
+      // Bottom square
+      -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f,
+      0.5f, 0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f,
+      -0.5f, -0.5f,
+      // Top square
+      -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
+      0.5f, 0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f,
+      -0.5f,
+      // Vertical edges
+      -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f,
+      -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f,
+      0.5f, 0.5f};
+  // Note: debug shader expects only position attribute (location 0)
+  // We'll use a custom setup for lines (different vertex format)
+  // Create VAO/VBO for line geometry
+  glGenVertexArrays(1, &debugCubeLines.VAO);
+  glGenBuffers(1, &debugCubeLines.VBO);
+  glBindVertexArray(debugCubeLines.VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, debugCubeLines.VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(debugLineVertices), debugLineVertices,
+               GL_STATIC_DRAW);
+  // Position attribute
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+  glBindVertexArray(0);
+  debugCubeLines.vertexCount = 24; // 24 vertices for lines
 
   return true;
 }
@@ -551,4 +587,47 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
   snowSystem->render(*particleShader, weatherModel, view, projection);
   rainSystem->render(*particleShader, weatherModel, view, projection);
   glDisable(GL_PROGRAM_POINT_SIZE);
+}
+
+void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
+                                        const glm::mat4 &view) {
+  if (!debugAABBsEnabled)
+    return;
+  if (!debugShader)
+    return;
+
+  debugShader->use();
+  debugShader->setMat4("projection", projection);
+  debugShader->setMat4("view", view);
+
+  // Set color for AABB lines (red)
+  debugShader->setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
+
+  // Iterate through all objects in GameManager
+  const auto &objects = gameManager.getObjects();
+  for (GameObject *obj : objects) {
+    if (!obj) {
+      continue;
+    }
+
+    // Get world AABB
+    scene::AABB aabb = obj->getWorldAABB();
+
+    // Compute scale and translation from AABB min/max
+    glm::vec3 center = (aabb.min + aabb.max) * 0.5f;
+    glm::vec3 size = aabb.max - aabb.min;
+
+    // Create model matrix: translate to center, scale to size
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, center);
+    // unit cube is from -0.5 to 0.5, scaling expands
+    model = glm::scale(model, size);
+
+    debugShader->setMat4("model", model);
+
+    // Draw lines
+    glBindVertexArray(debugCubeLines.VAO);
+    glDrawArrays(GL_LINES, 0, debugCubeLines.vertexCount);
+    glBindVertexArray(0);
+  }
 }
