@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <filesystem>
 
 class Shader
 {
@@ -20,32 +21,11 @@ public:
     Shader(const char* vertexPath, const char* fragmentPath)
     {
         // 1. retrieve the vertex/fragment source code from filePath
-        std::string vertexCode;
-        std::string fragmentCode;
-        std::ifstream vShaderFile;
-        std::ifstream fShaderFile;
-        // ensure ifstream objects can throw exceptions:
-        vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        try
-        {
-            // open files
-            vShaderFile.open(vertexPath);
-            fShaderFile.open(fragmentPath);
-            std::stringstream vShaderStream, fShaderStream;
-            // read file's buffer contents into streams
-            vShaderStream << vShaderFile.rdbuf();
-            fShaderStream << fShaderFile.rdbuf();
-            // close file handlers
-            vShaderFile.close();
-            fShaderFile.close();
-            // convert stream into string
-            vertexCode = vShaderStream.str();
-            fragmentCode = fShaderStream.str();
-        }
-        catch (std::ifstream::failure& e)
-        {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
+        std::string vertexCode = loadShaderFile(vertexPath);
+        std::string fragmentCode = loadShaderFile(fragmentPath);
+
+        if (vertexCode.empty() || fragmentCode.empty()) {
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
         }
         const char* vShaderCode = vertexCode.c_str();
         const char* fShaderCode = fragmentCode.c_str();
@@ -138,6 +118,42 @@ public:
     }
 
 private:
+    // Load shader file with #include directive support
+    static std::string loadShaderFile(const std::string& filePath) {
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << filePath << std::endl;
+            return "";
+        }
+
+        std::stringstream buffer;
+        std::string line;
+        std::filesystem::path parentPath = std::filesystem::path(filePath).parent_path();
+
+        while (std::getline(file, line)) {
+            // Check for #include "filename"
+            if (line.find("#include") != std::string::npos) {
+                size_t start = line.find('\"');
+                size_t end = line.rfind('\"');
+                if (start != std::string::npos && end != std::string::npos && start != end) {
+                    std::string includeFile = line.substr(start + 1, end - start - 1);
+                    std::filesystem::path includePath = parentPath / includeFile;
+
+                    // Recursively load included file
+                    std::string includedContent = loadShaderFile(includePath.string());
+                    buffer << includedContent << "\n";
+                } else {
+                    // Invalid include directive, keep as-is
+                    buffer << line << "\n";
+                }
+            } else {
+                buffer << line << "\n";
+            }
+        }
+
+        return buffer.str();
+    }
+
     // utility function for checking shader compilation/linking errors.
     // ------------------------------------------------------------------------
     void checkCompileErrors(GLuint shader, std::string type)
