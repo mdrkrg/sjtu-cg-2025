@@ -70,12 +70,12 @@ bool LightManager::createUBO() {
   return true;
 }
 
-uint32_t LightManager::addPointLight(const PointLight &light) {
+std::optional<uint32_t> LightManager::addPointLight(const PointLight &light) {
   if (m_numActiveLights >= static_cast<int>(MAX_POINT_LIGHTS)) {
     std::println(std::cerr,
                  "Cannot add point light: maximum limit ({}) reached",
                  MAX_POINT_LIGHTS);
-    return -1;
+    return std::nullopt;
   }
 
   uint32_t index = m_numActiveLights;

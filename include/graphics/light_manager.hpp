@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <cstddef>
 #include <cassert>
+#include <optional>
 
 namespace graphics {
 
@@ -88,8 +89,9 @@ public:
 
   void cleanup();
 
-  /// Add a point light to the scene, returns the index, -1 if reached limit
-  uint32_t addPointLight(const PointLight &light);
+  /// Add a point light to the scene
+  /// Returns the index, nullopt if reached limit
+  std::optional<uint32_t> addPointLight(const PointLight &light);
 
   /// Remove a point light by index
   void removePointLight(uint32_t index);

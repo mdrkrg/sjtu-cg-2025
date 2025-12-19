@@ -70,13 +70,14 @@ bool GraphicsRenderer::initialize() {
                                 lightSpecular, constant, linear, quadratic);
   }();
 
-  int lightIndex = lightManager.addPointLight(roomLight);
-  if (lightIndex < 0) {
+  const auto lightIndex = lightManager.addPointLight(roomLight);
+  if (not lightIndex.has_value()) {
     std::cout << "Failed to add default room light" << std::endl;
     return false;
   }
 
-  std::cout << "Added default room light at index " << lightIndex << std::endl;
+  std::cout << "Added default room light at index " << lightIndex.value()
+            << std::endl;
 
   if (!loadTextures()) {
     std::cout << "Failed to load textures" << std::endl;
