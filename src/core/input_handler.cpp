@@ -71,6 +71,11 @@ void InputHandler::update(float deltaTime) {
     pressedKeys.erase(GLFW_KEY_TAB);
   }
 
+  if (pressed(GLFW_KEY_TAB)) {
+    toggleCursor();
+    pressedKeys.erase(GLFW_KEY_TAB);
+  }
+
   if (not cloud) {
     processCameraInput(deltaTime);
     return;

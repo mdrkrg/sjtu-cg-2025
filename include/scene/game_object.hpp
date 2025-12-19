@@ -16,8 +16,7 @@
 
 class GameObject {
 public:
-  GameObject(std::unique_ptr<Model> model, const std::string &name = "");
-  GameObject(std::unique_ptr<Model> model, Shader *shader,
+  GameObject(std::unique_ptr<Model> model, std::shared_ptr<Shader> shader,
              const Material &material, const std::string &name = "");
   ~GameObject() = default;
 
@@ -107,8 +106,8 @@ public:
   const Material &getMaterial() const { return material; }
   void setMaterial(const Material &mat) { material = mat; }
 
-  Shader *getShader() const { return shader.get(); }
-  void setShader(Shader *shaderPtr) { shader.reset(shaderPtr); }
+  Shader *getShader() const { return shader.lock().get(); }
+  void setShader(std::shared_ptr<Shader> shader) { this->shader = shader; }
 
   // Behaviour system (Strategy Pattern)
   void addBehaviour(std::unique_ptr<IGameObjectBehaviour> behaviour) {
@@ -142,7 +141,7 @@ public:
 private:
   std::unique_ptr<Model> model;
   // Pointer to shader (owned by GraphicsRenderer)
-  std::shared_ptr<Shader> shader{nullptr};
+  std::weak_ptr<Shader> shader;
   Material material; // Material properties
   std::string name;
   bool selected = false;
@@ -172,14 +171,8 @@ private:
   static glm::vec3 lerp(const glm::vec3 &a, const glm::vec3 &b, float t);
 };
 
-// GameObject implementation
 inline GameObject::GameObject(std::unique_ptr<Model> model,
-                              const std::string &name)
-    : model(std::move(model)), shader(nullptr), material(), name(name) {
-  computeLocalAABB();
-}
-
-inline GameObject::GameObject(std::unique_ptr<Model> model, Shader *shader,
+                              std::shared_ptr<Shader> shader,
                               const Material &material, const std::string &name)
     : model(std::move(model)), shader(shader), material(material), name(name) {
   computeLocalAABB();
@@ -229,9 +222,10 @@ inline void GameObject::render(Shader &shader) {
   postRenderBehaviours();
 }
 
-inline void
-GameObject::render(const glm::mat4 &projection, const glm::mat4 &view) {
-  if (!model || !shader)
+inline void GameObject::render(const glm::mat4 &projection,
+                               const glm::mat4 &view) {
+  const auto shader = this->shader.lock();
+  if (not model or not shader)
     return;
 
   // Call pre-render behaviours (can modify shader/material)

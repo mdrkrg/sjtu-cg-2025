@@ -12,7 +12,7 @@ Application::Application()
     : window(nullptr), camera(glm::vec3(0.0f, 0.3f, 3.3f)), deltaTime(0.0f),
       lastFrame(0.0f), inputHandler(std::make_unique<InputHandler>(
                            camera, SCR_WIDTH, SCR_HEIGHT)),
-      gameManager(std::make_unique<GameManager>()) {}
+      gameManager(std::make_shared<GameManager>()) {}
 
 Application::~Application() {
   cleanup();
@@ -54,7 +54,7 @@ bool Application::initialize() {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Initialize renderer
-  renderer = std::make_unique<GraphicsRenderer>(*gameManager);
+  renderer = std::make_unique<GraphicsRenderer>(gameManager);
   if (not renderer->initialize()) {
     std::println(std::cerr, "Failed to initialize renderer");
     return false;

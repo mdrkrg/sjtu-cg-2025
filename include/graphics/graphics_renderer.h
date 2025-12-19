@@ -18,7 +18,7 @@ class GameManager;
 
 class GraphicsRenderer {
 public:
-  GraphicsRenderer(GameManager &gameManager);
+  GraphicsRenderer(std::shared_ptr<GameManager> gameManager);
   ~GraphicsRenderer();
 
   bool initialize();
@@ -40,13 +40,13 @@ public:
 
 private:
   // Shaders
-  std::unique_ptr<Shader> lightingShader;
-  std::unique_ptr<Shader> modelShader;
-  std::unique_ptr<Shader> modelSimpleShader;
-  std::unique_ptr<Shader> lightCubeShader;
-  std::unique_ptr<Shader> windowShader;
-  std::unique_ptr<Shader> particleShader;
-  std::unique_ptr<Shader> debugShader;
+  std::shared_ptr<Shader> lightingShader;
+  std::shared_ptr<Shader> modelShader;
+  std::shared_ptr<Shader> modelSimpleShader;
+  std::shared_ptr<Shader> lightCubeShader;
+  std::shared_ptr<Shader> windowShader;
+  std::shared_ptr<Shader> particleShader;
+  std::shared_ptr<Shader> debugShader;
 
   // Lighting management
   graphics::LightManager lightManager;
@@ -62,8 +62,7 @@ private:
   // Textures
   unsigned int windowDiffuseMap;
 
-  // Game manager reference
-  GameManager &gameManager;
+  std::shared_ptr<GameManager> gameManager;
 
   // Game objects (pointers for shader selection)
   GameObject *tableObject;

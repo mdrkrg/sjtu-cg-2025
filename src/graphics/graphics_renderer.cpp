@@ -21,7 +21,7 @@ const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
     glm::translate(glm::mat4(1.0f), glm::vec3(0.15f, 0.15f, 2.0f)),
     glm::vec3(0.24f));
 
-GraphicsRenderer::GraphicsRenderer(GameManager &gameManager)
+GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
       debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
@@ -129,7 +129,7 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
 
 void GraphicsRenderer::update(float deltaTime) {
   // Update game objects (animations) via GameManager
-  gameManager.update(deltaTime);
+  gameManager->update(deltaTime);
 
   // Update cloud
   if (cloud && cloud->isInitialized()) {
@@ -140,7 +140,7 @@ void GraphicsRenderer::update(float deltaTime) {
 void GraphicsRenderer::handleMouseClick(const glm::vec3 &rayOrigin,
                                         const glm::vec3 &rayDir) {
   // Use GameManager for ray casting and selection
-  GameObject *selected = gameManager.handleRayCast(rayOrigin, rayDir);
+  GameObject *selected = gameManager->handleRayCast(rayOrigin, rayDir);
   if (selected) {
     std::cout << "Selected object: " << selected->getName() << std::endl;
     // TODO: Trigger object-specific behavior (e.g., lamp toggle)
@@ -148,7 +148,7 @@ void GraphicsRenderer::handleMouseClick(const glm::vec3 &rayOrigin,
     std::cout << "No object selected" << std::endl;
   }
   // Update local selectedObject pointer for consistency
-  selectedObject = gameManager.getSelectedObject();
+  selectedObject = gameManager->getSelectedObject();
 }
 
 void GraphicsRenderer::cleanup() {
@@ -183,19 +183,19 @@ void GraphicsRenderer::cleanup() {
 
 bool GraphicsRenderer::setupShaders() {
   try {
-    lightingShader = std::make_unique<Shader>("shaders/lighting.vs.glsl",
+    lightingShader = std::make_shared<Shader>("shaders/lighting.vs.glsl",
                                               "shaders/lighting.fs.glsl");
-    modelShader = std::make_unique<Shader>("shaders/model.vs.glsl",
+    modelShader = std::make_shared<Shader>("shaders/model.vs.glsl",
                                            "shaders/model.fs.glsl");
-    modelSimpleShader = std::make_unique<Shader>(
+    modelSimpleShader = std::make_shared<Shader>(
         "shaders/model.vs.glsl", "shaders/model-simple.fs.glsl");
-    lightCubeShader = std::make_unique<Shader>("shaders/lightcube.vs.glsl",
+    lightCubeShader = std::make_shared<Shader>("shaders/lightcube.vs.glsl",
                                                "shaders/lightcube.fs.glsl");
-    windowShader = std::make_unique<Shader>("shaders/window.vs.glsl",
+    windowShader = std::make_shared<Shader>("shaders/window.vs.glsl",
                                             "shaders/window.fs.glsl");
-    particleShader = std::make_unique<Shader>("shaders/particle.vs.glsl",
+    particleShader = std::make_shared<Shader>("shaders/particle.vs.glsl",
                                               "shaders/particle.fs.glsl");
-    debugShader = std::make_unique<Shader>("shaders/debug.vs.glsl",
+    debugShader = std::make_shared<Shader>("shaders/debug.vs.glsl",
                                            "shaders/debug.fs.glsl");
     return true;
   } catch (const std::exception &e) {
@@ -217,11 +217,11 @@ bool GraphicsRenderer::loadModels() {
         std::filesystem::path("resources/objects/table/table3.obj"));
     Material tableMaterial; // Default: TEXTURED, shininess 32.0f
     auto tableObj = std::make_unique<GameObject>(
-        std::move(tableModel), modelShader.get(), tableMaterial, "table");
+        std::move(tableModel), modelShader, tableMaterial, "table");
     tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
     tableObj->scale = glm::vec3(0.1f);
     // Add to GameManager and get pointer
-    tableObject = gameManager.addObject(std::move(tableObj));
+    tableObject = gameManager->addObject(std::move(tableObj));
 
     // Load sandbox (uniform material)
     auto sandboxModel = std::make_unique<Model>(
@@ -231,13 +231,12 @@ bool GraphicsRenderer::loadModels() {
                              glm::vec3(0.4f, 0.4f, 0.2f), // specular
                              2.0f                         // shininess
     );
-    auto sandboxObj = std::make_unique<GameObject>(std::move(sandboxModel),
-                                                   modelSimpleShader.get(),
-                                                   sandboxMaterial, "sandbox");
+    auto sandboxObj = std::make_unique<GameObject>(
+        std::move(sandboxModel), modelSimpleShader, sandboxMaterial, "sandbox");
     sandboxObj->position = glm::vec3(0.15f, 0.13f, 2.0f);
     sandboxObj->scale = glm::vec3(0.13f);
     // Add to GameManager and get pointer
-    sandboxObject = gameManager.addObject(std::move(sandboxObj));
+    sandboxObject = gameManager->addObject(std::move(sandboxObj));
 
     return true;
   } catch (const std::exception &e) {
@@ -585,7 +584,7 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
   debugShader->setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
 
   // Iterate through all objects in GameManager
-  const auto &objects = gameManager.getObjects();
+  const auto &objects = gameManager->getObjects();
   for (GameObject *obj : objects) {
     if (!obj) {
       continue;
