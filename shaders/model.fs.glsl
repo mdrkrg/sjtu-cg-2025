@@ -7,6 +7,9 @@ struct Material {
     sampler2D texture_normal1;
     sampler2D texture_height1;
     float shininess;
+    bool emissive;
+    vec3 emission;
+    float emissionStrength;
 };
 
 
@@ -144,6 +147,11 @@ void main()
       viewDir,
       normDir
     );
+
+    // Add emission if enabled
+    if (material.emissive) {
+        result += material.emission * material.emissionStrength;
+    }
 
     FragColor = vec4(result, 1.0);
 }

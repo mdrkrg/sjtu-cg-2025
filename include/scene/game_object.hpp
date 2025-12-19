@@ -12,11 +12,13 @@
 #include "graphics/shader.h"
 #include "scene/aabb.hpp"
 #include "scene/game_object_behaviour.hpp"
+#include "graphics/material.hpp"
 
 class GameObject {
 public:
-  GameObject(std::unique_ptr<Model> model, bool interactive = false,
-             const std::string &name = "");
+  GameObject(std::unique_ptr<Model> model, const std::string &name = "");
+  GameObject(std::unique_ptr<Model> model, Shader *shader,
+             const Material &material, const std::string &name = "");
   ~GameObject() = default;
 
   std::function<void(GameObject *)> onselect = [](GameObject *) {};
@@ -24,6 +26,11 @@ public:
 
   // Rendering
   void render(Shader &shader);
+  void render(const glm::mat4 &projection, const glm::mat4 &view,
+              const glm::vec3 &viewPos, const glm::vec3 &lightPos,
+              const glm::vec3 &lightAmbient, const glm::vec3 &lightDiffuse,
+              const glm::vec3 &lightSpecular, float lightConstant,
+              float lightLinear, float lightQuadratic);
 
   // Update animation
   void update(float deltaTime);
@@ -36,7 +43,6 @@ public:
   glm::mat4 getModelMatrix() const;
 
   // Interaction
-  bool isInteractive() const { return interactive; }
   const std::string &getName() const { return name; }
 
   bool isSelected() const { return selected; }
@@ -100,6 +106,14 @@ public:
   Model *getModel() { return model.get(); }
   const Model *getModel() const { return model.get(); }
 
+  // Material and shader access
+  Material &getMaterial() { return material; }
+  const Material &getMaterial() const { return material; }
+  void setMaterial(const Material &mat) { material = mat; }
+
+  Shader *getShader() const { return shader.get(); }
+  void setShader(Shader *shaderPtr) { shader.reset(shaderPtr); }
+
   // Behaviour system (Strategy Pattern)
   void addBehaviour(std::unique_ptr<IGameObjectBehaviour> behaviour) {
     behaviours.push_back(std::move(behaviour));
@@ -131,7 +145,9 @@ public:
 
 private:
   std::unique_ptr<Model> model;
-  bool interactive;
+  // Pointer to shader (owned by GraphicsRenderer)
+  std::shared_ptr<Shader> shader{nullptr};
+  Material material; // Material properties
   std::string name;
   bool selected = false;
   bool hovered = false;
@@ -161,9 +177,15 @@ private:
 };
 
 // GameObject implementation
-inline GameObject::GameObject(std::unique_ptr<Model> model, bool interactive,
+inline GameObject::GameObject(std::unique_ptr<Model> model,
                               const std::string &name)
-    : model(std::move(model)), interactive(interactive), name(name) {
+    : model(std::move(model)), shader(nullptr), material(), name(name) {
+  computeLocalAABB();
+}
+
+inline GameObject::GameObject(std::unique_ptr<Model> model, Shader *shader,
+                              const Material &material, const std::string &name)
+    : model(std::move(model)), shader(shader), material(material), name(name) {
   computeLocalAABB();
 }
 
@@ -206,6 +228,67 @@ inline void GameObject::render(Shader &shader) {
 
   // Render model
   model->Draw(shader);
+
+  // Call post-render behaviours
+  postRenderBehaviours();
+}
+
+inline void
+GameObject::render(const glm::mat4 &projection, const glm::mat4 &view,
+                   const glm::vec3 &viewPos, const glm::vec3 &lightPos,
+                   const glm::vec3 &lightAmbient, const glm::vec3 &lightDiffuse,
+                   const glm::vec3 &lightSpecular, float lightConstant,
+                   float lightLinear, float lightQuadratic) {
+  if (!model || !shader)
+    return;
+
+  // Call pre-render behaviours (can modify shader/material)
+  preRenderBehaviours();
+
+  shader->use();
+
+  // Set common uniforms
+  shader->setMat4("projection", projection);
+  shader->setMat4("view", view);
+  shader->setMat4("model", getModelMatrix());
+  shader->setVec3("viewPos", viewPos);
+  shader->setVec3("light.position", lightPos);
+  shader->setVec3("light.ambient", lightAmbient);
+  shader->setVec3("light.diffuse", lightDiffuse);
+  shader->setVec3("light.specular", lightSpecular);
+  shader->setFloat("light.constant", lightConstant);
+  shader->setFloat("light.linear", lightLinear);
+  shader->setFloat("light.quadratic", lightQuadratic);
+
+  // Set material properties based on material type
+  if (material.usesUniformColors()) {
+    // For uniform materials, set ambient/diffuse/specular colors
+    shader->setVec3("material.ambient", material.ambient);
+    shader->setVec3("material.diffuse", material.diffuse);
+    shader->setVec3("material.specular", material.specular);
+    shader->setFloat("material.shininess", material.shininess);
+  } else if (material.usesTextures()) {
+    // For textured materials, shader uses textures from model
+    // Still set shininess
+    shader->setFloat("material.shininess", material.shininess);
+    // Optionally set color multipliers if needed
+    // shader->setVec3("material.ambient", material.ambient);
+    // shader->setVec3("material.diffuse", material.diffuse);
+    // shader->setVec3("material.specular", material.specular);
+  }
+
+  // Set emission if enabled
+  if (material.isEmissive()) {
+    // Note: shader needs to have emission uniform
+    shader->setBool("material.emissive", true);
+    shader->setVec3("material.emission", material.emissionColor);
+    shader->setFloat("material.emissionStrength", material.emissionStrength);
+  } else {
+    shader->setBool("material.emissive", false);
+  }
+
+  // Render model (Mesh::Draw will set texture uniforms for textured materials)
+  model->Draw(*shader);
 
   // Call post-render behaviours
   postRenderBehaviours();

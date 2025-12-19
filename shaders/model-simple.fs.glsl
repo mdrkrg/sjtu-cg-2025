@@ -6,6 +6,9 @@ struct Material {
     vec3 diffuse;
     vec3 specular;
     float shininess;
+    bool emissive;
+    vec3 emission;
+    float emissionStrength;
 };
 
 
@@ -141,6 +144,11 @@ void main()
       viewDir,
       normDir
     );
+
+    // Add emission if enabled
+    if (material.emissive) {
+        result += material.emission * material.emissionStrength;
+    }
 
     FragColor = vec4(result, 1.0);
 }

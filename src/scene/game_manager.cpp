@@ -27,9 +27,6 @@ GameObject *GameManager::handleRayCast(const glm::vec3 &rayOrigin,
   float closestDistance = std::numeric_limits<float>::max();
 
   for (auto &obj : objects) {
-    if (!obj->isInteractive())
-      continue;
-
     auto aabb = obj->getWorldAABB();
     auto hit = math::raycastAABB(math::Ray{rayOrigin, rayDir}, aabb);
     if (hit) {

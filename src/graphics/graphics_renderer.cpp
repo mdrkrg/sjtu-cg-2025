@@ -1,6 +1,7 @@
 #include "graphics/graphics_renderer.h"
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
+#include "graphics/material.hpp"
 #include "graphics/texture.hpp"
 #include "scene/game_object.hpp"
 #include "scene/game_manager.hpp"
@@ -178,21 +179,28 @@ bool GraphicsRenderer::loadTextures() {
 
 bool GraphicsRenderer::loadModels() {
   try {
-    // Load table
+    // Load table (textured material)
     auto tableModel = std::make_unique<Model>(
         std::filesystem::path("resources/objects/table/table3.obj"));
-    auto tableObj =
-        std::make_unique<GameObject>(std::move(tableModel), true, "table");
+    Material tableMaterial; // Default: TEXTURED, shininess 32.0f
+    auto tableObj = std::make_unique<GameObject>(
+        std::move(tableModel), modelShader.get(), tableMaterial, "table");
     tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
     tableObj->scale = glm::vec3(0.1f);
     // Add to GameManager and get pointer
     tableObject = gameManager.addObject(std::move(tableObj));
 
-    // Load sandbox
+    // Load sandbox (uniform material)
     auto sandboxModel = std::make_unique<Model>(
         std::filesystem::path("resources/objects/sandbox/sandbox.obj"));
-    auto sandboxObj =
-        std::make_unique<GameObject>(std::move(sandboxModel), true, "sandbox");
+    Material sandboxMaterial(glm::vec3(1.0f, 0.8f, 0.4f), // ambient
+                             glm::vec3(0.8f, 0.8f, 0.4f), // diffuse
+                             glm::vec3(0.4f, 0.4f, 0.2f), // specular
+                             2.0f                         // shininess
+    );
+    auto sandboxObj = std::make_unique<GameObject>(std::move(sandboxModel),
+                                                   modelSimpleShader.get(),
+                                                   sandboxMaterial, "sandbox");
     sandboxObj->position = glm::vec3(0.15f, 0.13f, 2.0f);
     sandboxObj->scale = glm::vec3(0.13f);
     // Add to GameManager and get pointer
@@ -469,52 +477,27 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
 void GraphicsRenderer::renderTable(const glm::mat4 &projection,
                                    const glm::mat4 &view,
                                    const glm::vec3 &cameraPosition) {
-  modelShader->use();
-
+  // Compute light properties (same for all objects)
   glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-  glm::vec3 diffuseColor = lightColor * glm::vec3(0.8f);
-  glm::vec3 ambientColor = lightColor * glm::vec3(0.2f);
+  glm::vec3 lightDiffuse = lightColor * glm::vec3(0.8f);
+  glm::vec3 lightAmbient = lightColor * glm::vec3(0.2f);
+  glm::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
+  float lightConstant = 1.0f;
+  float lightLinear = 0.09f;
+  float lightQuadratic = 0.032f;
 
-  modelShader->setVec3("light.position", lightPosition);
-  modelShader->setVec3("viewPos", cameraPosition);
-  modelShader->setVec3("light.ambient", ambientColor);
-  modelShader->setVec3("light.diffuse", diffuseColor);
-  modelShader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-  modelShader->setFloat("light.constant", 1.0f);
-  modelShader->setFloat("light.linear", 0.09f);
-  modelShader->setFloat("light.quadratic", 0.032f);
-  modelShader->setFloat("material.shininess", 32.0f);
-  modelShader->setMat4("projection", projection);
-  modelShader->setMat4("view", view);
-
+  // Render table (GameObject manages its own shader and material)
   if (tableObject) {
-    tableObject->render(*modelShader);
+    tableObject->render(projection, view, cameraPosition, lightPosition,
+                        lightAmbient, lightDiffuse, lightSpecular,
+                        lightConstant, lightLinear, lightQuadratic);
   }
 
-  { // sandbox
-    modelSimpleShader->use();
-    modelSimpleShader->setVec3("light.position", lightPosition);
-    modelSimpleShader->setVec3("viewPos", cameraPosition);
-    modelSimpleShader->setVec3("light.ambient", ambientColor);
-    modelSimpleShader->setVec3("light.diffuse", diffuseColor);
-    modelSimpleShader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-    modelSimpleShader->setFloat("light.constant", 1.0f);
-    modelSimpleShader->setFloat("light.linear", 0.09f);
-    modelSimpleShader->setFloat("light.quadratic", 0.032f);
-    modelSimpleShader->setFloat("material.shininess", 2.0f);
-    modelSimpleShader->setMat4("projection", projection);
-    modelSimpleShader->setMat4("view", view);
-    modelSimpleShader->setVec3("material.ambient", glm::vec3(1.0, 0.8, 0.4));
-    modelSimpleShader->setVec3("material.diffuse", glm::vec3(0.8, 0.8, 0.4));
-    modelSimpleShader->setVec3("material.specular", glm::vec3(0.4, 0.4, 0.2));
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.15f, 0.13f, 2.0f));
-    model = glm::scale(model, glm::vec3(0.13f));
-    modelSimpleShader->setMat4("model", model);
-
-    if (sandboxObject) {
-      sandboxObject->render(*modelSimpleShader);
-    }
+  // Render sandbox (GameObject manages its own shader and material)
+  if (sandboxObject) {
+    sandboxObject->render(projection, view, cameraPosition, lightPosition,
+                          lightAmbient, lightDiffuse, lightSpecular,
+                          lightConstant, lightLinear, lightQuadratic);
   }
 }
 
