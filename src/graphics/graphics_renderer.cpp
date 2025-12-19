@@ -50,6 +50,34 @@ bool GraphicsRenderer::initialize() {
     return false;
   }
 
+  // Init LightManager and UBO
+  if (!lightManager.init()) {
+    std::println(std::cerr, "Failed to initialize LightManager");
+    return false;
+  }
+
+  // Default room light
+  graphics::PointLight roomLight = [] {
+    glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+    glm::vec3 lightAmbient = lightColor * glm::vec3(0.2f);
+    glm::vec3 lightDiffuse = lightColor * glm::vec3(0.8f);
+    glm::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
+
+    float constant = 1.0f;
+    float linear = 0.09f;
+    float quadratic = 0.032f;
+    return graphics::PointLight(lightPosition, lightAmbient, lightDiffuse,
+                                lightSpecular, constant, linear, quadratic);
+  }();
+
+  int lightIndex = lightManager.addPointLight(roomLight);
+  if (lightIndex < 0) {
+    std::cout << "Failed to add default room light" << std::endl;
+    return false;
+  }
+
+  std::cout << "Added default room light at index " << lightIndex << std::endl;
+
   if (!loadTextures()) {
     std::cout << "Failed to load textures" << std::endl;
     return false;
@@ -82,6 +110,11 @@ bool GraphicsRenderer::initialize() {
 void GraphicsRenderer::render(const glm::mat4 &projection,
                               const glm::mat4 &view,
                               const glm::vec3 &cameraPosition) {
+  // Update LightManager with camera position
+  lightManager.setViewPos(cameraPosition);
+  // Send data to to GPU
+  lightManager.updateUBO();
+
   renderRoom(projection, view, cameraPosition);
   renderTable(projection, view, cameraPosition);
   renderLightCube(projection, view);
@@ -371,16 +404,7 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
   // Set common uniforms
   lightingShader->setMat4("projection", projection);
   lightingShader->setMat4("view", view);
-  lightingShader->setVec3("viewPos", cameraPosition);
-  lightingShader->setVec3("light.position", lightPosition);
-
-  glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-  glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
-  glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f);
-
-  lightingShader->setVec3("light.ambient", ambientColor);
-  lightingShader->setVec3("light.diffuse", diffuseColor);
-  lightingShader->setVec3("light.specular", glm::vec3(1.0f));
+  // Lighting handled by UBO
 
   glm::mat4 model = glm::mat4(1.0f);
 
@@ -444,12 +468,8 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
   windowShader->use();
   windowShader->setMat4("projection", projection);
   windowShader->setMat4("view", view);
-  windowShader->setVec3("viewPos", cameraPosition);
-  windowShader->setVec3("lightPos", lightPosition);
 
-  windowShader->setVec3("light.ambient", ambientColor);
-  windowShader->setVec3("light.diffuse", diffuseColor);
-  windowShader->setVec3("light.specular", glm::vec3(1.0f));
+  // Lighting handled by UBO (binding = 1)
 
   windowShader->setVec3("material.ambient", glm::vec3(0.5f, 0.25f, 0.0f));
   windowShader->setVec3("material.diffuse", glm::vec3(0.5f, 0.25f, 0.0f));
@@ -477,27 +497,16 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
 void GraphicsRenderer::renderTable(const glm::mat4 &projection,
                                    const glm::mat4 &view,
                                    const glm::vec3 &cameraPosition) {
-  // Compute light properties (same for all objects)
-  glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-  glm::vec3 lightDiffuse = lightColor * glm::vec3(0.8f);
-  glm::vec3 lightAmbient = lightColor * glm::vec3(0.2f);
-  glm::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
-  float lightConstant = 1.0f;
-  float lightLinear = 0.09f;
-  float lightQuadratic = 0.032f;
+  (void)cameraPosition; // Unused, lighting handled by UBO
 
-  // Render table (GameObject manages its own shader and material)
+  // Render table
   if (tableObject) {
-    tableObject->render(projection, view, cameraPosition, lightPosition,
-                        lightAmbient, lightDiffuse, lightSpecular,
-                        lightConstant, lightLinear, lightQuadratic);
+    tableObject->render(projection, view);
   }
 
-  // Render sandbox (GameObject manages its own shader and material)
+  // Render sandbox
   if (sandboxObject) {
-    sandboxObject->render(projection, view, cameraPosition, lightPosition,
-                          lightAmbient, lightDiffuse, lightSpecular,
-                          lightConstant, lightLinear, lightQuadratic);
+    sandboxObject->render(projection, view);
   }
 }
 
@@ -524,18 +533,7 @@ void GraphicsRenderer::renderTerrain(const glm::mat4 &projection,
 
   modelSimpleShader->use();
 
-  glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-  glm::vec3 diffuseColor = lightColor * glm::vec3(0.8f);
-  glm::vec3 ambientColor = lightColor * glm::vec3(0.2f);
-
-  modelSimpleShader->setVec3("light.position", lightPosition);
-  modelSimpleShader->setVec3("viewPos", cameraPosition);
-  modelSimpleShader->setVec3("light.ambient", ambientColor);
-  modelSimpleShader->setVec3("light.diffuse", diffuseColor);
-  modelSimpleShader->setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-  modelSimpleShader->setFloat("light.constant", 1.0f);
-  modelSimpleShader->setFloat("light.linear", 0.09f);
-  modelSimpleShader->setFloat("light.quadratic", 0.032f);
+  // Lighting handled by UBO
   modelSimpleShader->setFloat("material.shininess", 2.0f);
   modelSimpleShader->setMat4("projection", projection);
   modelSimpleShader->setMat4("view", view);

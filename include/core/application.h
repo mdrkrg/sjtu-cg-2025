@@ -70,7 +70,7 @@ private:
   std::unique_ptr<InputHandler> inputHandler;
 
   // Game management
-  std::unique_ptr<GameManager> gameManager;
+  std::shared_ptr<GameManager> gameManager;
 
   // Graphics components
   std::unique_ptr<GraphicsRenderer> renderer;

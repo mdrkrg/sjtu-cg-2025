@@ -26,11 +26,7 @@ public:
 
   // Rendering
   void render(Shader &shader);
-  void render(const glm::mat4 &projection, const glm::mat4 &view,
-              const glm::vec3 &viewPos, const glm::vec3 &lightPos,
-              const glm::vec3 &lightAmbient, const glm::vec3 &lightDiffuse,
-              const glm::vec3 &lightSpecular, float lightConstant,
-              float lightLinear, float lightQuadratic);
+  void render(const glm::mat4 &projection, const glm::mat4 &view);
 
   // Update animation
   void update(float deltaTime);
@@ -234,11 +230,7 @@ inline void GameObject::render(Shader &shader) {
 }
 
 inline void
-GameObject::render(const glm::mat4 &projection, const glm::mat4 &view,
-                   const glm::vec3 &viewPos, const glm::vec3 &lightPos,
-                   const glm::vec3 &lightAmbient, const glm::vec3 &lightDiffuse,
-                   const glm::vec3 &lightSpecular, float lightConstant,
-                   float lightLinear, float lightQuadratic) {
+GameObject::render(const glm::mat4 &projection, const glm::mat4 &view) {
   if (!model || !shader)
     return;
 
@@ -247,18 +239,10 @@ GameObject::render(const glm::mat4 &projection, const glm::mat4 &view,
 
   shader->use();
 
-  // Set common uniforms
+  // Set transformation uniforms
   shader->setMat4("projection", projection);
   shader->setMat4("view", view);
   shader->setMat4("model", getModelMatrix());
-  shader->setVec3("viewPos", viewPos);
-  shader->setVec3("light.position", lightPos);
-  shader->setVec3("light.ambient", lightAmbient);
-  shader->setVec3("light.diffuse", lightDiffuse);
-  shader->setVec3("light.specular", lightSpecular);
-  shader->setFloat("light.constant", lightConstant);
-  shader->setFloat("light.linear", lightLinear);
-  shader->setFloat("light.quadratic", lightQuadratic);
 
   // Set material properties based on material type
   if (material.usesUniformColors()) {

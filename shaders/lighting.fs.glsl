@@ -1,10 +1,10 @@
-#version 330 core
+#version 430 core
 out vec4 FragColor;
+
+#include "include/lighting.glsl"
 
 in vec3 Normal;
 in vec3 FragPos;
-
-uniform vec3 viewPos;
 
 struct Material {
     vec3 ambient;
@@ -13,46 +13,32 @@ struct Material {
     float shininess;
 };
 
-
-struct Light {
-    vec3 position;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-
 uniform Material material;
-
-uniform Light light;
-
 
 vec3 blinnPhongAmbient(
     Material material,
-    Light light
+    PointLight light
 ) {
-  return material.ambient * light.ambient;
+  return material.ambient * light.ambient.xyz;
 }
-
 
 vec3 blinnPhongDiffuse(
     Material material,
-    Light light,
+    PointLight light,
     vec3 lightDir,
     vec3 normDir
 ) {
-    return material.diffuse * max(dot(normDir, lightDir), 0.0) * light.diffuse;
+    return material.diffuse * max(dot(normDir, lightDir), 0.0) * light.diffuse.xyz;
 }
-
 
 vec3 bisector(vec3 a, vec3 b) {
   vec3 result = a + b;
   return normalize(result);
 }
 
-
 vec3 blinnPhongSpecular(
     Material material,
-    Light light,
+    PointLight light,
     vec3 lightDir,
     vec3 normDir,
     vec3 viewDir
@@ -61,13 +47,12 @@ vec3 blinnPhongSpecular(
     float angle = dot(normDir, bisectorDir);
 
     float spec = pow(max(angle, 0.0), material.shininess);
-    return spec * material.specular * light.specular;
+    return spec * material.specular * light.specular.xyz;
 }
-
 
 vec3 phongSpecular(
     Material material,
-    Light light,
+    PointLight light,
     vec3 lightDir,
     vec3 viewDir,
     vec3 normDir
@@ -75,13 +60,12 @@ vec3 phongSpecular(
     vec3 reflectDir = reflect(-lightDir, normDir);
     float angle = dot(viewDir, reflectDir);
     float spec = pow(max(angle, 0.0), material.shininess);
-    return spec * material.specular * light.specular;
+    return spec * material.specular * light.specular.xyz;
 }
-
 
 vec3 blinnPhong(
     Material material,
-    Light light,
+    PointLight light,
     vec3 lightDir,
     vec3 viewDir,
     vec3 normDir
@@ -93,10 +77,9 @@ vec3 blinnPhong(
     return result;
 }
 
-
 vec3 phong(
     Material material,
-    Light light,
+    PointLight light,
     vec3 lightDir,
     vec3 viewDir,
     vec3 normDir
@@ -108,19 +91,35 @@ vec3 phong(
     return result;
 }
 
-
 void main()
 {
     vec3 normDir = normalize(Normal);
-    vec3 lightDir = normalize(light.position - FragPos);
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(lighting.viewPos.xyz - FragPos);
 
-    vec3 result = blinnPhong(
-      material,
-      light,
-      lightDir,
-      viewDir,
-      normDir
-    );
+    vec3 result = vec3(0.0);
+
+    // Process all point lights
+    for (int i = 0; i < lighting.numPointLights; ++i) {
+        PointLight light = lighting.pointLights[i];
+
+        vec3 lightDir = normalize(light.position.xyz - FragPos);
+
+        // Lighting for this light (no attenuation for room walls)
+        vec3 lightContribution = blinnPhong(
+            material,
+            light,
+            lightDir,
+            viewDir,
+            normDir
+        );
+
+        result += lightContribution;
+    }
+
+    // No lights, use ambient from material
+    if (lighting.numPointLights == 0) {
+        result = material.ambient * vec3(0.2);
+    }
+
     FragColor = vec4(result, 1.0);
 }

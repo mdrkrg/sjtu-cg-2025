@@ -1,5 +1,7 @@
-#version 330 core
+#version 430 core
 out vec4 FragColor;
+
+#include "include/lighting.glsl"
 
 struct Material {
     vec3 ambient;
@@ -11,60 +13,41 @@ struct Material {
     float emissionStrength;
 };
 
-
-struct Light {
-    vec3 position;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-
-    float constant;
-    float linear;
-    float quadratic;
-};
-
 in vec3 Normal;
 in vec3 FragPos;
 in vec2 TexCoords;
 
-uniform vec3 viewPos;
 uniform Material material;
-uniform Light light;
-
 
 vec3 blinnPhongAmbient(
     Material material,
-    Light light,
+    PointLight light,
     vec2 textureUV
 ) {
     // NOTE: texture map as ambient
-    return light.ambient * material.diffuse;
+    return light.ambient.xyz * material.diffuse;
 }
-
 
 vec3 blinnPhongDiffuse(
     Material material,
-    Light light,
+    PointLight light,
     vec2 textureUV,
     vec3 lightDir,
     vec3 normDir
 ) {
     float diff = max(dot(normDir, lightDir), 0.0);
     // NOTE: texture map as diffuse
-    return material.diffuse * diff * light.diffuse;
+    return material.diffuse * diff * light.diffuse.xyz;
 }
-
 
 vec3 bisector(vec3 a, vec3 b) {
   vec3 result = a + b;
   return normalize(result);
 }
 
-
 vec3 blinnPhongSpecular(
     Material material,
-    Light light,
+    PointLight light,
     vec2 textureUV,
     vec3 lightDir,
     vec3 normDir,
@@ -73,13 +56,12 @@ vec3 blinnPhongSpecular(
     vec3 bisectorDir = bisector(viewDir, lightDir);
     float angle = dot(normDir, bisectorDir);
     float spec = pow(max(angle, 0.0), material.shininess);
-    return light.specular * spec * material.specular;
+    return light.specular.xyz * spec * material.specular;
 }
-
 
 vec3 phongSpecular(
     Material material,
-    Light light,
+    PointLight light,
     vec2 textureUV,
     vec3 lightDir,
     vec3 viewDir,
@@ -88,13 +70,12 @@ vec3 phongSpecular(
     vec3 reflectDir = reflect(-lightDir, normDir);
     float angle = dot(viewDir, reflectDir);
     float spec = pow(max(angle, 0.0), material.shininess);
-    return light.specular * spec * material.specular;
+    return light.specular.xyz * spec * material.specular;
 }
-
 
 vec3 blinnPhong(
     Material material,
-    Light light,
+    PointLight light,
     vec2 textureUV,
     vec3 lightDir,
     vec3 viewDir,
@@ -106,11 +87,10 @@ vec3 blinnPhong(
     vec3 result = diffuse + specular + ambient;
     return result;
 }
-
 
 vec3 phong(
     Material material,
-    Light light,
+    PointLight light,
     vec2 textureUV,
     vec3 lightDir,
     vec3 viewDir,
@@ -123,27 +103,41 @@ vec3 phong(
     return result;
 }
 
-
 void main()
 {
-    // diffuse
     vec3 normDir = normalize(Normal);
-    vec3 lightDir = normalize(light.position - FragPos);
-    float lightDistance = length(light.position - FragPos);
+    vec3 viewDir = normalize(lighting.viewPos.xyz - FragPos);
 
-    float attenuation = 1.0 / (light.constant + light.linear * lightDistance + light.quadratic * (lightDistance * lightDistance));
+    vec3 result = vec3(0.0);
 
-    // specular
-    vec3 viewDir = normalize(viewPos - FragPos);
+    // Process all point lights
+    for (int i = 0; i < lighting.numPointLights; ++i) {
+        PointLight light = lighting.pointLights[i];
 
-    vec3 result = blinnPhong(
-      material,
-      light,
-      TexCoords,
-      lightDir,
-      viewDir,
-      normDir
-    );
+        // Light direction and distance
+        vec3 lightDir = normalize(light.position.xyz - FragPos);
+        float distance = length(light.position.xyz - FragPos);
+        float attenuation = 1.0 / (light.constant + light.linear * distance +
+                                 light.quadratic * (distance * distance));
+
+        // Lighting for this light
+        vec3 lightContribution = blinnPhong(
+            material,
+            light,
+            TexCoords,
+            lightDir,
+            viewDir,
+            normDir
+        );
+
+        result += lightContribution * attenuation;
+    }
+
+    // No lights, use ambient from material
+    if (lighting.numPointLights == 0) {
+        // Default ambient lighting
+        result = material.ambient * vec3(0.2);
+    }
 
     // Add emission if enabled
     if (material.emissive) {
@@ -152,4 +146,3 @@ void main()
 
     FragColor = vec4(result, 1.0);
 }
-

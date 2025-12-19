@@ -12,6 +12,7 @@
 #include "terrain_mesh.hpp"
 #include "cloud.h"
 #include "scene/game_object.hpp"
+#include "graphics/light_manager.hpp"
 
 class GameManager;
 
@@ -46,6 +47,9 @@ private:
   std::unique_ptr<Shader> windowShader;
   std::unique_ptr<Shader> particleShader;
   std::unique_ptr<Shader> debugShader;
+
+  // Lighting management
+  graphics::LightManager lightManager;
 
   // TODO: Normally we would use an object manager to handle position stuff
   // For simplicity we define it here
