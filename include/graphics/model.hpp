@@ -156,6 +156,11 @@ private:
     const auto diffuseColor = getColor(material, AI_MATKEY_COLOR_DIFFUSE);
     const auto specularColor = getColor(material, AI_MATKEY_COLOR_SPECULAR);
 
+    // Get material name
+    aiString matName;
+    material->Get(AI_MATKEY_NAME, matName);
+    std::string materialName = std::string(matName.C_Str());
+
     // we assume a convention for sampler names in the shaders. Each diffuse
     // texture should be named as 'texture_diffuseN' where N is a sequential
     // number ranging from 1 to MAX_SAMPLER_NUMBER. Same applies to other
@@ -182,7 +187,8 @@ private:
 
     // return a mesh object created from the extracted mesh data
     return Mesh(std::move(vertices), std::move(indices), std::move(textures),
-                std::make_tuple(ambientColor, diffuseColor, specularColor));
+                std::make_tuple(ambientColor, diffuseColor, specularColor),
+                materialName);
   }
 
   // checks all material textures of a given type and loads the textures if

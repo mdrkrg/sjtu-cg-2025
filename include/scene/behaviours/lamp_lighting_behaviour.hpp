@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
-/// Lamp lighting behaviour (Strategy Pattern example)
+/// Lamp lighting behaviour (Strategy pattern)
 /// Toggles light on/off when selected, manages light source
 class LampLightingBehaviour : public IGameObjectBehaviour {
 public:
@@ -74,8 +74,8 @@ public:
       }
     }
 
-    // Update material emission
-    updateMaterialEmission(obj);
+    // Update mesh emission
+    updateMeshEmission(obj);
   }
 
   void onHover(GameObject *obj, bool enter) override {
@@ -106,8 +106,8 @@ public:
   }
 
   void onPreRender(GameObject *obj) override {
-    // Update material emission before rendering
-    updateMaterialEmission(obj);
+    // Update mesh emission for lamp shade before rendering
+    updateMeshEmission(obj);
   }
 
   void onPostRender(GameObject *obj) override {
@@ -126,15 +126,27 @@ public:
   void setIntensity(float newIntensity) { intensity = newIntensity; }
 
 private:
-  void updateMaterialEmission(GameObject *obj) {
-    if (!obj)
+  void updateMeshEmission(GameObject *obj) {
+    if (not obj)
       return;
 
-    Material &mat = obj->getMaterial();
-    if (lightOn) {
-      mat.setEmissive(true, lightColor, currentIntensity);
-    } else {
-      mat.setEmissive(false);
+    const Model *model = obj->getModel();
+    if (not model)
+      return;
+
+    const auto meshCount = model->meshes.size();
+    // Find meshes with material name "Lampshade"
+    for (size_t i = 0; i < meshCount; ++i) {
+      const auto &mesh = model->meshes[i];
+      if (mesh.name == "Lampshade") {
+        // Update GameObject material
+        auto &mat = obj->getMeshMaterial(i);
+        mat.setEmissive(lightOn, lightColor, currentIntensity);
+      } else {
+        // Other parts should not emit light
+        auto &mat = obj->getMeshMaterial(i);
+        mat.setEmissive(false);
+      }
     }
   }
 

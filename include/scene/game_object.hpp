@@ -14,6 +14,9 @@
 #include "scene/game_object_behaviour.hpp"
 #include "graphics/material.hpp"
 
+inline void renderMesh(const Mesh &mesh, const Material &material,
+                       const Shader &shader);
+
 class GameObject {
 public:
   GameObject(std::unique_ptr<Model> model, std::shared_ptr<Shader> shader,
@@ -97,14 +100,25 @@ public:
   bool isAnimating() const { return animation.active; }
   void stopAnimation() { animation.active = false; }
 
-  // Model access (for material modification, e.g., lamp emission)
   Model *getModel() { return model.get(); }
   const Model *getModel() const { return model.get(); }
 
-  // Material and shader access
-  Material &getMaterial() { return material; }
-  const Material &getMaterial() const { return material; }
-  void setMaterial(const Material &mat) { material = mat; }
+  Material &getMeshMaterial(size_t index) {
+    assert(index < meshMaterials.size());
+    return meshMaterials[index];
+  }
+
+  const Material &getMeshMaterial(size_t index) const {
+    assert(index < meshMaterials.size());
+    return meshMaterials[index];
+  }
+
+  void setMeshMaterial(size_t index, const Material &mat) {
+    assert(index < meshMaterials.size());
+    meshMaterials[index] = mat;
+  }
+
+  size_t getMeshMaterialCount() const { return meshMaterials.size(); }
 
   Shader *getShader() const { return shader.lock().get(); }
   void setShader(std::shared_ptr<Shader> shader) { this->shader = shader; }
@@ -142,7 +156,8 @@ private:
   std::unique_ptr<Model> model;
   // Pointer to shader (owned by GraphicsRenderer)
   std::weak_ptr<Shader> shader;
-  Material material; // Material properties
+  // One material per mesh
+  std::vector<Material> meshMaterials;
   std::string name;
   bool selected = false;
   bool hovered = false;
@@ -167,6 +182,25 @@ private:
   // Compute local AABB from model vertices
   void computeLocalAABB();
 
+  /// Render all meshes
+  void renderMeshes(const Shader &shader) {
+    const size_t meshCount = model->meshes.size();
+    const size_t materialCount = meshMaterials.size();
+
+    if (meshCount != materialCount) {
+      std::cerr << "Warning: Mesh count (" << meshCount
+                << ") doesn't match material count (" << materialCount
+                << ") for GameObject " << name << std::endl;
+    }
+
+    // Render each mesh with its material
+    for (size_t i = 0; i < meshCount and i < materialCount; ++i) {
+      const auto &meshMat = meshMaterials[i];
+      const auto &mesh = model->meshes[i];
+      renderMesh(mesh, meshMat, shader);
+    }
+  }
+
   // Helper for linear interpolation
   static glm::vec3 lerp(const glm::vec3 &a, const glm::vec3 &b, float t);
 };
@@ -174,7 +208,15 @@ private:
 inline GameObject::GameObject(std::unique_ptr<Model> model,
                               std::shared_ptr<Shader> shader,
                               const Material &material, const std::string &name)
-    : model(std::move(model)), shader(shader), material(material), name(name) {
+    : model(std::move(model)), shader(shader), name(name) {
+  // Initialize mesh materials vector with one material per mesh
+  if (this->model) {
+    size_t meshCount = this->model->meshes.size();
+    meshMaterials.reserve(meshCount);
+    for (size_t i = 0; i < meshCount; ++i) {
+      meshMaterials.push_back(material);
+    }
+  }
   computeLocalAABB();
 }
 
@@ -215,8 +257,7 @@ inline void GameObject::render(Shader &shader) {
   glm::mat4 modelMatrix = getModelMatrix();
   shader.setMat4("model", modelMatrix);
 
-  // Render model
-  model->Draw(shader);
+  renderMeshes(shader);
 
   // Call post-render behaviours
   postRenderBehaviours();
@@ -238,35 +279,7 @@ inline void GameObject::render(const glm::mat4 &projection,
   shader->setMat4("view", view);
   shader->setMat4("model", getModelMatrix());
 
-  // Set material properties based on material type
-  if (material.usesUniformColors()) {
-    // For uniform materials, set ambient/diffuse/specular colors
-    shader->setVec3("material.ambient", material.ambient);
-    shader->setVec3("material.diffuse", material.diffuse);
-    shader->setVec3("material.specular", material.specular);
-    shader->setFloat("material.shininess", material.shininess);
-  } else if (material.usesTextures()) {
-    // For textured materials, shader uses textures from model
-    // Still set shininess
-    shader->setFloat("material.shininess", material.shininess);
-    // Optionally set color multipliers if needed
-    // shader->setVec3("material.ambient", material.ambient);
-    // shader->setVec3("material.diffuse", material.diffuse);
-    // shader->setVec3("material.specular", material.specular);
-  }
-
-  // Set emission if enabled
-  if (material.isEmissive()) {
-    // Note: shader needs to have emission uniform
-    shader->setBool("material.emissive", true);
-    shader->setVec3("material.emission", material.emissionColor);
-    shader->setFloat("material.emissionStrength", material.emissionStrength);
-  } else {
-    shader->setBool("material.emissive", false);
-  }
-
-  // Render model (Mesh::Draw will set texture uniforms for textured materials)
-  model->Draw(*shader);
+  renderMeshes(*shader.get());
 
   // Call post-render behaviours
   postRenderBehaviours();
@@ -330,4 +343,30 @@ inline void GameObject::animateTo(const glm::vec3 &targetPosition,
 inline glm::vec3 GameObject::lerp(const glm::vec3 &a, const glm::vec3 &b,
                                   float t) {
   return a * (1.0f - t) + b * t;
+}
+
+/// Render a mesh with material and shader
+inline void renderMesh(const Mesh &mesh, const Material &material,
+                       const Shader &shader) {
+
+  if (material.usesUniformColors()) {
+    // For uniform materials, set ambient, diffuse, specular
+    shader.setVec3("material.ambient", material.ambient);
+    shader.setVec3("material.diffuse", material.diffuse);
+    shader.setVec3("material.specular", material.specular);
+    shader.setFloat("material.shininess", material.shininess);
+  } else if (material.usesTextures()) {
+    // For textured materials, shader uses textures from model
+    shader.setFloat("material.shininess", material.shininess);
+  }
+
+  // Set emission if enabled
+  if (material.isEmissive()) {
+    shader.setBool("material.emissive", true);
+    shader.setVec3("material.emission", material.emissionColor);
+    shader.setFloat("material.emissionStrength", material.emissionStrength);
+  } else {
+    shader.setBool("material.emissive", false);
+  }
+  mesh.Draw(shader);
 }

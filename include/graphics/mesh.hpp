@@ -48,11 +48,15 @@ public:
   glm::vec3 diffuseColor;
   glm::vec3 specularColor;
 
+  // Name of the material in .mtl file
+  std::string name;
+
   // constructor
   Mesh(std::vector<Vertex> &&vertices, std::vector<unsigned int> &&indices,
        std::vector<Texture> &&textures,
-       std::tuple<glm::vec3, glm::vec3, glm::vec3> &&colors)
-      : vertices{vertices}, indices{indices}, textures{textures} {
+       std::tuple<glm::vec3, glm::vec3, glm::vec3> &&colors,
+       const std::string &name = "")
+      : vertices{vertices}, indices{indices}, textures{textures}, name{name} {
     std::tie(ambientColor, diffuseColor, specularColor) = colors;
 
     // now that we have all the required data, set the vertex buffers and its
@@ -61,7 +65,7 @@ public:
   }
 
   // render the mesh
-  void Draw(Shader &shader) {
+  void Draw(const Shader &shader) const {
     // bind appropriate textures
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
