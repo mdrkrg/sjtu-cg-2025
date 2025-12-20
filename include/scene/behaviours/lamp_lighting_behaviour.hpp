@@ -2,6 +2,7 @@
 
 #include "scene/game_object.hpp"
 #include "scene/game_object_behaviour.hpp"
+#include "graphics/light_manager.hpp"
 #include <glm/glm.hpp>
 #include <iostream>
 
@@ -9,68 +10,108 @@
 /// Toggles light on/off when selected, manages light source
 class LampLightingBehaviour : public IGameObjectBehaviour {
 public:
-  LampLightingBehaviour(const glm::vec3 &lightColor = glm::vec3(1.0f, 0.9f,
+  LampLightingBehaviour(graphics::LightManager &lightManager,
+                        const glm::vec3 &lightColor = glm::vec3(1.0f, 0.9f,
                                                                 0.6f),
-                        float intensity = 1.0f)
-      : lightColor(lightColor), intensity(intensity), lightOn(false) {
-    std::cout << "LampLightingBehaviour created with color (" << lightColor.r
-              << ", " << lightColor.g << ", " << lightColor.b << ")"
-              << std::endl;
+                        float intensity = 1.0f, float lightRadius = 2.0f)
+      : lightManager{lightManager}, lightColor{lightColor},
+        intensity{intensity}, lightRadius{lightRadius}, lightOn{false},
+        lightIndex{std::nullopt} {
+    std::println(std::clog,
+                 "LampLightingBehaviour created with color ({}, {}, {})",
+                 lightColor.r, lightColor.g, lightColor.b);
+  }
+
+  ~LampLightingBehaviour() override {
+    // Clean up light
+    if (lightOn && lightIndex.has_value()) {
+      lightManager.removePointLight(lightIndex.value());
+      std::println(std::clog,
+                   "LampLightingBehaviour destroyed, removed light at index {}",
+                   lightIndex.value());
+    }
   }
 
   void onSelect(GameObject *obj) override {
     lightOn = !lightOn;
-    std::cout << "Lamp " << obj->getName() << " toggled "
-              << (lightOn ? "ON" : "OFF") << std::endl;
+    std::println(std::clog, "Lamp {} toggled {}", obj->getName(),
+                 lightOn ? "ON" : "OFF");
 
-    // In a full implementation, would:
-    // 1. Update GameObject material.emissive = lightOn
-    // 2. Update GameObject material.emissionColor = lightColor
-    // 3. Add/remove light source from scene via GameManager
-    // 4. Update shader uniforms for emission
-
-    // For demonstration, just print action
     if (lightOn) {
-      std::cout << "  - Light position: " << obj->position.x << ", "
-                << obj->position.y << ", " << obj->position.z << std::endl;
-      std::cout << "  - Light color: (" << lightColor.r << ", " << lightColor.g
-                << ", " << lightColor.b << ")" << std::endl;
+      // Add point light to LightManager
+      glm::vec3 lightPos = obj->position + glm::vec3(0.0f, 0.2f, 0.0f);
+      graphics::PointLight lampLight(
+          lightPos,                          // position
+          lightColor * 0.05f,                // ambient (5% of color)
+          lightColor * intensity,            // diffuse
+          lightColor * 0.4f,                 // specular (reduced from 0.8)
+          1.0f,                              // constant
+          0.7f / lightRadius,                // linear
+          1.8f / (lightRadius * lightRadius) // quadratic
+      );
+
+      lightIndex = lightManager.addPointLight(lampLight);
+      if (not lightIndex.has_value()) {
+        std::println(std::cerr,
+                     "ERROR: Failed to add lamp light (max lights reached)");
+        lightOn = false;
+        return;
+      }
+
+      std::println(std::clog, "  - Light added at index {}",
+                   lightIndex.value());
+      std::println(std::clog, "  - Position: ({}, {}, {})", lightPos.x,
+                   lightPos.y, lightPos.z);
+      std::println(std::clog, "  - Color: ({}, {}, {})", lightColor.r,
+                   lightColor.g, lightColor.b);
+    } else {
+      // Remove point light from LightManager
+      if (lightIndex.has_value()) {
+        lightManager.removePointLight(lightIndex.value());
+        std::println(std::clog, "Light removed from index {}",
+                     lightIndex.value());
+        lightIndex = std::nullopt;
+      }
     }
+
+    // Update material emission
+    updateMaterialEmission(obj);
   }
 
   void onHover(GameObject *obj, bool enter) override {
     if (enter) {
-      std::cout << "Hovering over lamp " << obj->getName() << " (light is "
-                << (lightOn ? "ON" : "OFF") << ")" << std::endl;
+      std::println(std::clog, "Hovering over lamp {} (light is {})",
+                   obj->getName(), lightOn ? "ON" : "OFF");
     }
   }
 
   void onUpdate(GameObject *obj, float deltaTime) override {
-    // Could implement light flicker animation here
-    // For example: intensity = baseIntensity + sin(time * flickerSpeed) *
-    // flickerAmount
+    // Update time accumulator for animation
     timeAccumulator += deltaTime;
 
-    // Simple demonstration: pulse intensity when light is on
+    // Calculate current intensity with optional flicker
     if (lightOn) {
-      float pulse = 0.5f + 0.5f * sin(timeAccumulator * 2.0f);
-      currentIntensity = intensity * pulse;
+      // Simple flicker: 10% intensity variation
+      float flicker = 0.9f + 0.2f * sin(timeAccumulator * 5.0f) *
+                                 sin(timeAccumulator * 7.0f);
+      currentIntensity = intensity * flicker;
+
+      // Update light position if lamp moved
+      if (lightIndex.has_value()) {
+        updateLightPosition(obj);
+      }
     } else {
       currentIntensity = 0.0f;
     }
   }
 
   void onPreRender(GameObject *obj) override {
-    // In full implementation, would set shader uniforms:
-    // shader.setBool("material.emissive", lightOn);
-    // shader.setVec3("material.emission", lightColor * currentIntensity);
-
-    // For demonstration, just track that we're about to render
-    // (could set a flag on GameObject if it had material properties)
+    // Update material emission before rendering
+    updateMaterialEmission(obj);
   }
 
   void onPostRender(GameObject *obj) override {
-    // Could reset any temporary shader modifications here
+    // Nothing needed for now
   }
 
   const char *getName() const override { return "LampLightingBehaviour"; }
@@ -85,9 +126,38 @@ public:
   void setIntensity(float newIntensity) { intensity = newIntensity; }
 
 private:
+  void updateMaterialEmission(GameObject *obj) {
+    if (!obj)
+      return;
+
+    Material &mat = obj->getMaterial();
+    if (lightOn) {
+      mat.setEmissive(true, lightColor, currentIntensity);
+    } else {
+      mat.setEmissive(false);
+    }
+  }
+
+  void updateLightPosition(GameObject *obj) {
+    if (not lightIndex.has_value())
+      return;
+
+    glm::vec3 lightPos = obj->position + glm::vec3(0.0f, 0.2f, 0.0f);
+    graphics::PointLight &light =
+        lightManager.getPointLight(lightIndex.value());
+    // Mark LightManager as dirty for update
+    light.position = glm::vec4(lightPos, 1.0f);
+    lightManager.updateUBO(); // Force update
+  }
+
+  // Member variables
+  graphics::LightManager &lightManager;
   glm::vec3 lightColor; // Warm yellow default
   float intensity;      // Base intensity
+  float lightRadius;    // Light influence radius
   float currentIntensity = 0.0f;
   bool lightOn = false;
+  // Index in LightManager array, nullopt if not active
+  std::optional<uint32_t> lightIndex;
   float timeAccumulator = 0.0f;
 };

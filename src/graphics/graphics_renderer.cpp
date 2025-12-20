@@ -3,6 +3,7 @@
 #include "graphics/particles/particle_factory.hpp"
 #include "graphics/material.hpp"
 #include "graphics/texture.hpp"
+#include "scene/behaviours/lamp_lighting_behaviour.hpp"
 #include "scene/game_object.hpp"
 #include "scene/game_manager.hpp"
 #include <filesystem>
@@ -25,7 +26,7 @@ GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
       debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
-      tableObject(nullptr), sandboxObject(nullptr), selectedObject(nullptr),
+      selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
       rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
                                                    weatherPosition, 100000)},
@@ -59,9 +60,9 @@ bool GraphicsRenderer::initialize() {
   // Default room light
   graphics::PointLight roomLight = [] {
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-    glm::vec3 lightAmbient = lightColor * glm::vec3(0.2f);
-    glm::vec3 lightDiffuse = lightColor * glm::vec3(0.8f);
-    glm::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
+    glm::vec3 lightAmbient = lightColor * glm::vec3(0.1f);
+    glm::vec3 lightDiffuse = lightColor * glm::vec3(0.5f);
+    glm::vec3 lightSpecular(0.5f, 0.5f, 0.5f);
 
     float constant = 1.0f;
     float linear = 0.09f;
@@ -117,7 +118,7 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
   lightManager.updateUBO();
 
   renderRoom(projection, view, cameraPosition);
-  renderTable(projection, view, cameraPosition);
+  renderObjects(projection, view);
   renderLightCube(projection, view);
   // Render cloud
   if (cloud && cloud->isInitialized()) {
@@ -171,8 +172,6 @@ void GraphicsRenderer::cleanup() {
   debugShader.reset();
 
   // Cleanup game objects
-  tableObject = nullptr;
-  sandboxObject = nullptr;
   terrainMesh.reset();
 
   // Cleanup cloud
@@ -221,8 +220,8 @@ bool GraphicsRenderer::loadModels() {
         std::move(tableModel), modelShader, tableMaterial, "table");
     tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
     tableObj->scale = glm::vec3(0.1f);
-    // Add to GameManager and get pointer
-    tableObject = gameManager->addObject(std::move(tableObj));
+    // Add to GameManager
+    gameManager->addObject(std::move(tableObj));
 
     // Load sandbox (uniform material)
     auto sandboxModel = std::make_unique<Model>(
@@ -236,8 +235,25 @@ bool GraphicsRenderer::loadModels() {
         std::move(sandboxModel), modelSimpleShader, sandboxMaterial, "sandbox");
     sandboxObj->position = glm::vec3(0.15f, 0.13f, 2.0f);
     sandboxObj->scale = glm::vec3(0.13f);
-    // Add to GameManager and get pointer
-    sandboxObject = gameManager->addObject(std::move(sandboxObj));
+    // Add to GameManager
+    gameManager->addObject(std::move(sandboxObj));
+
+    // Load lamp (textured material with emission capability)
+    auto lampModel = std::make_unique<Model>(
+        std::filesystem::path("resources/objects/lamp/lamp1.obj"));
+    Material lampMaterial(64.0f);
+    auto lampObj = std::make_unique<GameObject>(
+        std::move(lampModel), modelShader, lampMaterial, "lamp");
+    lampObj->position = glm::vec3(-0.1f, 0.4f, 2.0f);
+    lampObj->scale = glm::vec3(0.05f);
+
+    // Add lighting behaviour
+    auto lampBehaviour = std::make_unique<LampLightingBehaviour>(
+        lightManager, glm::vec3(1.0f, 0.9f, 0.6f), 0.2f, 0.5f);
+    lampObj->addBehaviour(std::move(lampBehaviour));
+
+    // Add to GameManager
+    gameManager->addObject(std::move(lampObj));
 
     return true;
   } catch (const std::exception &e) {
@@ -494,19 +510,10 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
   glDrawArrays(GL_TRIANGLES, 0, frontWall.vertexCount);
 }
 
-void GraphicsRenderer::renderTable(const glm::mat4 &projection,
-                                   const glm::mat4 &view,
-                                   const glm::vec3 &cameraPosition) {
-  (void)cameraPosition; // Unused, lighting handled by UBO
-
-  // Render table
-  if (tableObject) {
-    tableObject->render(projection, view);
-  }
-
-  // Render sandbox
-  if (sandboxObject) {
-    sandboxObject->render(projection, view);
+void GraphicsRenderer::renderObjects(const glm::mat4 &projection,
+                                     const glm::mat4 &view) {
+  for (const auto &obj : gameManager->getObjects()) {
+    obj->render(projection, view);
   }
 }
 

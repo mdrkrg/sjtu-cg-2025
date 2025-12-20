@@ -5,7 +5,6 @@
 enum class MaterialType {
   TEXTURED, /// Uses texture maps from model
   UNIFORM,  /// Uses uniform colors (no textures)
-  EMISSIVE  /// Emits light (can be combined with TEXTURED or UNIFORM)
 };
 
 struct Material {
@@ -38,9 +37,6 @@ struct Material {
     emissive = enabled;
     emissionColor = color;
     emissionStrength = strength;
-    if (enabled) {
-      type = MaterialType::EMISSIVE;
-    }
   }
 
   /// Check if material uses textures

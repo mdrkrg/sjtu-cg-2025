@@ -65,8 +65,6 @@ private:
   std::shared_ptr<GameManager> gameManager;
 
   // Game objects (pointers for shader selection)
-  GameObject *tableObject;
-  GameObject *sandboxObject;
   GameObject *selectedObject;
 
   std::shared_ptr<TerrainMesh> terrainMesh;
@@ -110,8 +108,7 @@ private:
 
   void renderRoom(const glm::mat4 &projection, const glm::mat4 &view,
                   const glm::vec3 &cameraPosition);
-  void renderTable(const glm::mat4 &projection, const glm::mat4 &view,
-                   const glm::vec3 &cameraPosition);
+  void renderObjects(const glm::mat4 &projection, const glm::mat4 &view);
   void renderLightCube(const glm::mat4 &projection, const glm::mat4 &view);
   void renderTerrain(const glm::mat4 &projection, const glm::mat4 &view,
                      const glm::vec3 &cameraPosition);
