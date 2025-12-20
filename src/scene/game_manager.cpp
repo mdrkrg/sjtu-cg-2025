@@ -6,6 +6,7 @@
 
 GameManager::GameManager() {
   std::cout << "GameManager initialized" << std::endl;
+  puzzleManager = std::make_unique<PuzzleManager>();
 }
 
 GameObject *GameManager::addObject(std::unique_ptr<GameObject> obj) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game_object.hpp"
+#include "puzzle_manager.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
@@ -24,6 +25,8 @@ public:
 
   /// Get all objects for rendering
   const std::vector<GameObject *> &getObjects() const { return objectPointers; }
+
+  PuzzleManager &getPuzzleManager() const { return *puzzleManager.get(); }
 
   /// Get selected object
   GameObject *getSelectedObject() const { return selectedObject; }
@@ -52,6 +55,8 @@ private:
 
   std::function<void(GameObject *)> onObjectSelected;
   std::function<void(GameObject *, bool)> onObjectHovered;
+
+  std::unique_ptr<PuzzleManager> puzzleManager;
 
   void updateObjectPointers();
 };
