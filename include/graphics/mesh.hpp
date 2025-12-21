@@ -1,5 +1,4 @@
-#ifndef MESH_H
-#define MESH_H
+#pragma once
 
 #include <epoxy/gl.h>
 #include <epoxy/glx.h>
@@ -62,6 +61,51 @@ public:
     // now that we have all the required data, set the vertex buffers and its
     // attribute pointers.
     setupMesh();
+  }
+
+  /// Create a cube mesh
+  static Mesh createCube(float size = 1.0f, const std::string &name = "") {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    float s = size * 0.5f;
+    // 8 vertices
+    glm::vec3 positions[8] = {{-s, -s, s}, {s, -s, s},   {s, s, s},
+                              {-s, s, s},  {-s, -s, -s}, {s, -s, -s},
+                              {s, s, -s},  {-s, s, -s}};
+    glm::vec3 normals[6] = {{0, 0, 1},  {0, 0, -1}, {1, 0, 0},
+                            {-1, 0, 0}, {0, 1, 0},  {0, -1, 0}};
+    glm::vec2 texCoords[4] = {
+        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
+    unsigned int faceVertices[6][4] = {{0, 1, 2, 3}, {5, 4, 7, 6},
+                                       {1, 5, 6, 2}, {4, 0, 3, 7},
+                                       {3, 2, 6, 7}, {4, 5, 1, 0}};
+    for (int face = 0; face < 6; ++face) {
+      unsigned int baseIndex = vertices.size();
+      for (int i = 0; i < 4; ++i) {
+        Vertex v;
+        v.Position = positions[faceVertices[face][i]];
+        v.Normal = normals[face];
+        v.TexCoords = texCoords[i];
+        v.Tangent = glm::vec3(0.0f);
+        v.Bitangent = glm::vec3(0.0f);
+        for (int j = 0; j < MAX_BONE_INFLUENCE; ++j) {
+          v.m_BoneIDs[j] = 0;
+          v.m_Weights[j] = 0.0f;
+        }
+        vertices.push_back(v);
+      }
+      indices.push_back(baseIndex);
+      indices.push_back(baseIndex + 1);
+      indices.push_back(baseIndex + 2);
+      indices.push_back(baseIndex);
+      indices.push_back(baseIndex + 2);
+      indices.push_back(baseIndex + 3);
+    }
+    std::vector<Texture> textures;
+    auto colors =
+        std::make_tuple(glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+    return Mesh(std::move(vertices), std::move(indices), std::move(textures),
+                std::move(colors), name);
   }
 
   // render the mesh
@@ -164,4 +208,3 @@ private:
     glBindVertexArray(0);
   }
 };
-#endif

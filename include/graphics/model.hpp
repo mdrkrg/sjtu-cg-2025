@@ -1,5 +1,4 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
 #include <epoxy/gl.h>
 #include <epoxy/glx.h>
@@ -33,6 +32,13 @@ public:
   // constructor, expects a filepath to a 3D model.
   Model(std::string const &path, bool gamma = false) : gammaCorrection(gamma) {
     loadModel(path);
+  }
+
+  /// Constructor for programmatically created meshes
+  Model(std::vector<Mesh> &&meshes, bool gamma = false)
+      : gammaCorrection(gamma) {
+    this->meshes = std::move(meshes);
+    directory = "";
   }
 
   // draws the model, and thus all its meshes
@@ -264,4 +270,3 @@ inline unsigned int TextureFromFile(const char *path,
 
   return textureID;
 }
-#endif
