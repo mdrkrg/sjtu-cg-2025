@@ -4,6 +4,7 @@
 #include "graphics/material.hpp"
 #include "graphics/texture.hpp"
 #include "scene/behaviours/lamp_lighting_behaviour.hpp"
+#include "scene/behaviours/puzzle_movement_behaviour.hpp"
 #include "scene/game_object.hpp"
 #include "scene/game_manager.hpp"
 #include <filesystem>
@@ -254,6 +255,35 @@ bool GraphicsRenderer::loadModels() {
 
     // Add to GameManager
     gameManager->addObject(std::move(lampObj));
+
+    // Cubes for animation testing
+    auto createCube = [&](glm::vec3 position, glm::vec3 color,
+                          float size = 0.1f, const std::string &name = "") {
+      auto cubeMesh = Mesh::createCube(size, name);
+      auto cubeModel = std::make_unique<Model>(
+          std::vector<Mesh>{std::move(cubeMesh)}, false);
+      Material cubeMaterial;
+      cubeMaterial.type = MaterialType::UNIFORM;
+      cubeMaterial.ambient = color * 0.2f;
+      cubeMaterial.diffuse = color * 0.8f;
+      cubeMaterial.specular = glm::vec3(0.1f);
+      cubeMaterial.shininess = 32.0f;
+      auto cubeObj = std::make_unique<GameObject>(
+          std::move(cubeModel), modelSimpleShader, cubeMaterial, name);
+      cubeObj->position = position;
+      // Add animation behaviour: when selected, move up by 0.2f
+      cubeObj->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
+          gameManager->getPuzzleManager(),
+          position + glm::vec3(0.0f, 0.2f, 0.0f)));
+      gameManager->addObject(std::move(cubeObj));
+    };
+
+    createCube(glm::vec3(-0.3f, 0.2f, 2.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.1f,
+               "red_cube");
+    createCube(glm::vec3(-0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.1f,
+               "green_cube");
+    createCube(glm::vec3(0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.1f,
+               "blue_cube");
 
     return true;
   } catch (const std::exception &e) {
