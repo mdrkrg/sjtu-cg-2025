@@ -1,12 +1,14 @@
 #include "graphics/graphics_renderer.h"
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
-#include "graphics/material.hpp"
 #include "graphics/model_factory.hpp"
 #include "graphics/texture.hpp"
 #include "scene/behaviours/lamp_lighting_behaviour.hpp"
 #include "scene/behaviours/puzzle_movement_behaviour.hpp"
 #include "scene/behaviours/hidden_cell_behaviour.hpp"
+#include "scene/behaviours/trap_trigger_behaviour.hpp"
+#include "scene/behaviours/trap_behaviour.hpp"
+#include "scene/utils.hpp"
 #include "scene/game_object.hpp"
 #include "scene/game_manager.hpp"
 #include <filesystem>
@@ -218,8 +220,8 @@ bool GraphicsRenderer::loadModels() {
     // Load table using factory (extracts material from .mtl)
     auto table = ModelFactory::loadModel(
         std::filesystem::path("resources/objects/table/table3.obj"));
-    auto tableObj = std::make_unique<GameObject>(
-        std::move(table), modelShader, "table");
+    auto tableObj =
+        std::make_unique<GameObject>(std::move(table), modelShader, "table");
     tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
     tableObj->scale = glm::vec3(0.1f);
     // Add to GameManager
@@ -238,8 +240,8 @@ bool GraphicsRenderer::loadModels() {
     // Load lamp using factory
     auto lamp = ModelFactory::loadModel(
         std::filesystem::path("resources/objects/lamp/lamp1.obj"));
-    auto lampObj = std::make_unique<GameObject>(
-        std::move(lamp), modelShader, "lamp");
+    auto lampObj =
+        std::make_unique<GameObject>(std::move(lamp), modelShader, "lamp");
     lampObj->position = glm::vec3(-0.1f, 0.4f, 2.0f);
     lampObj->scale = glm::vec3(0.05f);
 
@@ -252,40 +254,55 @@ bool GraphicsRenderer::loadModels() {
     gameManager->addObject(std::move(lampObj));
 
     // Cubes for animation testing using factory
-    auto createCube = [&](glm::vec3 position, glm::vec3 color,
-                          float size = 0.1f, const std::string &name = "") {
-      Material cubeMaterial;
-      cubeMaterial.type = MaterialType::UNIFORM;
-      cubeMaterial.ambient = color * 0.2f;
-      cubeMaterial.diffuse = color * 0.8f;
-      cubeMaterial.specular = glm::vec3(0.1f);
-      cubeMaterial.shininess = 32.0f;
+    const auto createCube = getCreateCube(gameManager, modelSimpleShader);
 
-      auto cube = ModelFactory::createCube(size, cubeMaterial, name);
-      auto cubeObj = std::make_unique<GameObject>(
-          std::move(cube), modelSimpleShader, name);
-      cubeObj->position = position;
+    auto createPuzzleCube = [&](glm::vec3 position, glm::vec3 color,
+                                float size = 0.1f,
+                                const std::string &name = "") {
+      auto cubeObj = createCube(position, color, size, name);
+
       // Add animation behaviour: when selected, move up by 0.2f
       cubeObj->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
           gameManager->getPuzzleManager(),
           position + glm::vec3(0.0f, 0.2f, 0.0f)));
-      return gameManager->addObject(std::move(cubeObj));
+      return cubeObj;
     };
 
-    createCube(glm::vec3(-0.3f, 0.2f, 2.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.1f,
-               "red_cube");
-    createCube(glm::vec3(-0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f), 0.1f,
-               "green_cube");
-    createCube(glm::vec3(0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.1f,
-               "blue_cube");
+    // Puzzle
+    {
+      createPuzzleCube(glm::vec3(-0.3f, 0.2f, 2.0f),
+                       glm::vec3(1.0f, 0.0f, 0.0f), 0.1f, "red_cube");
+      createPuzzleCube(glm::vec3(-0.1f, 0.2f, 2.0f),
+                       glm::vec3(0.0f, 1.0f, 0.0f), 0.1f, "green_cube");
+      createPuzzleCube(glm::vec3(0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
+                       0.1f, "blue_cube");
 
-    auto hiddenCube =
-        createCube(glm::vec3(0.3f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
-                   0.1f, "hidden_cube");
+      auto hiddenCube =
+          createPuzzleCube(glm::vec3(0.3f, 0.2f, 2.0f),
+                           glm::vec3(0.0f, 0.0f, 1.0f), 0.1f, "hidden_cube");
 
-    hiddenCube->addBehaviour(std::make_unique<HiddenCellBehaviour>(
-        gameManager->getPuzzleManager(), hiddenCube->position,
-        glm::vec3{90.0f, 0.0f, 0.0f}));
+      hiddenCube->addBehaviour(std::make_unique<HiddenCellBehaviour>(
+          gameManager->getPuzzleManager(), hiddenCube->position,
+          glm::vec3{90.0f, 0.0f, 0.0f}));
+    }
+
+    // Trap
+    {
+      auto triggerCube =
+          createCube(glm::vec3(0.2f, 0.1f, 3.0f), glm::vec3(1.0f, 1.0f, 1.0f),
+                     0.05f, "trigger_cube");
+
+      triggerCube->addBehaviour(std::make_unique<TrapTriggerBehaviour>(
+          gameManager->getTrapManager()));
+
+      auto trapCube =
+          createCube(glm::vec3(-0.4f, 0.3f, 2.0f), glm::vec3(1.0f, 1.0f, 1.0f),
+                     0.10f, "trap_cube");
+
+      trapCube->addBehaviour(std::make_unique<TrapBehaviour>(
+          gameManager->getTrapManager(), trapCube->position,
+          glm::vec3{0.0f, 180.0f, 0.0f}, 0.5f));
+    }
 
     return true;
   } catch (const std::exception &e) {

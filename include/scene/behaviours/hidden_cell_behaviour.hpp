@@ -29,7 +29,7 @@ public:
     }
     std::println(std::clog, "HiddenCellBehaviour attached to {}",
                  obj->getName());
-    puzzleManager->registerPuzzleCallback(this, [this]() {
+    puzzleManager->registerPuzzleCallback(this, [this] {
       std::println(std::clog, "HiddenCellBehaviour triggered!");
       if (this->obj) {
         this->obj->animateTo(targetPosition, targetRotation, moveDuration);

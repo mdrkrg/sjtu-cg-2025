@@ -1,4 +1,5 @@
 #include "scene/game_manager.hpp"
+#include "scene/trap_manager.hpp"
 #include "math/intersection.hpp"
 #include <algorithm>
 #include <iostream>
@@ -11,6 +12,8 @@ GameManager::GameManager() {
   puzzleManager->onComplete = [](PuzzleManager *) {
     std::println("Puzzle Solved!!!");
   };
+
+  trapManager = std::make_unique<TrapManager>();
 }
 
 GameObject *GameManager::addObject(std::unique_ptr<GameObject> obj) {

@@ -2,6 +2,7 @@
 
 #include "game_object.hpp"
 #include "puzzle_manager.hpp"
+#include "trap_manager.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -40,6 +41,8 @@ public:
 
   PuzzleManager *getPuzzleManager() const { return puzzleManager.get(); }
 
+  TrapManager *getTrapManager() const { return trapManager.get(); }
+
   /// Get selected object
   GameObject *getSelectedObject() const { return selectedObject; }
 
@@ -64,6 +67,7 @@ private:
   // so that they can be unregistered safely in object deconstruction
 
   std::unique_ptr<PuzzleManager> puzzleManager;
+  std::unique_ptr<TrapManager> trapManager;
 
   // TODO: Use a map of names to objects?
   std::vector<std::unique_ptr<GameObject>> objects;
