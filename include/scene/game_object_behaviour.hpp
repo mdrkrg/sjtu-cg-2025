@@ -11,6 +11,12 @@ class IGameObjectBehaviour {
 public:
   virtual ~IGameObjectBehaviour() = default;
 
+  /// Called when behaviour is attached to GameObject
+  virtual void onAttach(GameObject *obj) { (void)obj; };
+
+  /// Called when behaviour is detached from GameObject
+  virtual void onDetach(GameObject *obj) { (void)obj; };
+
   /// Called when object is selected (clicked)
   virtual void onSelect(GameObject *obj) { (void)obj; };
 

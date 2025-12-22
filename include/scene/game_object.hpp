@@ -21,7 +21,7 @@ class GameObject {
 public:
   GameObject(std::unique_ptr<Model> model, std::shared_ptr<Shader> shader,
              const Material &material, const std::string &name = "");
-  ~GameObject() = default;
+  ~GameObject();
 
   std::function<void(GameObject *)> onselect = [](GameObject *) {};
   std::function<void(GameObject *)> onhover = [](GameObject *) {};
@@ -125,6 +125,7 @@ public:
 
   // Behaviour system (Strategy Pattern)
   void addBehaviour(std::unique_ptr<IGameObjectBehaviour> behaviour) {
+    behaviour->onAttach(this);
     behaviours.push_back(std::move(behaviour));
   }
 
@@ -204,6 +205,12 @@ private:
   // Helper for linear interpolation
   static glm::vec3 lerp(const glm::vec3 &a, const glm::vec3 &b, float t);
 };
+
+inline GameObject::~GameObject() {
+  for (const auto &behaviour : behaviours) {
+    behaviour->onDetach(this);
+  }
+}
 
 inline GameObject::GameObject(std::unique_ptr<Model> model,
                               std::shared_ptr<Shader> shader,

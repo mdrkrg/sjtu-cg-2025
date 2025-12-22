@@ -4,6 +4,7 @@
 #include "puzzle_manager.hpp"
 #include <glm/glm.hpp>
 #include <memory>
+#include <optional>
 #include <vector>
 #include <functional>
 
@@ -25,6 +26,17 @@ public:
 
   /// Get all objects for rendering
   const std::vector<GameObject *> &getObjects() const { return objectPointers; }
+
+  /// Get the first occurance of a GameObject by name
+  std::optional<GameObject *> getObject(const std::string &name) const {
+    for (const auto obj : objectPointers) {
+      if (obj->getName() == name) {
+        return obj;
+      }
+    }
+
+    return std::nullopt;
+  }
 
   PuzzleManager &getPuzzleManager() const { return *puzzleManager.get(); }
 
@@ -48,6 +60,7 @@ public:
   }
 
 private:
+  // TODO: Use a map of names to objects?
   std::vector<std::unique_ptr<GameObject>> objects;
   std::vector<GameObject *> objectPointers; // For fast iteration
   GameObject *selectedObject = nullptr;

@@ -3,10 +3,14 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <print>
 
 GameManager::GameManager() {
   std::cout << "GameManager initialized" << std::endl;
   puzzleManager = std::make_unique<PuzzleManager>();
+  puzzleManager->onComplete = [](PuzzleManager *) {
+    std::println("Puzzle Solved!!!");
+  };
 }
 
 GameObject *GameManager::addObject(std::unique_ptr<GameObject> obj) {

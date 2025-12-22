@@ -5,6 +5,7 @@
 #include "graphics/texture.hpp"
 #include "scene/behaviours/lamp_lighting_behaviour.hpp"
 #include "scene/behaviours/puzzle_movement_behaviour.hpp"
+#include "scene/behaviours/hidden_cell_behaviour.hpp"
 #include "scene/game_object.hpp"
 #include "scene/game_manager.hpp"
 #include <filesystem>
@@ -275,7 +276,7 @@ bool GraphicsRenderer::loadModels() {
       cubeObj->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
           gameManager->getPuzzleManager(),
           position + glm::vec3(0.0f, 0.2f, 0.0f)));
-      gameManager->addObject(std::move(cubeObj));
+      return gameManager->addObject(std::move(cubeObj));
     };
 
     createCube(glm::vec3(-0.3f, 0.2f, 2.0f), glm::vec3(1.0f, 0.0f, 0.0f), 0.1f,
@@ -284,6 +285,14 @@ bool GraphicsRenderer::loadModels() {
                "green_cube");
     createCube(glm::vec3(0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f), 0.1f,
                "blue_cube");
+
+    auto hiddenCube =
+        createCube(glm::vec3(0.3f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
+                   0.1f, "hidden_cube");
+
+    hiddenCube->addBehaviour(std::make_unique<HiddenCellBehaviour>(
+        gameManager->getPuzzleManager(), hiddenCube->position,
+        glm::vec3{90.0f, 0.0f, 0.0f}));
 
     return true;
   } catch (const std::exception &e) {
