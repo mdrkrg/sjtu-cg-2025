@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
 #include "graphics/material.hpp"
+#include "graphics/model_factory.hpp"
 #include "graphics/texture.hpp"
 #include "scene/behaviours/lamp_lighting_behaviour.hpp"
 #include "scene/behaviours/puzzle_movement_behaviour.hpp"
@@ -214,38 +215,31 @@ bool GraphicsRenderer::loadTextures() {
 
 bool GraphicsRenderer::loadModels() {
   try {
-    // Load table (textured material)
-    auto tableModel = std::make_unique<Model>(
+    // Load table using factory (extracts material from .mtl)
+    auto table = ModelFactory::loadModel(
         std::filesystem::path("resources/objects/table/table3.obj"));
-    Material tableMaterial; // Default: TEXTURED, shininess 32.0f
     auto tableObj = std::make_unique<GameObject>(
-        std::move(tableModel), modelShader, tableMaterial, "table");
+        std::move(table), modelShader, "table");
     tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
     tableObj->scale = glm::vec3(0.1f);
     // Add to GameManager
     gameManager->addObject(std::move(tableObj));
 
-    // Load sandbox (uniform material)
-    auto sandboxModel = std::make_unique<Model>(
+    // Load sandbox using factory (extracts correct colors from .mtl)
+    auto sandbox = ModelFactory::loadModel(
         std::filesystem::path("resources/objects/sandbox/sandbox.obj"));
-    Material sandboxMaterial(glm::vec3(1.0f, 0.8f, 0.4f), // ambient
-                             glm::vec3(0.8f, 0.8f, 0.4f), // diffuse
-                             glm::vec3(0.4f, 0.4f, 0.2f), // specular
-                             2.0f                         // shininess
-    );
     auto sandboxObj = std::make_unique<GameObject>(
-        std::move(sandboxModel), modelSimpleShader, sandboxMaterial, "sandbox");
+        std::move(sandbox), modelSimpleShader, "sandbox");
     sandboxObj->position = glm::vec3(0.15f, 0.13f, 2.0f);
     sandboxObj->scale = glm::vec3(0.13f);
     // Add to GameManager
     gameManager->addObject(std::move(sandboxObj));
 
-    // Load lamp (textured material with emission capability)
-    auto lampModel = std::make_unique<Model>(
+    // Load lamp using factory
+    auto lamp = ModelFactory::loadModel(
         std::filesystem::path("resources/objects/lamp/lamp1.obj"));
-    Material lampMaterial(64.0f);
     auto lampObj = std::make_unique<GameObject>(
-        std::move(lampModel), modelShader, lampMaterial, "lamp");
+        std::move(lamp), modelShader, "lamp");
     lampObj->position = glm::vec3(-0.1f, 0.4f, 2.0f);
     lampObj->scale = glm::vec3(0.05f);
 
@@ -257,20 +251,19 @@ bool GraphicsRenderer::loadModels() {
     // Add to GameManager
     gameManager->addObject(std::move(lampObj));
 
-    // Cubes for animation testing
+    // Cubes for animation testing using factory
     auto createCube = [&](glm::vec3 position, glm::vec3 color,
                           float size = 0.1f, const std::string &name = "") {
-      auto cubeMesh = Mesh::createCube(size, name);
-      auto cubeModel = std::make_unique<Model>(
-          std::vector<Mesh>{std::move(cubeMesh)}, false);
       Material cubeMaterial;
       cubeMaterial.type = MaterialType::UNIFORM;
       cubeMaterial.ambient = color * 0.2f;
       cubeMaterial.diffuse = color * 0.8f;
       cubeMaterial.specular = glm::vec3(0.1f);
       cubeMaterial.shininess = 32.0f;
+
+      auto cube = ModelFactory::createCube(size, cubeMaterial, name);
       auto cubeObj = std::make_unique<GameObject>(
-          std::move(cubeModel), modelSimpleShader, cubeMaterial, name);
+          std::move(cube), modelSimpleShader, name);
       cubeObj->position = position;
       // Add animation behaviour: when selected, move up by 0.2f
       cubeObj->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(

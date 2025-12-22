@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "graphics/model.hpp"
+#include "graphics/model_factory.hpp"
 #include "graphics/shader.h"
 #include "scene/aabb.hpp"
 #include "scene/game_object_behaviour.hpp"
@@ -21,6 +22,8 @@ class GameObject {
 public:
   GameObject(std::unique_ptr<Model> model, std::shared_ptr<Shader> shader,
              const Material &material, const std::string &name = "");
+  GameObject(ModelWithMaterials &&modelMaterials,
+             std::shared_ptr<Shader> shader, const std::string &name = "");
   ~GameObject();
 
   std::function<void(GameObject *)> onselect = [](GameObject *) {};
@@ -187,12 +190,7 @@ private:
   void renderMeshes(const Shader &shader) {
     const size_t meshCount = model->meshes.size();
     const size_t materialCount = meshMaterials.size();
-
-    if (meshCount != materialCount) {
-      std::cerr << "Warning: Mesh count (" << meshCount
-                << ") doesn't match material count (" << materialCount
-                << ") for GameObject " << name << std::endl;
-    }
+    checkMeshMaterialMismatch();
 
     // Render each mesh with its material
     for (size_t i = 0; i < meshCount and i < materialCount; ++i) {
@@ -204,6 +202,20 @@ private:
 
   // Helper for linear interpolation
   static glm::vec3 lerp(const glm::vec3 &a, const glm::vec3 &b, float t);
+
+  void checkMeshMaterialMismatch(
+      std::function<void(size_t meshCount, size_t materialCount)> onMismatch =
+          [](size_t, size_t) {}) {
+    const size_t meshCount = model->meshes.size();
+    const size_t materialCount = meshMaterials.size();
+    if (meshCount != materialCount) {
+      std::println(std::clog,
+                   "Warning: Mesh count ({}) doesn't match material count ({}) "
+                   "for GameObject {}",
+                   meshCount, materialCount, name);
+      onMismatch(meshCount, materialCount);
+    }
+  }
 };
 
 inline GameObject::~GameObject() {
@@ -227,8 +239,31 @@ inline GameObject::GameObject(std::unique_ptr<Model> model,
   computeLocalAABB();
 }
 
+inline GameObject::GameObject(ModelWithMaterials &&modelMaterials,
+                              std::shared_ptr<Shader> shader,
+                              const std::string &name)
+    : model(std::move(modelMaterials.model)), shader(shader),
+      meshMaterials(std::move(modelMaterials.materials)), name(name) {
+
+  if (not model) {
+    computeLocalAABB();
+    return;
+  }
+
+  checkMeshMaterialMismatch([this](size_t meshCount, size_t materialCount) {
+    std::println(std::clog, "Using default material for missing meshes.");
+    if (materialCount < meshCount) {
+      Material defaultMat{};
+      for (size_t i = materialCount; i < meshCount; ++i) {
+        meshMaterials.push_back(defaultMat);
+      }
+    }
+  });
+  computeLocalAABB();
+}
+
 inline void GameObject::computeLocalAABB() {
-  if (!model || model->meshes.empty()) {
+  if (not model or model->meshes.empty()) {
     localAABB =
         scene::AABB(glm::vec3(-0.1f), glm::vec3(0.1f)); // Default small cube
     return;

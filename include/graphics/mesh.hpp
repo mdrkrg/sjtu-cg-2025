@@ -43,20 +43,14 @@ public:
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
   unsigned int VAO;
-  glm::vec3 ambientColor;
-  glm::vec3 diffuseColor;
-  glm::vec3 specularColor;
 
   // Name of the material in .mtl file
   std::string name;
 
   // constructor
   Mesh(std::vector<Vertex> &&vertices, std::vector<unsigned int> &&indices,
-       std::vector<Texture> &&textures,
-       std::tuple<glm::vec3, glm::vec3, glm::vec3> &&colors,
-       const std::string &name = "")
+       std::vector<Texture> &&textures, const std::string &name = "")
       : vertices{vertices}, indices{indices}, textures{textures}, name{name} {
-    std::tie(ambientColor, diffuseColor, specularColor) = colors;
 
     // now that we have all the required data, set the vertex buffers and its
     // attribute pointers.
@@ -102,10 +96,8 @@ public:
       indices.push_back(baseIndex + 3);
     }
     std::vector<Texture> textures;
-    auto colors =
-        std::make_tuple(glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f));
     return Mesh(std::move(vertices), std::move(indices), std::move(textures),
-                std::move(colors), name);
+                name);
   }
 
   // render the mesh
@@ -136,10 +128,6 @@ public:
       // and finally bind the texture
       glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
-
-    shader.setVec3("material.ambient", ambientColor);
-    shader.setVec3("material.diffuse", diffuseColor);
-    shader.setVec3("material.specular", specularColor);
 
     // draw mesh
     glBindVertexArray(VAO);
