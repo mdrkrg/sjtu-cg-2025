@@ -65,7 +65,7 @@ bool GraphicsRenderer::initialize() {
   // Default room light
   graphics::PointLight roomLight = [] {
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-    glm::vec3 lightAmbient = lightColor * glm::vec3(0.1f);
+    glm::vec3 lightAmbient = lightColor * glm::vec3(0.2f);
     glm::vec3 lightDiffuse = lightColor * glm::vec3(0.5f);
     glm::vec3 lightSpecular(0.5f, 0.5f, 0.5f);
 
@@ -290,20 +290,28 @@ bool GraphicsRenderer::loadModels() {
 
     // Trap
     {
+      auto bookcase = GameObject::createFromModelFile(
+          "resources/objects/bookcase/bookcase1.obj", modelShader, "bookCase");
+      bookcase->position = glm::vec3(0.92f, 0.15f, 2.0f);
+      bookcase->scale = glm::vec3(0.04f);
+      bookcase->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
+      bookcase->interactable = false;
+
+      // Add lighting behaviour
+      auto bookCaseBehaviour = std::make_unique<TrapBehaviour>(
+          gameManager->getTrapManager(),
+          bookcase->position + glm::vec3{0.0f, 0.0f, 0.6f}, bookcase->rotation);
+      bookcase->addBehaviour(std::move(bookCaseBehaviour));
+
+      // Add to GameManager
+      gameManager->addObject(std::move(bookcase));
+
       auto triggerCube =
-          createCube(glm::vec3(0.2f, 0.1f, 3.0f), glm::vec3(1.0f, 1.0f, 1.0f),
+          createCube(glm::vec3{0.1f, 0.13f, 1.8f}, glm::vec3{1.0f, 1.0f, 1.0f},
                      0.05f, "trigger_cube");
 
       triggerCube->addBehaviour(std::make_unique<TrapTriggerBehaviour>(
           gameManager->getTrapManager()));
-
-      auto trapCube =
-          createCube(glm::vec3(-0.4f, 0.3f, 2.0f), glm::vec3(1.0f, 1.0f, 1.0f),
-                     0.10f, "trap_cube");
-
-      trapCube->addBehaviour(std::make_unique<TrapBehaviour>(
-          gameManager->getTrapManager(), trapCube->position,
-          glm::vec3{0.0f, 180.0f, 0.0f}, 0.5f));
     }
 
     return true;
