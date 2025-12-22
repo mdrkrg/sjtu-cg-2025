@@ -2,17 +2,7 @@
 out vec4 FragColor;
 
 #include "include/lighting.glsl"
-
-struct Material {
-    sampler2D texture_diffuse1;
-    sampler2D texture_specular1;
-    sampler2D texture_normal1;
-    sampler2D texture_height1;
-    float shininess;
-    bool emissive;
-    vec3 emission;
-    float emissionStrength;
-};
+#include "include/material.glsl"
 
 in vec3 FragPos;
 in vec2 TexCoords;
@@ -24,8 +14,7 @@ vec3 blinnPhongAmbient(
     PointLight light,
     vec2 textureUV
 ) {
-    // NOTE: texture map as ambient
-    return light.ambient.xyz * texture(material.texture_diffuse1, textureUV).rgb;
+    return light.ambient.xyz * material_ambient(material, textureUV);
 }
 
 vec3 blinnPhongDiffuse(
@@ -36,8 +25,7 @@ vec3 blinnPhongDiffuse(
     vec3 normDir
 ) {
     float diff = max(dot(normDir, lightDir), 0.0);
-    // NOTE: texture map as diffuse
-    vec3 textureDiff = texture(material.texture_diffuse1, textureUV).rgb;
+    vec3 textureDiff = material_diffuse(material, textureUV);
     return textureDiff * diff * light.diffuse.xyz;
 }
 
@@ -57,7 +45,7 @@ vec3 blinnPhongSpecular(
     vec3 bisectorDir = bisector(viewDir, lightDir);
     float angle = dot(normDir, bisectorDir);
     float spec = pow(max(angle, 0.0), material.shininess);
-    vec3 textureSpec = texture(material.texture_specular1, textureUV).rgb;
+    vec3 textureSpec = material_specular(material, textureUV);
     return light.specular.xyz * spec * textureSpec;
 }
 
@@ -72,7 +60,7 @@ vec3 phongSpecular(
     vec3 reflectDir = reflect(-lightDir, normDir);
     float angle = dot(viewDir, reflectDir);
     float spec = pow(max(angle, 0.0), material.shininess);
-    vec3 textureSpec = texture(material.texture_specular1, textureUV).rgb;
+    vec3 textureSpec = material_specular(material, textureUV);
     return spec * textureSpec * light.specular.xyz;
 }
 
@@ -137,7 +125,7 @@ void main()
 
     // No lights, use ambient from material
     if (lighting.numPointLights == 0) {
-        result = texture(material.texture_diffuse1, TexCoords).rgb * vec3(0.2);
+        result = material_diffuse(material, TexCoords) * vec3(0.2);
     }
 
     // Add emission if enabled

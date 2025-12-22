@@ -387,16 +387,13 @@ inline glm::vec3 GameObject::lerp(const glm::vec3 &a, const glm::vec3 &b,
 inline void renderMesh(const Mesh &mesh, const Material &material,
                        const Shader &shader) {
 
-  if (material.usesUniformColors()) {
-    // For uniform materials, set ambient, diffuse, specular
-    shader.setVec3("material.ambient", material.ambient);
-    shader.setVec3("material.diffuse", material.diffuse);
-    shader.setVec3("material.specular", material.specular);
-    shader.setFloat("material.shininess", material.shininess);
-  } else if (material.usesTextures()) {
-    // For textured materials, shader uses textures from model
-    shader.setFloat("material.shininess", material.shininess);
-  }
+  shader.use();
+  shader.setVec3("material.ambient", material.ambient);
+  shader.setVec3("material.diffuse", material.diffuse);
+  shader.setVec3("material.specular", material.specular);
+  shader.setFloat("material.shininess", material.shininess);
+  // For textured materials, shader uses textures from model
+  shader.setBool("material.use_texture", material.usesTextures());
 
   // Set emission if enabled
   if (material.isEmissive()) {
