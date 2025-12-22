@@ -26,6 +26,9 @@ public:
              std::shared_ptr<Shader> shader, const std::string &name = "");
   ~GameObject();
 
+
+  /// Whether this GameObject is the raycast target
+  bool interactable = true;
   std::function<void(GameObject *)> onselect = [](GameObject *) {};
   std::function<void(GameObject *)> onhover = [](GameObject *) {};
 

@@ -224,6 +224,7 @@ bool GraphicsRenderer::loadModels() {
         std::make_unique<GameObject>(std::move(table), modelShader, "table");
     tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
     tableObj->scale = glm::vec3(0.1f);
+    tableObj->interactable = false;
     // Add to GameManager
     gameManager->addObject(std::move(tableObj));
 
@@ -637,14 +638,18 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
   debugShader->setMat4("projection", projection);
   debugShader->setMat4("view", view);
 
-  // Set color for AABB lines (red)
-  debugShader->setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
-
   // Iterate through all objects in GameManager
   const auto &objects = gameManager->getObjects();
   for (GameObject *obj : objects) {
     if (!obj) {
       continue;
+    }
+
+    // Set color for AABB lines (interactable green, otherwise red)
+    if (obj->interactable) {
+      debugShader->setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
+    } else {
+      debugShader->setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
     }
 
     // Get world AABB
