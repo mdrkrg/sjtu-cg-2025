@@ -10,7 +10,7 @@
 /// Moves object to target position when selected, with animation
 class PuzzleMovementBehaviour : public IGameObjectBehaviour {
 public:
-  PuzzleMovementBehaviour(PuzzleManager &puzzleManager,
+  PuzzleMovementBehaviour(PuzzleManager *puzzleManager,
                           const glm::vec3 &targetPosition,
                           const glm::vec3 &targetRotation = glm::vec3(0.0f),
                           float moveDuration = 1.0f)
@@ -71,7 +71,7 @@ public:
                 << " reached target position" << std::endl;
 
       // Could trigger puzzle completion check here
-      puzzleManager.checkCompletion();
+      puzzleManager->checkCompletion();
     }
 
     // Could add hover/selection highlight effect here
@@ -106,7 +106,7 @@ public:
   void setMoveDuration(float duration) { moveDuration = duration; }
 
 private:
-  PuzzleManager &puzzleManager;
+  PuzzleManager *puzzleManager;
   glm::vec3 targetPosition;
   glm::vec3 targetRotation;
   glm::vec3 originalPosition;

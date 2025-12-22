@@ -38,7 +38,7 @@ public:
     return std::nullopt;
   }
 
-  PuzzleManager &getPuzzleManager() const { return *puzzleManager.get(); }
+  PuzzleManager *getPuzzleManager() const { return puzzleManager.get(); }
 
   /// Get selected object
   GameObject *getSelectedObject() const { return selectedObject; }
@@ -60,6 +60,11 @@ public:
   }
 
 private:
+  // managers are declared before objects,
+  // so that they can be unregistered safely in object deconstruction
+
+  std::unique_ptr<PuzzleManager> puzzleManager;
+
   // TODO: Use a map of names to objects?
   std::vector<std::unique_ptr<GameObject>> objects;
   std::vector<GameObject *> objectPointers; // For fast iteration
@@ -68,8 +73,6 @@ private:
 
   std::function<void(GameObject *)> onObjectSelected;
   std::function<void(GameObject *, bool)> onObjectHovered;
-
-  std::unique_ptr<PuzzleManager> puzzleManager;
 
   void updateObjectPointers();
 };
