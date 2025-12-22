@@ -26,6 +26,10 @@ public:
              std::shared_ptr<Shader> shader, const std::string &name = "");
   ~GameObject();
 
+  /// Factory method to create a model from model file
+  static std::unique_ptr<GameObject>
+  createFromModelFile(const std::string &path, std::shared_ptr<Shader> shader,
+                      const std::string &name = "");
 
   /// Whether this GameObject is the raycast target
   bool interactable = true;
@@ -33,7 +37,6 @@ public:
   std::function<void(GameObject *)> onhover = [](GameObject *) {};
 
   // Rendering
-  void render(Shader &shader);
   void render(const glm::mat4 &projection, const glm::mat4 &view);
 
   // Update animation
@@ -265,6 +268,13 @@ inline GameObject::GameObject(ModelWithMaterials &&modelMaterials,
   computeLocalAABB();
 }
 
+inline std::unique_ptr<GameObject>
+GameObject::createFromModelFile(const std::string &path,
+                                std::shared_ptr<Shader> shader,
+                                const std::string &name) {
+  auto model = ModelFactory::loadModel(path);
+  return std::make_unique<GameObject>(std::move(model), shader, name);
+}
 inline void GameObject::computeLocalAABB() {
   if (not model or model->meshes.empty()) {
     localAABB =
@@ -289,23 +299,6 @@ inline void GameObject::computeLocalAABB() {
   }
 
   localAABB = scene::AABB(min, max);
-}
-
-inline void GameObject::render(Shader &shader) {
-  if (!model)
-    return;
-
-  // Call pre-render behaviours (can modify shader/material)
-  preRenderBehaviours();
-
-  // Set model matrix
-  glm::mat4 modelMatrix = getModelMatrix();
-  shader.setMat4("model", modelMatrix);
-
-  renderMeshes(shader);
-
-  // Call post-render behaviours
-  postRenderBehaviours();
 }
 
 inline void GameObject::render(const glm::mat4 &projection,

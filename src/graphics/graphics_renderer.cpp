@@ -217,42 +217,43 @@ bool GraphicsRenderer::loadTextures() {
 
 bool GraphicsRenderer::loadModels() {
   try {
-    // Load table using factory (extracts material from .mtl)
-    auto table = ModelFactory::loadModel(
-        std::filesystem::path("resources/objects/table/table3.obj"));
-    auto tableObj =
-        std::make_unique<GameObject>(std::move(table), modelShader, "table");
-    tableObj->position = glm::vec3(0.0f, -0.2f, 2.0f);
-    tableObj->scale = glm::vec3(0.1f);
-    tableObj->interactable = false;
-    // Add to GameManager
-    gameManager->addObject(std::move(tableObj));
+    // Load table using factory
+    {
+      auto table = GameObject::createFromModelFile(
+          "resources/objects/table/table3.obj", modelShader, "table");
+      table->position = glm::vec3(0.0f, -0.2f, 2.0f);
+      table->scale = glm::vec3(0.1f);
+      table->interactable = false;
+      // Add to GameManager
+      gameManager->addObject(std::move(table));
+    }
 
-    // Load sandbox using factory (extracts correct colors from .mtl)
-    auto sandbox = ModelFactory::loadModel(
-        std::filesystem::path("resources/objects/sandbox/sandbox.obj"));
-    auto sandboxObj = std::make_unique<GameObject>(
-        std::move(sandbox), modelSimpleShader, "sandbox");
-    sandboxObj->position = glm::vec3(0.15f, 0.13f, 2.0f);
-    sandboxObj->scale = glm::vec3(0.13f);
-    // Add to GameManager
-    gameManager->addObject(std::move(sandboxObj));
+    // Load sandbox using factory
+    {
+      auto sandbox = GameObject::createFromModelFile(
+          "resources/objects/sandbox/sandbox.obj", modelSimpleShader,
+          "sandbox");
+      sandbox->position = glm::vec3(0.15f, 0.13f, 2.0f);
+      sandbox->scale = glm::vec3(0.13f);
+      // Add to GameManager
+      gameManager->addObject(std::move(sandbox));
+    }
 
     // Load lamp using factory
-    auto lamp = ModelFactory::loadModel(
-        std::filesystem::path("resources/objects/lamp/lamp1.obj"));
-    auto lampObj =
-        std::make_unique<GameObject>(std::move(lamp), modelShader, "lamp");
-    lampObj->position = glm::vec3(-0.1f, 0.4f, 2.0f);
-    lampObj->scale = glm::vec3(0.05f);
+    {
+      auto lamp = GameObject::createFromModelFile(
+          "resources/objects/lamp/lamp1.obj", modelShader, "lamp");
+      lamp->position = glm::vec3{0.1f, 0.18f, 2.2f};
+      lamp->scale = glm::vec3{0.03f};
 
-    // Add lighting behaviour
-    auto lampBehaviour = std::make_unique<LampLightingBehaviour>(
-        lightManager, glm::vec3(1.0f, 0.9f, 0.6f), 0.2f, 0.5f);
-    lampObj->addBehaviour(std::move(lampBehaviour));
+      // Add lighting behaviour
+      auto lampBehaviour = std::make_unique<LampLightingBehaviour>(
+          lightManager, glm::vec3(0.8f, 0.8f, 0.6f), 0.2f, 0.5f);
+      lamp->addBehaviour(std::move(lampBehaviour));
 
-    // Add to GameManager
-    gameManager->addObject(std::move(lampObj));
+      // Add to GameManager
+      gameManager->addObject(std::move(lamp));
+    }
 
     // Cubes for animation testing using factory
     const auto createCube = getCreateCube(gameManager, modelSimpleShader);
