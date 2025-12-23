@@ -8,6 +8,7 @@
 #include "scene/behaviours/hidden_cell_behaviour.hpp"
 #include "scene/behaviours/trap_trigger_behaviour.hpp"
 #include "scene/behaviours/trap_behaviour.hpp"
+#include "scene/behaviours/wall_panel_behaviour.hpp"
 #include "scene/utils.hpp"
 #include "scene/game_object.hpp"
 #include "scene/game_manager.hpp"
@@ -255,64 +256,11 @@ bool GraphicsRenderer::loadModels() {
       gameManager->addObject(std::move(lamp));
     }
 
-    // Cubes for animation testing using factory
-    const auto createCube = getCreateCube(gameManager, modelSimpleShader);
-
-    auto createPuzzleCube = [&](glm::vec3 position, glm::vec3 color,
-                                float size = 0.1f,
-                                const std::string &name = "") {
-      auto cubeObj = createCube(position, color, size, name);
-
-      // Add animation behaviour: when selected, move up by 0.2f
-      cubeObj->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
-          gameManager->getPuzzleManager(),
-          position + glm::vec3(0.0f, 0.2f, 0.0f)));
-      return cubeObj;
-    };
-
     // Puzzle
-    {
-      createPuzzleCube(glm::vec3(-0.3f, 0.2f, 2.0f),
-                       glm::vec3(1.0f, 0.0f, 0.0f), 0.1f, "red_cube");
-      createPuzzleCube(glm::vec3(-0.1f, 0.2f, 2.0f),
-                       glm::vec3(0.0f, 1.0f, 0.0f), 0.1f, "green_cube");
-      createPuzzleCube(glm::vec3(0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
-                       0.1f, "blue_cube");
-
-      auto hiddenCube =
-          createPuzzleCube(glm::vec3(0.3f, 0.2f, 2.0f),
-                           glm::vec3(0.0f, 0.0f, 1.0f), 0.1f, "hidden_cube");
-
-      hiddenCube->addBehaviour(std::make_unique<HiddenCellBehaviour>(
-          gameManager->getPuzzleManager(), hiddenCube->position,
-          glm::vec3{90.0f, 0.0f, 0.0f}));
-    }
+    setupPuzzle();
 
     // Trap
-    {
-      auto bookcase = GameObject::createFromModelFile(
-          "resources/objects/bookcase/bookcase1.obj", modelShader, "bookCase");
-      bookcase->position = glm::vec3(0.92f, 0.15f, 2.0f);
-      bookcase->scale = glm::vec3(0.04f);
-      bookcase->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
-      bookcase->interactable = false;
-
-      // Add lighting behaviour
-      auto bookCaseBehaviour = std::make_unique<TrapBehaviour>(
-          gameManager->getTrapManager(),
-          bookcase->position + glm::vec3{0.0f, 0.0f, 0.6f}, bookcase->rotation);
-      bookcase->addBehaviour(std::move(bookCaseBehaviour));
-
-      // Add to GameManager
-      gameManager->addObject(std::move(bookcase));
-
-      auto triggerCube =
-          createCube(glm::vec3{0.1f, 0.13f, 1.8f}, glm::vec3{1.0f, 1.0f, 1.0f},
-                     0.05f, "trigger_cube");
-
-      triggerCube->addBehaviour(std::make_unique<TrapTriggerBehaviour>(
-          gameManager->getTrapManager()));
-    }
+    setupTrap();
 
     return true;
   } catch (const std::exception &e) {
@@ -680,5 +628,125 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
     glBindVertexArray(debugCubeLines.VAO);
     glDrawArrays(GL_LINES, 0, debugCubeLines.vertexCount);
     glBindVertexArray(0);
+  }
+}
+
+void GraphicsRenderer::setupPuzzle() {
+  // Cubes for animation testing using factory
+  const auto createCube = getCreateCube(gameManager, modelSimpleShader);
+
+  auto createPuzzleCube = [&](glm::vec3 position, glm::vec3 color,
+                              float size = 0.1f, const std::string &name = "") {
+    auto cubeObj = createCube(position, color, size, name);
+
+    // Add animation behaviour: when selected, move up by 0.2f
+    cubeObj->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
+        gameManager->getPuzzleManager(),
+        position + glm::vec3(0.0f, 0.2f, 0.0f)));
+    return cubeObj;
+  };
+
+  // Puzzle
+  createPuzzleCube(glm::vec3(-0.3f, 0.2f, 2.0f), glm::vec3(1.0f, 0.0f, 0.0f),
+                   0.1f, "red_cube");
+  createPuzzleCube(glm::vec3(-0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+                   0.1f, "green_cube");
+  createPuzzleCube(glm::vec3(0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
+                   0.1f, "blue_cube");
+
+  auto hiddenCube =
+      createPuzzleCube(glm::vec3(0.3f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
+                       0.1f, "hidden_cube");
+
+  hiddenCube->addBehaviour(std::make_unique<HiddenCellBehaviour>(
+      gameManager->getPuzzleManager(), hiddenCube->position,
+      glm::vec3{90.0f, 0.0f, 0.0f}));
+}
+
+void GraphicsRenderer::setupTrap() {
+  const auto createCube = getCreateCube(gameManager, modelSimpleShader);
+
+  { // Bookcase
+    auto bookcase = GameObject::createFromModelFile(
+        "resources/objects/bookcase/bookcase1.obj", modelShader, "book_case");
+    bookcase->position = glm::vec3(0.92f, 0.15f, 2.0f);
+    bookcase->scale = glm::vec3(0.04f);
+    bookcase->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
+    bookcase->interactable = false;
+
+    // Add lighting behaviour
+    auto bookCaseBehaviour = std::make_unique<TrapBehaviour>(
+        gameManager->getTrapManager(),
+        bookcase->position + glm::vec3{0.0f, 0.0f, 0.6f}, bookcase->rotation);
+    bookcase->addBehaviour(std::move(bookCaseBehaviour));
+
+    // Add to GameManager
+    gameManager->addObject(std::move(bookcase));
+  }
+
+  { // Trigger that moves the bookcase
+    auto triggerCube =
+        createCube(glm::vec3{0.1f, 0.13f, 1.8f}, glm::vec3{1.0f, 1.0f, 1.0f},
+                   0.05f, "trigger_cube");
+
+    triggerCube->addBehaviour(
+        std::make_unique<TrapTriggerBehaviour>(gameManager->getTrapManager()));
+  }
+
+  // Position on right wall (behind bookcase)
+  const glm::vec3 panelPosition = glm::vec3(0.98f, 0.15f, 2.0f);
+  const glm::vec3 cavityPosition = panelPosition + glm::vec3(0.01f, 0.2f, 0.0f);
+
+  // Cavity
+  GameObject *cavityObj = [this, &cavityPosition] {
+    Material cavityMaterial{};
+    cavityMaterial.type = MaterialType::UNIFORM;
+    cavityMaterial.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+    cavityMaterial.diffuse = glm::vec3(0.3f, 0.3f, 0.3f); // Gray
+    cavityMaterial.specular = glm::vec3(0.05f);
+    cavityMaterial.shininess = 16.0f;
+
+    auto cavity = ModelFactory::createCube(0.1f, cavityMaterial, "wall_cavity");
+    auto cavityObj = std::make_unique<GameObject>(std::move(cavity),
+                                                  modelShader, "wall_cavity");
+    cavityObj->position = cavityPosition;
+    cavityObj->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
+    cavityObj->scale = glm::vec3(0.0f); // Start invisible
+    cavityObj->interactable = false;
+
+    // Return pointer for behaviour
+    return gameManager->addObject(std::move(cavityObj));
+  }();
+
+  { // Wall panel (hidden compartment door) on opposite wall
+    Material wallPanelMaterial;
+    wallPanelMaterial.type = MaterialType::UNIFORM;
+    wallPanelMaterial.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+    wallPanelMaterial.diffuse = glm::vec3(0.6f, 0.3f, 0.1f); // Brown wood-like
+    wallPanelMaterial.specular = glm::vec3(0.1f);
+    wallPanelMaterial.shininess = 32.0f;
+
+    // Create cavity (hidden compartment inside wall)
+    auto wallPanel =
+        ModelFactory::createCube(0.1f, wallPanelMaterial, "wall_panel");
+    auto panelObj = std::make_unique<GameObject>(std::move(wallPanel),
+                                                 modelShader, "wall_panel");
+    panelObj->position = panelPosition;
+    panelObj->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
+    panelObj->scale = glm::vec3(0.2f, 0.2f, 0.001f); // Thin panel
+    panelObj->interactable = false;                  // Initially locked
+
+    // Add behaviour that unlocks when bookcase moves
+    auto panelBehaviour = std::make_unique<WallPanelBehaviour>(
+        gameManager->getTrapManager(),
+        cavityObj, // Cavity GameObject pointer
+        []() { std::println(std::clog, "Arrow triggerred!"); },
+        glm::vec3(0.3f, 0.3f, 0.1f), // Cavity size
+        0.8f                         // Reveal duration
+    );
+    panelObj->addBehaviour(std::move(panelBehaviour));
+
+    // Add to GameManager
+    gameManager->addObject(std::move(panelObj));
   }
 }

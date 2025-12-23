@@ -102,6 +102,9 @@ private:
   bool loadTextures();
   bool loadModels();
 
+  void setupTrap();
+  void setupPuzzle();
+
   void setupGeometryComponent(RoomGeometry &geometry, const float *vertices,
                               size_t vertexCount);
   void cleanupGeometryComponent(RoomGeometry &geometry);
