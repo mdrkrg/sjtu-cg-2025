@@ -9,6 +9,8 @@
 #include "scene/behaviours/trap_trigger_behaviour.hpp"
 #include "scene/behaviours/trap_behaviour.hpp"
 #include "scene/behaviours/wall_panel_behaviour.hpp"
+#include "scene/behaviours/floor_compartment_behaviour.hpp"
+#include "scene/behaviours/orb_glow_behaviour.hpp"
 #include "scene/utils.hpp"
 #include "scene/game_object.hpp"
 #include "scene/game_manager.hpp"
@@ -661,6 +663,98 @@ void GraphicsRenderer::setupPuzzle() {
   hiddenCube->addBehaviour(std::make_unique<HiddenCellBehaviour>(
       gameManager->getPuzzleManager(), hiddenCube->position,
       glm::vec3{90.0f, 0.0f, 0.0f}));
+
+  // Floor hidden compartment with spirit orb
+  setupFloorCompartment();
+}
+
+void GraphicsRenderer::setupFloorCompartment() {
+  // Position on floor near puzzle cubes
+  const glm::vec3 floorPosition = glm::vec3(0.0f, -0.2f, 2.0f); // Floor level
+  const glm::vec3 cavityPosition = floorPosition;
+  const glm::vec3 orbPosition = cavityPosition; // Orb inside cavity
+
+  // Cavity (hidden compartment below floor)
+  GameObject *cavityObj = [this, &cavityPosition] {
+    Material cavityMaterial{};
+    cavityMaterial.type = MaterialType::UNIFORM;
+    cavityMaterial.ambient = glm::vec3(0.05f, 0.05f, 0.05f);
+    cavityMaterial.diffuse = glm::vec3(0.2f, 0.2f, 0.2f); // Dark gray
+    cavityMaterial.specular = glm::vec3(0.02f);
+    cavityMaterial.shininess = 8.0f;
+
+    auto cavity =
+        ModelFactory::createCube(0.1f, cavityMaterial, "floor_cavity");
+    auto cavityObj = std::make_unique<GameObject>(std::move(cavity),
+                                                  modelShader, "floor_cavity");
+    cavityObj->position = cavityPosition;
+    cavityObj->scale = glm::vec3(0.0f); // Start invisible
+    cavityObj->interactable = false;
+
+    return gameManager->addObject(std::move(cavityObj));
+  }();
+
+  // Spirit orb (placeholder cube with emissive material)
+  GameObject *orbObj = [this, &orbPosition] {
+    Material orbMaterial{};
+    orbMaterial.type = MaterialType::UNIFORM;
+    orbMaterial.ambient = glm::vec3(0.1f, 0.4f, 0.5f);
+    orbMaterial.diffuse = glm::vec3(0.2f, 0.8f, 1.0f); // Cyan
+    orbMaterial.specular = glm::vec3(0.5f);
+    orbMaterial.shininess = 64.0f;
+    orbMaterial.setEmissive(true, glm::vec3(0.2f, 0.8f, 1.0f), 1.0f);
+
+    auto orb = ModelFactory::createCube(0.05f, orbMaterial, "spirit_orb");
+    auto orbObj =
+        std::make_unique<GameObject>(std::move(orb), modelShader, "spirit_orb");
+    orbObj->position = orbPosition;
+    orbObj->scale = glm::vec3(0.0f); // Start invisible
+    orbObj->interactable = false;
+    orbObj->stopAnimation();
+
+    // Add OrbGlowBehaviour for pulsating glow
+    orbObj->addBehaviour(std::make_unique<OrbGlowBehaviour>());
+
+    // After revealed, make it interactable
+    gameManager->getPuzzleManager()->registerPuzzleCallback(
+        orbObj.get(), [orbObj = orbObj.get()] { orbObj->interactable = true; });
+
+    return gameManager->addObject(std::move(orbObj));
+  }();
+
+  // Floor tile (hidden compartment door)
+  {
+    Material floorTileMaterial;
+    floorTileMaterial.type = MaterialType::UNIFORM;
+    floorTileMaterial.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+    floorTileMaterial.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+    floorTileMaterial.specular = glm::vec3(0.1f);
+    floorTileMaterial.shininess = 32.0f;
+
+    auto floorTile =
+        ModelFactory::createCube(0.1f, floorTileMaterial, "floor_tile");
+    auto tileObj = std::make_unique<GameObject>(std::move(floorTile),
+                                                modelShader, "floor_tile");
+    tileObj->position = floorPosition;
+    // Thin tile, flush with floor
+    tileObj->scale = glm::vec3(0.2f, 0.01f, 0.2f);
+    // Initially locked until puzzle solved
+    tileObj->interactable = false;
+
+    // Add behaviour that unlocks when puzzle is solved
+    auto tileBehaviour = std::make_unique<FloorCompartmentBehaviour>(
+        gameManager->getPuzzleManager(),
+        cavityObj, // Cavity GameObject pointer
+        orbObj,    // Orb GameObject pointer
+        []() { std::println(std::clog, "Orb glow triggered!"); },
+        glm::vec3(0.2f, 0.1f, 0.2f), // Cavity size
+        1.2f                         // Reveal duration
+    );
+    tileObj->addBehaviour(std::move(tileBehaviour));
+
+    // Add to GameManager
+    gameManager->addObject(std::move(tileObj));
+  }
 }
 
 void GraphicsRenderer::setupTrap() {

@@ -104,6 +104,7 @@ private:
 
   void setupTrap();
   void setupPuzzle();
+  void setupFloorCompartment();
 
   void setupGeometryComponent(RoomGeometry &geometry, const float *vertices,
                               size_t vertexCount);
