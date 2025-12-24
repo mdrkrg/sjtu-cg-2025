@@ -100,6 +100,68 @@ public:
                 name);
   }
 
+  /// Create a sphere mesh
+  static Mesh createSphere(float radius = 1.0f, int sectors = 36,
+                           int stacks = 18, const std::string &name = "") {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+
+    const float PI = glm::pi<float>();
+    float sectorStep = 2.0f * PI / sectors;
+    float stackStep = PI / stacks;
+
+    // Generate vertices
+    for (int i = 0; i <= stacks; ++i) {
+      float stackAngle = PI / 2.0f - i * stackStep;
+      float xy = radius * std::cosf(stackAngle);
+      float y = radius * std::sinf(stackAngle);
+
+      for (int j = 0; j <= sectors; ++j) {
+        float sectorAngle = j * sectorStep;
+
+        float x = xy * cosf(sectorAngle);
+        float z = xy * sinf(sectorAngle);
+
+        Vertex vertex;
+        vertex.Position = glm::vec3(x, y, z);
+        vertex.Normal = glm::normalize(vertex.Position);
+        vertex.TexCoords = glm::vec2((float)j / sectors, (float)i / stacks);
+        vertex.Tangent = glm::vec3(0.0f);
+        vertex.Bitangent = glm::vec3(0.0f);
+
+        // Initialize bone data
+        for (int k = 0; k < MAX_BONE_INFLUENCE; ++k) {
+          vertex.m_BoneIDs[k] = 0;
+          vertex.m_Weights[k] = 0.0f;
+        }
+
+        vertices.push_back(vertex);
+      }
+    }
+
+    // Generate indices
+    for (int i = 0; i < stacks; ++i) {
+      for (int j = 0; j < sectors; ++j) {
+        int first = i * (sectors + 1) + j;
+        int second = first + sectors + 1;
+
+        // First triangle
+        indices.push_back(first);
+        indices.push_back(second);
+        indices.push_back(first + 1);
+
+        // Second triangle
+        indices.push_back(first + 1);
+        indices.push_back(second);
+        indices.push_back(second + 1);
+      }
+    }
+
+    std::vector<Texture> textures;
+    return Mesh(std::move(vertices), std::move(indices), std::move(textures),
+                name);
+  }
+
   // render the mesh
   void Draw(const Shader &shader) const {
     // bind appropriate textures

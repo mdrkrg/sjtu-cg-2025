@@ -37,6 +37,11 @@ public:
                                        const Material &material = Material(),
                                        const std::string &name = "");
 
+  /// Create sphere with material
+  static ModelWithMaterials createSphere(float radius = 1.0f,
+                                        const Material &material = Material(),
+                                        const std::string &name = "");
+
 private:
   // Helper to load texture from disk (Moved from Model)
   static unsigned int TextureFromFile(const char *path,
@@ -94,6 +99,19 @@ inline ModelWithMaterials ModelFactory::createCube(float size,
                                                    const Material &material,
                                                    const std::string &name) {
   auto mesh = Mesh::createCube(size, name);
+  std::vector<Mesh> meshes;
+  meshes.push_back(std::move(mesh));
+
+  std::vector<Material> materials;
+  materials.push_back(material);
+
+  return createFromMeshes(std::move(meshes), std::move(materials));
+}
+
+inline ModelWithMaterials ModelFactory::createSphere(float radius,
+                                                     const Material &material,
+                                                     const std::string &name) {
+  auto mesh = Mesh::createSphere(radius, 36, 18, name);
   std::vector<Mesh> meshes;
   meshes.push_back(std::move(mesh));
 

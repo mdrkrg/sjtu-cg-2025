@@ -704,9 +704,9 @@ void GraphicsRenderer::setupFloorCompartment() {
     orbMaterial.shininess = 64.0f;
     orbMaterial.setEmissive(true, glm::vec3(0.2f, 0.8f, 1.0f), 1.0f);
 
-    auto orb = ModelFactory::createCube(0.05f, orbMaterial, "spirit_orb");
-    auto orbObj =
-        std::make_unique<GameObject>(std::move(orb), modelShader, "spirit_orb");
+    auto orb = ModelFactory::createSphere(0.025f, orbMaterial, "spirit_orb");
+    auto orbObj = std::make_unique<GameObject>(std::move(orb),
+                                               modelSimpleShader, "spirit_orb");
     orbObj->position = orbPosition;
     orbObj->scale = glm::vec3(0.0f); // Start invisible
     orbObj->interactable = false;
