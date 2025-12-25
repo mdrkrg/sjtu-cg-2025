@@ -36,7 +36,7 @@ GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
       debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
       selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
-      cloud(nullptr) {
+      orbAuraSystem(nullptr), cloud(nullptr) {
   // Initialize geometry components
   ceiling = {0, 0, 0};
   floor = {0, 0, 0};
@@ -48,6 +48,12 @@ GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
 }
 
 GraphicsRenderer::~GraphicsRenderer() { cleanup(); }
+
+void GraphicsRenderer::activateOrbAura(GameObject *const parent) {
+  orbAuraSystem = ParticleFactory::createOrbAuraSystem(
+      parent, glm::vec4(0.2f, 0.8f, 1.0f, 0.6f), 1.0f, 1000000Z);
+  orbAuraSystem->toggle(true);
+}
 
 bool GraphicsRenderer::initialize() {
   if (!setupShaders()) {
@@ -578,6 +584,9 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
     // Update particle systems (includes automatic emission)
     snowSystem->update(deltaTime);
     rainSystem->update(deltaTime);
+    if (orbAuraSystem) {
+      orbAuraSystem->update(deltaTime);
+    }
   }
 
   glEnable(GL_PROGRAM_POINT_SIZE);
@@ -586,6 +595,9 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
 
   snowSystem->render(*particleShader, view, projection);
   rainSystem->render(*particleShader, view, projection);
+  if (orbAuraSystem) {
+    orbAuraSystem->render(*particleShader, view, projection);
+  }
   glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
@@ -749,7 +761,10 @@ void GraphicsRenderer::setupFloorCompartment() {
         gameManager->getPuzzleManager(),
         cavityObj, // Cavity GameObject pointer
         orbObj,    // Orb GameObject pointer
-        []() { std::println(std::clog, "Orb glow triggered!"); },
+        [this, orbObj]() {
+          std::println(std::clog, "Orb glow triggered!");
+          activateOrbAura(orbObj);
+        },
         glm::vec3(0.2f, 0.1f, 0.2f), // Cavity size
         1.2f                         // Reveal duration
     );

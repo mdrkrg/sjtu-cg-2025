@@ -23,4 +23,10 @@ public:
                    const glm::vec3 &position = glm::vec3(0.0f, 10.0f, 0.0f),
                    size_t maxParticles = 1000Z, float emissionRate = 100.0f,
                    const GameObject *parent = nullptr);
+
+  /// Create an orb aura particle system (glowing particles orbiting a center)
+  static std::unique_ptr<ParticleSystem> createOrbAuraSystem(
+      GameObject *const parent,
+      const glm::vec4 &glowColor = glm::vec4(0.2f, 0.8f, 1.0f, 1.0f),
+      float intensity = 1.0f, int maxParticles = 1000Z);
 };

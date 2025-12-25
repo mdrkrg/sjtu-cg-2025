@@ -31,6 +31,7 @@ public:
   std::shared_ptr<Cloud> getCloud() { return cloud; }
   std::shared_ptr<ParticleSystem> getRainSystem() { return rainSystem; }
   std::shared_ptr<ParticleSystem> getSnowSystem() { return snowSystem; }
+  void activateOrbAura(GameObject *const parent);
 
   // Mouse interaction
   void handleMouseClick(const glm::vec3 &rayOrigin, const glm::vec3 &rayDir);
@@ -71,6 +72,7 @@ private:
 
   std::shared_ptr<ParticleSystem> rainSystem;
   std::shared_ptr<ParticleSystem> snowSystem;
+  std::shared_ptr<ParticleSystem> orbAuraSystem;
 
   // Cloud
   std::shared_ptr<Cloud> cloud;

@@ -1,3 +1,5 @@
+#include "graphics/particles/behaviours/orbital_particle_behaviour.hpp"
+#include "graphics/particles/emitters/sphere_surface_emitter.hpp"
 #include "graphics/particles/particle_factory.hpp"
 #include "graphics/particles/behaviours/collision_behaviour.hpp"
 #include "graphics/particles/behaviours/gravity_behaviour.hpp"
@@ -170,6 +172,39 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
   // Snow system in world space
   auto system = std::make_unique<ParticleSystem>(
       emitter, SimulationSpace::WORLD, nullptr);
+  system->setMaxParticles(maxParticles);
+  system->init();
+
+  return system;
+}
+
+std::unique_ptr<ParticleSystem>
+ParticleFactory::createOrbAuraSystem(GameObject *const parent,
+                                     const glm::vec4 &glowColor,
+                                     float intensity, int maxParticles) {
+
+  // Create orbital behaviour
+  const auto minRadius = 0.2f;
+  const auto maxRadius = 0.5f;
+  auto orbitalBehaviour = std::make_shared<OrbitalParticleBehaviour>(
+      parent->position, // center
+      glowColor,        // color
+      0.2f * intensity, // orbit speed scaled by intensity
+      minRadius,        // min radius
+      maxRadius         // max radius
+  );
+
+  // Create sphere surface emitter
+  float avgRadius = (minRadius + maxRadius) / 2.0f;
+  auto emitter = std::make_shared<SphereSurfaceEmitter>(orbitalBehaviour,
+                                                        parent, avgRadius);
+  emitter->setEmissionRate(3000.0f);
+  emitter->setBurst(0, 0);
+
+  // Create particle system
+  // Orb aura should use LOCAL space to follow parent movement
+  auto system = std::make_unique<ParticleSystem>(
+      emitter, SimulationSpace::LOCAL, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
 
