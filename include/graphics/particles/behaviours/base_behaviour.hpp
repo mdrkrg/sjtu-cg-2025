@@ -20,13 +20,13 @@ public:
 
   /// Default implementation for particle update
   virtual void update(Particle &particle, float deltaTime,
-                      const glm::mat4 &model) override {
+                      const glm::mat4 &model, SimulationSpace space) override {
     // Empty, subclasses can override
   }
 
   /// Default implementation for alive check
-  virtual bool isAlive(const Particle &particle,
-                       const glm::mat4 &model) const override {
+  virtual bool isAlive(const Particle &particle, const glm::mat4 &model,
+                       SimulationSpace space) const override {
     return particle.life > 0.0f;
   }
 

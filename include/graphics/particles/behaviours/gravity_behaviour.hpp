@@ -1,6 +1,8 @@
 #pragma once
 
 #include "graphics/particles/behaviours/base_behaviour.hpp"
+#include "graphics/particles/particle.hpp"
+#include "math/transform.hpp"
 #include <glm/glm.hpp>
 
 class GravityBehaviour : public BaseBehaviour {
@@ -11,9 +13,18 @@ public:
 
   /// Update particle with gravity effect
   inline virtual void update(Particle &particle, float deltaTime,
-                             const glm::mat4 &model) override {
-    // Apply gravity to velocity
-    particle.velocity += gravity * deltaTime;
+                             const glm::mat4 &model,
+                             SimulationSpace space) override {
+    // Apply gravity to velocity based on simulation space
+    if (space == SimulationSpace::WORLD) {
+      // WORLD space: apply gravity directly
+      particle.velocity += gravity * deltaTime;
+    } else {
+      // Space is not world, transform gravity to local space
+      const auto localGravity =
+          math::transformVecToLocal(gravity, glm::mat3{model});
+      particle.velocity += localGravity * deltaTime;
+    }
   }
 
   /// Set gravity vector

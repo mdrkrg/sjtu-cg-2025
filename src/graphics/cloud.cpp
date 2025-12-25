@@ -7,8 +7,8 @@
 #include "graphics/cloud.h"
 
 Cloud::Cloud()
-    : position(0.0f, 0.0f, 0.0f), scale(1.0f, 0.5f, 1.0f), VAO(0), VBO(0),
-      volumeTexture(0), initialized(false), animationTime(0.0f) {
+    : VAO(0), VBO(0), volumeTexture(0), initialized(false),
+      animationTime(0.0f) {
   for (int i = 0; i < SLICE_COUNT; i++) {
     sliceVAOs[i] = 0;
     sliceVBOs[i] = 0;
@@ -30,6 +30,21 @@ bool Cloud::initialize() {
                  e.what());
     return false;
   }
+
+  // FIXME: The problem of GameObject not decoupled enough
+
+  Material dummyMaterial;
+  dummyMaterial.type = MaterialType::UNIFORM;
+  dummyMaterial.ambient = glm::vec3{};
+  dummyMaterial.diffuse = glm::vec3{};
+  dummyMaterial.specular = glm::vec3{};
+  dummyMaterial.shininess = 1.0f;
+
+  auto cube = ModelFactory::createCube(0.1f, dummyMaterial, "cloud");
+  obj = std::make_unique<GameObject>(std::move(cube), cloudShader, "cloud");
+  obj->interactable = false;
+  obj->position = glm::vec3{0.0f, 0.0f, 0.0f};
+  obj->scale = glm::vec3{1.0f, 0.5f, 1.0f};
 
   // Setup geometry
   if (not setupGeometry()) {
@@ -60,6 +75,8 @@ void Cloud::render(const glm::mat4 &projection, const glm::mat4 &view,
     cloudShader->setMat4("projection", projection);
     cloudShader->setMat4("view", view);
 
+    const auto position = obj->position;
+    const auto scale = obj->scale;
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, position);
     model = glm::scale(model, scale);
@@ -93,9 +110,9 @@ void Cloud::render(const glm::mat4 &projection, const glm::mat4 &view,
   }
 }
 
-void Cloud::setPosition(const glm::vec3 &pos) { position = pos; }
+void Cloud::setPosition(const glm::vec3 &pos) { obj->position = pos; }
 
-void Cloud::setScale(const glm::vec3 &scl) { scale = scl; }
+void Cloud::setScale(const glm::vec3 &scl) { obj->scale = scl; }
 
 void Cloud::update(float deltaTime) {
   if (not initialized or not toggled) {
@@ -111,7 +128,7 @@ void Cloud::cleanup() {
   }
 
   cleanupGeometry();
-  cloudShader.reset();
+  // cloudShader.reset();
   initialized = false;
 }
 
@@ -252,11 +269,11 @@ void Cloud::processKeyboard(Movement direction, float deltaTime) {
 
   float velocity = movementSpeed * deltaTime;
   if (direction == FORWARD)
-    position += front * velocity;
+    obj->position += front * velocity;
   if (direction == BACKWARD)
-    position -= front * velocity;
+    obj->position -= front * velocity;
   if (direction == LEFT)
-    position -= right * velocity;
+    obj->position -= right * velocity;
   if (direction == RIGHT)
-    position += right * velocity;
+    obj->position += right * velocity;
 }

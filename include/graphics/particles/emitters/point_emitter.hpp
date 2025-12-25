@@ -7,8 +7,9 @@
 class PointEmitter : public BaseEmitter {
 public:
   PointEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
+               GameObject *const parent = nullptr,
                const glm::vec3 &position = glm::vec3(0.0f))
-      : BaseEmitter(behaviour) {
+      : BaseEmitter(behaviour, parent) {
     setPosition(position);
   }
   virtual ~PointEmitter() = default;

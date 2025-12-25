@@ -69,8 +69,6 @@ private:
 
   void processCameraInput(float deltaTime);
   void processCloudInput(float deltaTime);
-  void processRainInput(float deltaTime);
-  void processSnowInput(float deltaTime);
 
   /// Get mouse ray at a certain screen positions from the camera position
   void getMouseRay(float x, float y, glm::vec3 &rayOrigin,

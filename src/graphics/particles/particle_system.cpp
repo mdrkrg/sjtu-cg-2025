@@ -1,8 +1,17 @@
 #include "graphics/particles/particle_system.hpp"
+#include "graphics/particles/particle.hpp"
 #include <algorithm>
 
-ParticleSystem::ParticleSystem(std::shared_ptr<ParticleEmitter> emitter)
-    : emitter(emitter) {}
+ParticleSystem::ParticleSystem(std::shared_ptr<ParticleEmitter> emitter,
+                               SimulationSpace space,
+                               GameObject *customTransform)
+    : emitter(emitter), simulationSpace(space),
+      customSimulationTransform(customTransform) {
+  // Set emitter's simulation space
+  if (emitter) {
+    emitter->simulationSpace = space;
+  }
+}
 
 ParticleSystem::~ParticleSystem() { cleanup(); }
 
@@ -11,7 +20,8 @@ void ParticleSystem::init() {
   loadTexture();
 }
 
-void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
+void ParticleSystem::update(float deltaTime) {
+  const auto &model = getModelMatrix();
   // Update existing particles
   auto it = activeParticles.begin();
   while (it != activeParticles.end()) {
@@ -23,7 +33,7 @@ void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
     // Check if particle should be removed
     const bool shouldRemove = [&, this] {
       if (emitter && emitter->getBehaviour()) {
-        return not emitter->getBehaviour()->isAlive(p, model);
+        return not emitter->getBehaviour()->isAlive(p, model, simulationSpace);
       } else {
         return p.life <= 0.0f;
       }
@@ -36,7 +46,7 @@ void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
     } else {
       // Update particle behaviour
       if (emitter && emitter->getBehaviour()) {
-        emitter->getBehaviour()->update(p, deltaTime, model);
+        emitter->getBehaviour()->update(p, deltaTime, model, simulationSpace);
       }
 
       // Update position
@@ -58,9 +68,9 @@ void ParticleSystem::update(float deltaTime, const glm::mat4 &model) {
   updateBuffers();
 }
 
-void ParticleSystem::render(Shader &shader, const glm::mat4 &model,
-                            const glm::mat4 &view,
+void ParticleSystem::render(Shader &shader, const glm::mat4 &view,
                             const glm::mat4 &projection) {
+  const auto &model = getModelMatrix();
   if (activeParticles.empty()) {
     return;
   }
@@ -207,6 +217,26 @@ void ParticleSystem::updateBuffers() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ParticleSystem::processKeyboard(Movement movement, float deltaTime) {
-  emitter->handleMovement(movement, deltaTime);
+glm::mat4 ParticleSystem::getModelMatrix() const {
+  switch (simulationSpace) {
+  case SimulationSpace::WORLD:
+    // Identity
+    return glm::mat4{1.0f};
+  case SimulationSpace::LOCAL:
+    // For LOCAL space, use emitter's parent
+    if (emitter && emitter->parent) {
+      return emitter->parent->getModelMatrix();
+    }
+    // Fallback to identity if no parent
+    return glm::mat4{1.0f};
+  case SimulationSpace::CUSTOM:
+    // For CUSTOM space, use the custom transform
+    if (customSimulationTransform) {
+      return customSimulationTransform->getModelMatrix();
+    }
+    // Fallback to identity if no custom transform
+    return glm::mat4(1.0f);
+  default:
+    return glm::mat4(1.0f);
+  }
 }

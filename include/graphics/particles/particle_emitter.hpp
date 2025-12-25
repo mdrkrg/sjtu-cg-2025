@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/movement.hpp"
+#include "scene/game_object.hpp"
 #include "particle_behaviour.hpp"
 #include "particle.hpp"
 #include <glm/glm.hpp>
@@ -10,8 +10,10 @@
 class ParticleEmitter {
 public:
   ParticleEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
-                  float emissionRate = 0.0f)
-      : behaviour(behaviour), emissionRate(emissionRate) {}
+                  float emissionRate = 0.0f, const GameObject *parent = nullptr,
+                  SimulationSpace space = SimulationSpace::WORLD)
+      : behaviour(behaviour), emissionRate(emissionRate), parent(parent),
+        simulationSpace(space) {}
   virtual ~ParticleEmitter() = default;
 
   /// Emit a single particle
@@ -59,9 +61,6 @@ public:
     timeSinceLastBurst = 0.0f;
   }
 
-  /// Process emitter movement. Subclasses can override.
-  virtual void handleMovement(Movement movement, float deltaTime) {}
-
 protected:
   std::shared_ptr<ParticleBehaviour> behaviour;
   float emissionRate = 10.0f; // particles per second
@@ -74,6 +73,25 @@ protected:
 
   static std::random_device rd;
   static std::mt19937 gen;
+
+  friend class ParticleSystem;
+
+  const GameObject *parent = nullptr;
+  SimulationSpace simulationSpace = SimulationSpace::WORLD;
+
+  /// Calculate particle position by simulation space
+  glm::vec3
+  calculatePositionBySimulationSpace(const glm::vec3 &localPos) const {
+    if (simulationSpace == SimulationSpace::WORLD and parent) {
+      // Transform world space using parent matrix
+      const auto parentMatrix = parent->getModelMatrix();
+      return parentMatrix * glm::vec4(localPos, 1.0f);
+    } else {
+      // LOCAL or CUSTOM space, or no parent
+      // Use local coordinates
+      return localPos;
+    }
+  }
 
 private:
   size_t handleEmission(float deltaTime) {

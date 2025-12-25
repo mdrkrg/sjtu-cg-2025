@@ -2,7 +2,7 @@
 
 #include "particle_emitter.hpp"
 #include "particle.hpp"
-#include "core/movement.hpp"
+#include "scene/game_object.hpp"
 #include <graphics/shader.h>
 #include <glm/glm.hpp>
 #include <memory>
@@ -11,14 +11,16 @@
 
 class ParticleSystem {
 public:
-  ParticleSystem(std::shared_ptr<ParticleEmitter> emitter);
+  ParticleSystem(std::shared_ptr<ParticleEmitter> emitter,
+                 SimulationSpace space = SimulationSpace::WORLD,
+                 GameObject *customTransform = nullptr);
   ~ParticleSystem();
 
   /// Update all particles
-  void update(float deltaTime, const glm::mat4 &model);
+  void update(float deltaTime);
 
   /// Render all particles
-  void render(Shader &shader, const glm::mat4 &model, const glm::mat4 &view,
+  void render(Shader &shader, const glm::mat4 &view,
               const glm::mat4 &projection);
 
   /// Emit particles dynamically
@@ -39,8 +41,6 @@ public:
   /// Initialize OpenGL resources
   void init();
 
-  void processKeyboard(Movement direction, float deltaTime);
-
   inline void toggle(bool toggled) { this->toggled = toggled; }
 
 private:
@@ -51,8 +51,11 @@ private:
 
   bool toggled = false;
 
-  // OpenGL resources
+  // Simulation space configuration
+  SimulationSpace simulationSpace;
+  GameObject *customSimulationTransform;
 
+  // OpenGL resources
   unsigned int VAO = 0, VBO = 0;
   unsigned int particleTexture = 0;
 
@@ -66,4 +69,7 @@ private:
 
   /// Update buffer data
   void updateBuffers();
+
+  /// Get model matrix based on simulation space
+  glm::mat4 getModelMatrix() const;
 };

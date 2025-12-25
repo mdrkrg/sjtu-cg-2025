@@ -22,7 +22,7 @@
 const glm::mat4 GraphicsRenderer::weatherModel =
     glm::scale(glm::mat4(1.0), glm::vec3(0.04));
 
-const glm::vec3 GraphicsRenderer::weatherPosition = {0.0f, 15.0f, 50.0f};
+const glm::vec3 GraphicsRenderer::weatherPosition = {0.0f, 0.0f, 0.0f};
 
 // Scale terrain to fit on the table
 const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
@@ -36,10 +36,6 @@ GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
       debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
       selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
-      rainSystem{ParticleFactory::createRainSystem(terrainMesh, terrainModel,
-                                                   weatherPosition, 100000)},
-      snowSystem{ParticleFactory::createSnowSystem(terrainMesh, terrainModel,
-                                                   weatherPosition, 1000000)},
       cloud(nullptr) {
   // Initialize geometry components
   ceiling = {0, 0, 0};
@@ -113,6 +109,13 @@ bool GraphicsRenderer::initialize() {
   // Position the cloud above the table
   cloud->setPosition(glm::vec3(0.0f, 0.65f, 2.0f));
   cloud->setScale(glm::vec3(2.0f, 0.5f, 2.0f));
+
+  rainSystem = ParticleFactory::createRainSystem(terrainMesh, terrainModel,
+                                                 weatherPosition, 100000, 500.f,
+                                                 cloud->getGameObject());
+  snowSystem = ParticleFactory::createSnowSystem(terrainMesh, terrainModel,
+                                                 weatherPosition, 1000000,
+                                                 500.f, cloud->getGameObject());
 
   return true;
 }
@@ -573,16 +576,16 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
     lastTime = currentTime;
 
     // Update particle systems (includes automatic emission)
-    snowSystem->update(deltaTime, weatherModel);
-    rainSystem->update(deltaTime, weatherModel);
+    snowSystem->update(deltaTime);
+    rainSystem->update(deltaTime);
   }
 
   glEnable(GL_PROGRAM_POINT_SIZE);
   particleShader->use();
   particleShader->setVec3("viewPos", cameraPosition);
 
-  snowSystem->render(*particleShader, weatherModel, view, projection);
-  rainSystem->render(*particleShader, weatherModel, view, projection);
+  snowSystem->render(*particleShader, view, projection);
+  rainSystem->render(*particleShader, view, projection);
   glDisable(GL_PROGRAM_POINT_SIZE);
 }
 

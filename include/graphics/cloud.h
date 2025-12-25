@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "core/movement.hpp"
+#include "scene/game_object.hpp"
 #include "shader.h"
 
 const float CLOUD_SPEED = 1.0f;
@@ -30,17 +31,16 @@ public:
   void processKeyboard(Movement direction, float deltaTime);
   void toggle(bool toggled) { this->toggled = toggled; }
 
-private:
-  glm::vec3 position;
-  glm::vec3 scale;
+  const GameObject *getGameObject() const { return obj.get(); }
 
+private:
   float movementSpeed = CLOUD_SPEED;
 
   // Graphics
 
   unsigned int VAO, VBO;
   unsigned int volumeTexture;
-  std::unique_ptr<Shader> cloudShader;
+  std::shared_ptr<Shader> cloudShader;
 
   /// Layered billboard slice count
   static const int SLICE_COUNT = 16;
@@ -52,6 +52,8 @@ private:
   bool initialized;
   bool toggled = false;
   float animationTime;
+
+  std::unique_ptr<GameObject> obj;
 
   bool setupGeometry();
   bool generateVolumeTexture();

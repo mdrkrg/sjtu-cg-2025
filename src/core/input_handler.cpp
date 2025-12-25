@@ -110,14 +110,6 @@ void InputHandler::update(float deltaTime) {
   }
 
   processCloudInput(deltaTime);
-  // TODO: Make this consistant with the cloud.
-  // Logically, the control should be on the cloud side.
-  if (snowToggled) {
-    processSnowInput(deltaTime);
-  }
-  if (rainToggled) {
-    processRainInput(deltaTime);
-  }
 }
 
 void InputHandler::processCameraInput(float deltaTime) {
@@ -150,42 +142,6 @@ void InputHandler::processCloudInput(float deltaTime) {
   }
   if (pressed(GLFW_KEY_D)) {
     cloud->processKeyboard(RIGHT, deltaTime);
-  }
-}
-
-void InputHandler::processRainInput(float deltaTime) {
-  if (not rainSystem) {
-    return;
-  }
-  if (pressed(GLFW_KEY_W)) {
-    rainSystem->processKeyboard(FORWARD, deltaTime);
-  }
-  if (pressed(GLFW_KEY_X)) {
-    rainSystem->processKeyboard(BACKWARD, deltaTime);
-  }
-  if (pressed(GLFW_KEY_A)) {
-    rainSystem->processKeyboard(LEFT, deltaTime);
-  }
-  if (pressed(GLFW_KEY_D)) {
-    rainSystem->processKeyboard(RIGHT, deltaTime);
-  }
-}
-
-void InputHandler::processSnowInput(float deltaTime) {
-  if (not snowSystem) {
-    return;
-  }
-  if (pressed(GLFW_KEY_W)) {
-    snowSystem->processKeyboard(FORWARD, deltaTime);
-  }
-  if (pressed(GLFW_KEY_X)) {
-    snowSystem->processKeyboard(BACKWARD, deltaTime);
-  }
-  if (pressed(GLFW_KEY_A)) {
-    snowSystem->processKeyboard(LEFT, deltaTime);
-  }
-  if (pressed(GLFW_KEY_D)) {
-    snowSystem->processKeyboard(RIGHT, deltaTime);
   }
 }
 

@@ -16,8 +16,9 @@ public:
 
   /// Update particle with collision detection
   inline virtual void update(Particle &particle, float deltaTime,
-                             const glm::mat4 &model) override {
-    BaseBehaviour::update(particle, deltaTime, model);
+                             const glm::mat4 &model,
+                             SimulationSpace space) override {
+    BaseBehaviour::update(particle, deltaTime, model, space);
 
     // Check for collision with terrain
     if (const auto heightResult = getCollisionHeight(particle, model);
@@ -26,9 +27,9 @@ public:
     }
   }
 
-  inline virtual bool isAlive(const Particle &particle,
-                              const glm::mat4 &model) const override {
-    if (!BaseBehaviour::isAlive(particle, model)) {
+  inline virtual bool isAlive(const Particle &particle, const glm::mat4 &model,
+                              SimulationSpace space) const override {
+    if (!BaseBehaviour::isAlive(particle, model, space)) {
       return false;
     }
 

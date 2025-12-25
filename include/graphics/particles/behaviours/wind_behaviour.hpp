@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/particles/behaviours/base_behaviour.hpp"
+#include "math/transform.hpp"
 #include <glm/glm.hpp>
 
 class WindBehaviour : public BaseBehaviour {
@@ -12,11 +13,20 @@ public:
 
   /// Update particle with wind effect
   inline virtual void update(Particle &particle, float deltaTime,
-                             const glm::mat4 &model) override {
-    // Constant wind force
-    particle.velocity += windForce * deltaTime;
+                             const glm::mat4 &model,
+                             SimulationSpace space) override {
+    // Apply wind force based on simulation space
+    if (space == SimulationSpace::WORLD) {
+      // WORLD space: apply wind force directly
+      particle.velocity += windForce * deltaTime;
+    } else {
+      // Space is not world, transform wind force to local space
+      const auto localWindForce =
+          math::transformVecToLocal(windForce, glm::mat3{model});
+      particle.velocity += localWindForce * deltaTime;
+    }
 
-    // Turbulence
+    // Turbulence (always in local space)
     if (turbulence > 0.0f) {
       float turbulenceX = (uniformDist(gen) - 0.5f) * 2.0f * turbulence;
       float turbulenceZ = (uniformDist(gen) - 0.5f) * 2.0f * turbulence;

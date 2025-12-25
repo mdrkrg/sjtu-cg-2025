@@ -7,7 +7,8 @@
 
 std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(
     std::shared_ptr<TerrainMesh> terrain, const glm::mat4 &terrainModel,
-    const glm::vec3 &position, size_t maxParticles, float emissionRate) {
+    const glm::vec3 &position, size_t maxParticles, float emissionRate,
+    const GameObject *parent) {
 
   const auto gravityBehaviour =
       std::make_shared<GravityBehaviour>(glm::vec3(0.0f, -9.81f, 0.0f));
@@ -28,30 +29,31 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(
 
     virtual void initialize(Particle &particle) override {
       particle.position = glm::vec3(0.0f);
-      particle.velocity = glm::vec3((uniformDist(gen) - 0.5f) * 2.0f,
-                                    -uniformDist(gen) * 5.0f - 5.0f,
-                                    (uniformDist(gen) - 0.5f) * 2.0f);
+      particle.velocity = glm::vec3((uniformDist(gen) - 0.5f) * 0.05f,
+                                    -uniformDist(gen) * 0.1f - 0.5f,
+                                    (uniformDist(gen) - 0.5f) * 0.05f);
       particle.color = glm::vec4(0.8f, 0.8f, 1.0f, 0.8f);
       particle.life = uniformDist(gen) * 2.0f + 1.0f;
       particle.size = 0.05f + uniformDist(gen) * 0.05f;
     }
 
     virtual void update(Particle &particle, float deltaTime,
-                        const glm::mat4 &model) override {
+                        const glm::mat4 &model,
+                        SimulationSpace space) override {
       if (gravityBehaviour) {
-        gravityBehaviour->update(particle, deltaTime, model);
+        gravityBehaviour->update(particle, deltaTime, model, space);
       }
       if (dissolveBehaviour) {
-        dissolveBehaviour->update(particle, deltaTime, model);
+        dissolveBehaviour->update(particle, deltaTime, model, space);
       }
     }
 
-    virtual bool isAlive(const Particle &particle,
-                         const glm::mat4 &model) const override {
+    virtual bool isAlive(const Particle &particle, const glm::mat4 &model,
+                         SimulationSpace space) const override {
       if (dissolveBehaviour) {
-        return dissolveBehaviour->isAlive(particle, model);
+        return dissolveBehaviour->isAlive(particle, model, space);
       }
-      return BaseBehaviour::isAlive(particle, model) &&
+      return BaseBehaviour::isAlive(particle, model, space) &&
              particle.position.y > -10.0f;
     }
 
@@ -64,13 +66,15 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(
       std::make_shared<RainBehaviour>(gravityBehaviour, dissolveBehaviour);
 
   // Create emitter
-  auto emitter = std::make_shared<AreaEmitter>(rainBehaviour, position,
-                                               glm::vec3(10.0f, 0.0f, 10.0f));
+  auto emitter = std::make_shared<AreaEmitter>(
+      rainBehaviour, position, glm::vec3(0.1f, 0.0f, 0.1f), parent);
   emitter->setEmissionRate(emissionRate);
   emitter->setBurst(100, 5.0f);
 
   // Create particle system
-  auto system = std::make_unique<ParticleSystem>(emitter);
+  // Rain system in world space
+  auto system = std::make_unique<ParticleSystem>(
+      emitter, SimulationSpace::WORLD, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
 
@@ -79,12 +83,13 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(
 
 std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
     std::shared_ptr<TerrainMesh> terrain, const glm::mat4 &terrainModel,
-    const glm::vec3 &position, size_t maxParticles, float emissionRate) {
+    const glm::vec3 &position, size_t maxParticles, float emissionRate,
+    const GameObject *parent) {
 
   const auto gravityBehaviour =
-      std::make_shared<GravityBehaviour>(glm::vec3(0.0f, -1.5f, 0.0f));
+      std::make_shared<GravityBehaviour>(glm::vec3(0.0f, -0.05f, 0.0f));
   const auto windBehaviour =
-      std::make_shared<WindBehaviour>(glm::vec3{0.0, 0.0, 0.0}, 2.0f);
+      std::make_shared<WindBehaviour>(glm::vec3{0.0, 0.0, 0.0}, 0.15f);
   const auto coverBehaviour = [&terrain, &terrainModel] {
     if (terrain) {
       return std::make_shared<CoverBehaviour>(terrain, terrainModel);
@@ -105,26 +110,27 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
 
     virtual void initialize(Particle &particle) override {
       particle.position = glm::vec3(0.0f);
-      particle.velocity = glm::vec3((uniformDist(gen) - 0.5f) * 0.5f,
-                                    -uniformDist(gen) * 0.5f - 0.5f,
-                                    (uniformDist(gen) - 0.5f) * 0.5f);
+      particle.velocity = glm::vec3((uniformDist(gen) - 0.5f) * 0.02f,
+                                    -uniformDist(gen) * 0.1f - 0.05f,
+                                    (uniformDist(gen) - 0.5f) * 0.02f);
       particle.color = glm::vec4(1.0f, 1.0f, 1.0f, 0.8f);
       particle.life = uniformDist(gen) * 20.0f + 10.0f;
       particle.size = 1.0f + uniformDist(gen) * 1.0f;
     }
 
     virtual void update(Particle &particle, float deltaTime,
-                        const glm::mat4 &model) override {
+                        const glm::mat4 &model,
+                        SimulationSpace space) override {
       if (gravityBehaviour) {
-        gravityBehaviour->update(particle, deltaTime, model);
+        gravityBehaviour->update(particle, deltaTime, model, space);
       }
 
       if (coverBehaviour) {
-        coverBehaviour->update(particle, deltaTime, model);
+        coverBehaviour->update(particle, deltaTime, model, space);
       }
 
       if (windBehaviour) {
-        windBehaviour->update(particle, deltaTime, model);
+        windBehaviour->update(particle, deltaTime, model, space);
       }
 
       // Add waving motion
@@ -136,12 +142,12 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
           std::cos(particle.life * waveFrequency) * waveAmplitude * deltaTime;
     }
 
-    virtual bool isAlive(const Particle &particle,
-                         const glm::mat4 &model) const override {
+    virtual bool isAlive(const Particle &particle, const glm::mat4 &model,
+                         SimulationSpace space) const override {
       if (coverBehaviour) {
-        return coverBehaviour->isAlive(particle, model);
+        return coverBehaviour->isAlive(particle, model, space);
       }
-      return BaseBehaviour::isAlive(particle, model) &&
+      return BaseBehaviour::isAlive(particle, model, space) &&
              particle.position.y > -10.0f;
     }
 
@@ -155,13 +161,15 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
       gravityBehaviour, coverBehaviour, windBehaviour);
 
   // Create emitter
-  auto emitter = std::make_shared<AreaEmitter>(snowBehaviour, position,
-                                               glm::vec3(10.0f, 0.0f, 10.0f));
+  auto emitter = std::make_shared<AreaEmitter>(
+      snowBehaviour, position, glm::vec3(0.1f, 0.0f, 0.1f), parent);
   emitter->setEmissionRate(emissionRate);
   emitter->setBurst(50, 8.0f);
 
   // Create particle system
-  auto system = std::make_unique<ParticleSystem>(emitter);
+  // Snow system in world space
+  auto system = std::make_unique<ParticleSystem>(
+      emitter, SimulationSpace::WORLD, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
 
