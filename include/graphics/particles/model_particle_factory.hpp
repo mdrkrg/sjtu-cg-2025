@@ -9,6 +9,7 @@ namespace graphics::particles {
 class ModelParticleFactory {
 public:
   /// Create a simple test cube particle system
+  /// @param shader Shader for the particle system
   /// @param position Emission position
   /// @param maxParticles Maximum number of particles
   /// @param emissionRate Particles per second
@@ -16,6 +17,7 @@ public:
   /// @param cubeColor Color of cubes
   /// @return ModelParticleSystem with falling cubes
   static std::shared_ptr<ModelParticleSystem> createCubeTestSystem(
+      std::shared_ptr<Shader> shader,
       const glm::vec3 &position = glm::vec3{0.0f, 0.0f, 0.0f},
       size_t maxParticles = 50, float emissionRate = 2.0f,
       float cubeSize = 0.1f,

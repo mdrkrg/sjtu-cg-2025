@@ -11,10 +11,11 @@
 
 template <typename ParticleType = Particle> class ParticleSystem {
 public:
-  ParticleSystem(std::shared_ptr<ParticleEmitter> emitter,
+  ParticleSystem(std::shared_ptr<Shader> shader,
+                 std::shared_ptr<ParticleEmitter> emitter,
                  SimulationSpace space = SimulationSpace::WORLD,
                  GameObject *customTransform = nullptr)
-      : emitter(emitter), simulationSpace(space),
+      : shader{shader}, emitter(emitter), simulationSpace(space),
         customSimulationTransform(customTransform) {
     // Set emitter's simulation space
     if (emitter) {
@@ -75,25 +76,24 @@ public:
   }
 
   /// Render all particles
-  virtual void render(Shader &shader, const glm::mat4 &view,
-                      const glm::mat4 &projection) {
+  virtual void render(const glm::mat4 &view, const glm::mat4 &projection) {
     const auto &model = getModelMatrix();
     if (activeParticles.empty()) {
       return;
     }
 
-    shader.use();
+    shader->use();
 
     { // Uniforms
-      shader.setMat4("view", view);
-      shader.setMat4("projection", projection);
-      shader.setMat4("model", model);
+      shader->setMat4("view", view);
+      shader->setMat4("projection", projection);
+      shader->setMat4("model", model);
     }
 
     { // Bind texture
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, particleTexture);
-      shader.setInt("particleTexture", 0);
+      shader->setInt("particleTexture", 0);
     }
 
     // Update buffer data before rendering
@@ -166,13 +166,17 @@ public:
     loadTexture();
   }
 
-  inline void toggle(bool toggled) { this->toggled = toggled; }
+  void toggle(bool toggled) { this->toggled = toggled; }
+
+  void setShader(std::shared_ptr<Shader> shader) { this->shader = shader; }
 
 protected:
   std::shared_ptr<ParticleEmitter> emitter;
   std::vector<ParticleType> activeParticles;
   std::queue<ParticleType> particlePool; // For reuse
   size_t maxParticles = 1000;
+
+  std::shared_ptr<Shader> shader;
 
   bool toggled = false;
 

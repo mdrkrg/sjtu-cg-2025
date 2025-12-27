@@ -5,10 +5,11 @@
 namespace graphics::particles {
 
 ModelParticleSystem::ModelParticleSystem(
-    std::shared_ptr<ParticleEmitter> emitter, SimulationSpace space,
-    GameObject *customTransform, std::shared_ptr<Model> particleModel,
+    std::shared_ptr<Shader> shader, std::shared_ptr<ParticleEmitter> emitter,
+    SimulationSpace space, GameObject *customTransform,
+    std::shared_ptr<Model> particleModel,
     std::shared_ptr<Material> particleMaterial)
-    : ParticleSystem{emitter, space, customTransform},
+    : ParticleSystem{shader, emitter, space, customTransform},
       particleModel{particleModel}, particleMaterial{particleMaterial} {
 
   // Compute local AABB from model
@@ -38,38 +39,38 @@ void ModelParticleSystem::update(float deltaTime) {
   updateInstanceData();
 }
 
-void ModelParticleSystem::render(Shader &shader, const glm::mat4 &view,
+void ModelParticleSystem::render(const glm::mat4 &view,
                                  const glm::mat4 &projection) {
   // Override to use instanced rendering instead of GL_POINTS
   // Instanced rendering implementation
   if (not particleModel or not isVisible()) {
     return;
   }
-  shader.use();
+  shader->use();
 
   // Set transformation uniforms
-  shader.setMat4("view", view);
-  shader.setMat4("projection", projection);
+  shader->setMat4("view", view);
+  shader->setMat4("projection", projection);
 
   // Set material properties if material is provided
   if (particleMaterial) {
-    shader.setVec3("material.ambient", particleMaterial->ambient);
-    shader.setVec3("material.diffuse", particleMaterial->diffuse);
-    shader.setVec3("material.specular", particleMaterial->specular);
-    shader.setFloat("material.shininess", particleMaterial->shininess);
+    shader->setVec3("material.ambient", particleMaterial->ambient);
+    shader->setVec3("material.diffuse", particleMaterial->diffuse);
+    shader->setVec3("material.specular", particleMaterial->specular);
+    shader->setFloat("material.shininess", particleMaterial->shininess);
 
     if (particleMaterial->isEmissive()) {
-      shader.setBool("material.emissive", true);
-      shader.setVec3("material.emission", particleMaterial->emissionColor);
-      shader.setFloat("material.emissionStrength",
-                      particleMaterial->emissionStrength);
+      shader->setBool("material.emissive", true);
+      shader->setVec3("material.emission", particleMaterial->emissionColor);
+      shader->setFloat("material.emissionStrength",
+                       particleMaterial->emissionStrength);
     } else {
-      shader.setBool("material.emissive", false);
+      shader->setBool("material.emissive", false);
     }
   }
 
   // Render instanced
-  particleModel->DrawInstanced(shader, instanceMatrices.size());
+  particleModel->DrawInstanced(*shader, instanceMatrices.size());
 }
 
 void ModelParticleSystem::emitParticle() {

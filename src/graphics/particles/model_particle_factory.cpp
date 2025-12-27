@@ -7,8 +7,9 @@
 namespace graphics::particles {
 
 std::shared_ptr<ModelParticleSystem> ModelParticleFactory::createCubeTestSystem(
-    const glm::vec3 &position, size_t maxParticles, float emissionRate,
-    float cubeSize, const glm::vec3 &cubeColor) {
+    std::shared_ptr<Shader> shader, const glm::vec3 &position,
+    size_t maxParticles, float emissionRate, float cubeSize,
+    const glm::vec3 &cubeColor) {
   // Create cube model
   Material cubeMaterial;
   cubeMaterial.ambient = cubeColor;
@@ -42,7 +43,7 @@ std::shared_ptr<ModelParticleSystem> ModelParticleFactory::createCubeTestSystem(
 
   // Create model particle system
   auto cubeParticleSystem = std::make_shared<ModelParticleSystem>(
-      cubeEmitter, SimulationSpace::WORLD, nullptr, cubeModel,
+      shader, cubeEmitter, SimulationSpace::WORLD, nullptr, cubeModel,
       particleMaterial);
   cubeParticleSystem->setMaxParticles(maxParticles);
   cubeParticleSystem->init();

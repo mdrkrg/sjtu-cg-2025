@@ -9,8 +9,8 @@
 
 std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createRainSystem(
     std::shared_ptr<TerrainMesh> terrain, const glm::mat4 &terrainModel,
-    const glm::vec3 &position, size_t maxParticles, float emissionRate,
-    const GameObject *parent) {
+    std::shared_ptr<Shader> shader, const glm::vec3 &position,
+    size_t maxParticles, float emissionRate, const GameObject *parent) {
 
   const auto gravityBehaviour =
       std::make_shared<GravityBehaviour>(glm::vec3(0.0f, -9.81f, 0.0f));
@@ -76,7 +76,7 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createRainSystem(
   // Create particle system
   // Rain system in world space
   auto system = std::make_unique<ParticleSystem<Particle>>(
-      emitter, SimulationSpace::WORLD, nullptr);
+      shader, emitter, SimulationSpace::WORLD, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
 
@@ -85,8 +85,8 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createRainSystem(
 
 std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createSnowSystem(
     std::shared_ptr<TerrainMesh> terrain, const glm::mat4 &terrainModel,
-    const glm::vec3 &position, size_t maxParticles, float emissionRate,
-    const GameObject *parent) {
+    std::shared_ptr<Shader> shader, const glm::vec3 &position,
+    size_t maxParticles, float emissionRate, const GameObject *parent) {
 
   const auto gravityBehaviour =
       std::make_shared<GravityBehaviour>(glm::vec3(0.0f, -0.05f, 0.0f));
@@ -171,17 +171,16 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createSnowSystem(
   // Create particle system
   // Snow system in world space
   auto system = std::make_unique<ParticleSystem<Particle>>(
-      emitter, SimulationSpace::WORLD, nullptr);
+      shader, emitter, SimulationSpace::WORLD, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
 
   return system;
 }
 
-std::unique_ptr<ParticleSystem<Particle>>
-ParticleFactory::createOrbAuraSystem(GameObject *const parent,
-                                     const glm::vec4 &glowColor,
-                                     float intensity, int maxParticles) {
+std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createOrbAuraSystem(
+    GameObject *const parent, std::shared_ptr<Shader> shader,
+    const glm::vec4 &glowColor, float intensity, int maxParticles) {
 
   // Create orbital behaviour
   const auto minRadius = 0.2f;
@@ -204,7 +203,7 @@ ParticleFactory::createOrbAuraSystem(GameObject *const parent,
   // Create particle system
   // Orb aura should use LOCAL space to follow parent movement
   auto system = std::make_unique<ParticleSystem<Particle>>(
-      emitter, SimulationSpace::LOCAL, nullptr);
+      shader, emitter, SimulationSpace::LOCAL, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
 

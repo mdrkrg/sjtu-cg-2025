@@ -52,7 +52,8 @@ GraphicsRenderer::~GraphicsRenderer() { cleanup(); }
 
 void GraphicsRenderer::activateOrbAura(GameObject *const parent) {
   orbAuraSystem = ParticleFactory::createOrbAuraSystem(
-      parent, glm::vec4(0.2f, 0.8f, 1.0f, 0.6f), 1.0f, 1000000Z);
+      parent, particleShader, glm::vec4(0.2f, 0.8f, 1.0f, 0.6f), 1.0f,
+      1000000Z);
   orbAuraSystem->toggle(true);
 }
 
@@ -117,16 +118,17 @@ bool GraphicsRenderer::initialize() {
   cloud->setPosition(glm::vec3(0.0f, 0.65f, 2.0f));
   cloud->setScale(glm::vec3(2.0f, 0.5f, 2.0f));
 
-  rainSystem = ParticleFactory::createRainSystem(terrainMesh, terrainModel,
-                                                 weatherPosition, 100000, 500.f,
-                                                 cloud->getGameObject());
-  snowSystem = ParticleFactory::createSnowSystem(terrainMesh, terrainModel,
-                                                 weatherPosition, 1000000,
-                                                 500.f, cloud->getGameObject());
+  rainSystem = ParticleFactory::createRainSystem(
+      terrainMesh, terrainModel, particleShader, weatherPosition, 100000, 500.f,
+      cloud->getGameObject());
+  snowSystem = ParticleFactory::createSnowSystem(
+      terrainMesh, terrainModel, particleShader, weatherPosition, 1000000,
+      500.f, cloud->getGameObject());
 
   // Create a simple test particle system with cube model
   testCubeSystem =
       graphics::particles::ModelParticleFactory::createCubeTestSystem(
+          modelSimpleInstancedShader,
           glm::vec3{0.0f, 0.5f, 2.0f}, // position above table
           50,                          // max particles
           2.0f,                        // emission rate (2 cubes/sec)
@@ -611,16 +613,16 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
   particleShader->use();
   particleShader->setVec3("viewPos", cameraPosition);
 
-  snowSystem->render(*particleShader, view, projection);
-  rainSystem->render(*particleShader, view, projection);
+  snowSystem->render(view, projection);
+  rainSystem->render(view, projection);
   if (orbAuraSystem) {
-    orbAuraSystem->render(*particleShader, view, projection);
+    orbAuraSystem->render(view, projection);
   }
   glDisable(GL_PROGRAM_POINT_SIZE);
 
   // Render test cube system
   if (testCubeSystem && testCubeSystem->isVisible()) {
-    testCubeSystem->render(*modelSimpleInstancedShader, view, projection);
+    testCubeSystem->render(view, projection);
   }
 }
 

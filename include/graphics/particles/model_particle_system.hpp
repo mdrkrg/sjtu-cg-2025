@@ -16,12 +16,14 @@ namespace graphics::particles {
 class ModelParticleSystem : public ParticleSystem<ModelParticle> {
 public:
   /// Constructor
+  /// @param shader The particle shader used for the system
   /// @param emitter Particle emitter
   /// @param space Simulation space
   /// @param customTransform Custom transform for CUSTOM simulation space
   /// @param particleModel Shared model for all particles
   /// @param particleMaterial Shared material for all particles
-  ModelParticleSystem(std::shared_ptr<ParticleEmitter> emitter,
+  ModelParticleSystem(std::shared_ptr<Shader> shader,
+                      std::shared_ptr<ParticleEmitter> emitter,
                       SimulationSpace space = SimulationSpace::WORLD,
                       GameObject *customTransform = nullptr,
                       std::shared_ptr<Model> particleModel = nullptr,
@@ -31,8 +33,7 @@ public:
 
   // ParticleSystem methods (virtual in base)
   void update(float deltaTime) override;
-  void render(Shader &shader, const glm::mat4 &view,
-              const glm::mat4 &projection) override;
+  void render(const glm::mat4 &view, const glm::mat4 &projection) override;
   void emitParticle() override;
   void reset() override;
   void init() override;
