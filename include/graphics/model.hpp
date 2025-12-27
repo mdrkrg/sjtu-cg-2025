@@ -22,6 +22,12 @@ public:
       meshes[i].Draw(shader);
   }
 
+  /// Draws the model with instanced rendering
+  void DrawInstanced(Shader &shader, unsigned int instanceCount) {
+    for (unsigned int i = 0; i < meshes.size(); i++)
+      meshes[i].DrawInstanced(shader, instanceCount);
+  }
+
   // Allow factory to access internals if strictly necessary,
   // though the public constructor handles most needs now.
   friend class ModelFactory;

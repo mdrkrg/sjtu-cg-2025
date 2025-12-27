@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "particles/particle_system.hpp"
+#include "particles/model_particle_system.hpp"
 #include "shader.h"
 #include "terrain_mesh.hpp"
 #include "cloud.h"
@@ -48,6 +49,7 @@ private:
   std::shared_ptr<Shader> lightingShader;
   std::shared_ptr<Shader> modelShader;
   std::shared_ptr<Shader> modelSimpleShader;
+  std::shared_ptr<Shader> modelSimpleInstancedShader;
   std::shared_ptr<Shader> lightCubeShader;
   std::shared_ptr<Shader> windowShader;
   std::shared_ptr<Shader> particleShader;
@@ -77,6 +79,9 @@ private:
   std::shared_ptr<ParticleSystem<Particle>> rainSystem;
   std::shared_ptr<ParticleSystem<Particle>> snowSystem;
   std::shared_ptr<ParticleSystem<Particle>> orbAuraSystem;
+
+  // Test cube particle system
+  std::shared_ptr<graphics::particles::ModelParticleSystem> testCubeSystem;
 
   // Cloud
   std::shared_ptr<Cloud> cloud;

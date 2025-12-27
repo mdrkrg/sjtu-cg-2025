@@ -1,6 +1,7 @@
 #include "graphics/graphics_renderer.h"
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
+#include "graphics/particles/model_particle_factory.hpp"
 #include "graphics/model_factory.hpp"
 #include "graphics/texture.hpp"
 #include "scene/behaviours/lamp_lighting_behaviour.hpp"
@@ -32,11 +33,11 @@ const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
 
 GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
-      lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
-      debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
-      selectedObject(nullptr),
+      modelSimpleInstancedShader(nullptr), lightCubeShader(nullptr),
+      windowShader(nullptr), particleShader(nullptr), debugShader(nullptr),
+      windowDiffuseMap(0), gameManager(gameManager), selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
-      orbAuraSystem(nullptr), cloud(nullptr) {
+      orbAuraSystem(nullptr), testCubeSystem(nullptr), cloud(nullptr) {
   // Initialize geometry components
   ceiling = {0, 0, 0};
   floor = {0, 0, 0};
@@ -123,6 +124,16 @@ bool GraphicsRenderer::initialize() {
                                                  weatherPosition, 1000000,
                                                  500.f, cloud->getGameObject());
 
+  // Create a simple test particle system with cube model
+  testCubeSystem =
+      graphics::particles::ModelParticleFactory::createCubeTestSystem(
+          glm::vec3{0.0f, 0.5f, 2.0f}, // position above table
+          50,                          // max particles
+          2.0f,                        // emission rate (2 cubes/sec)
+          0.1f,                        // cube size
+          glm::vec3{1.0f, 0.0f, 0.0f}  // red color
+      );
+
   return true;
 }
 
@@ -153,6 +164,11 @@ void GraphicsRenderer::update(float deltaTime) {
   // Update cloud
   if (cloud && cloud->isInitialized()) {
     cloud->update(deltaTime);
+  }
+
+  // Update test cube system
+  if (testCubeSystem) {
+    testCubeSystem->update(deltaTime);
   }
 }
 
@@ -206,6 +222,8 @@ bool GraphicsRenderer::setupShaders() {
                                            "shaders/model.fs.glsl");
     modelSimpleShader = std::make_shared<Shader>(
         "shaders/model.vs.glsl", "shaders/model-simple.fs.glsl");
+    modelSimpleInstancedShader = std::make_shared<Shader>(
+        "shaders/model-instanced.vs.glsl", "shaders/model-simple.fs.glsl");
     lightCubeShader = std::make_shared<Shader>("shaders/lightcube.vs.glsl",
                                                "shaders/lightcube.fs.glsl");
     windowShader = std::make_shared<Shader>("shaders/window.vs.glsl",
@@ -599,6 +617,11 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
     orbAuraSystem->render(*particleShader, view, projection);
   }
   glDisable(GL_PROGRAM_POINT_SIZE);
+
+  // Render test cube system
+  if (testCubeSystem && testCubeSystem->isVisible()) {
+    testCubeSystem->render(*modelSimpleInstancedShader, view, projection);
+  }
 }
 
 void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,

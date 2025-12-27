@@ -42,5 +42,20 @@ struct AABB {
 
     return AABB(transformedMin, transformedMax);
   }
+
+  /// Merge this AABB with another AABB
+  /// @param other Other AABB to merge with
+  /// @return New AABB containing both AABBs
+  AABB merge(const AABB &other) const {
+    if (min.x == 0.0f && min.y == 0.0f && min.z == 0.0f && max.x == 0.0f &&
+        max.y == 0.0f && max.z == 0.0f) {
+      return other; // This AABB is empty
+    }
+    if (other.min.x == 0.0f && other.min.y == 0.0f && other.min.z == 0.0f &&
+        other.max.x == 0.0f && other.max.y == 0.0f && other.max.z == 0.0f) {
+      return *this; // Other AABB is empty
+    }
+    return AABB(glm::min(min, other.min), glm::max(max, other.max));
+  }
 };
 } // namespace scene
