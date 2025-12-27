@@ -9,7 +9,6 @@
 
 #include "camera.h"
 #include "graphics/cloud.h"
-#include "graphics/particles/particle_system.hpp"
 
 using graphics::particles::ParticleSystem;
 
@@ -30,13 +29,7 @@ public:
   void scrollCallback(double yoffset);
   void framebufferSizeCallback(int width, int height);
 
-  void initWeather(std::shared_ptr<Cloud> &&cloud,
-                   std::shared_ptr<ParticleSystem<Particle>> &&rainSystem,
-                   std::shared_ptr<ParticleSystem<Particle>> &&snowSystem) {
-    this->cloud = std::move(cloud);
-    this->rainSystem = std::move(rainSystem);
-    this->snowSystem = std::move(snowSystem);
-  }
+  void initCloud(std::shared_ptr<Cloud> cloud) { this->cloud = cloud; }
 
   // Mouse interaction
   void setMouseClickCallback(
@@ -50,14 +43,10 @@ private:
   Camera &camera;
 
   std::shared_ptr<Cloud> cloud;
-  std::shared_ptr<ParticleSystem<Particle>> rainSystem;
-  std::shared_ptr<ParticleSystem<Particle>> snowSystem;
 
   std::unordered_set<int> pressedKeys{};
 
   bool cloudToggled = false;
-  bool rainToggled = false;
-  bool snowToggled = false;
 
   float screenWidth;
   float screenHeight;

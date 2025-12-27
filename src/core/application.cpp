@@ -61,8 +61,7 @@ bool Application::initialize() {
   }
 
   // Pass weather into input handler
-  inputHandler->initWeather(renderer->getCloud(), renderer->getRainSystem(),
-                            renderer->getSnowSystem());
+  inputHandler->initCloud(renderer->getCloud());
 
   // Set mouse click callback for object interaction
   inputHandler->setMouseClickCallback(

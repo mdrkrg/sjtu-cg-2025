@@ -89,11 +89,9 @@ void InputHandler::update(float deltaTime) {
   // TODO: make control more human
   if (cloud and pressed(GLFW_KEY_M)) {
     cloudToggled = not cloudToggled;
-    snowToggled = false;
-    rainToggled = false;
     cloud->toggle(cloudToggled);
-    rainSystem->toggle(rainToggled);
-    snowSystem->toggle(snowToggled);
+    cloud->toggleRain(false);
+    cloud->toggleSnow(false);
     pressedKeys.erase(GLFW_KEY_M);
   }
 
@@ -103,14 +101,12 @@ void InputHandler::update(float deltaTime) {
   }
 
   if (cloud and cloudToggled and pressed(GLFW_KEY_S)) {
-    snowToggled = not snowToggled;
-    snowSystem->toggle(snowToggled);
+    cloud->toggleSnow(not cloud->snowToggled());
     pressedKeys.erase(GLFW_KEY_S);
   }
 
   if (cloud and cloudToggled and pressed(GLFW_KEY_R)) {
-    rainToggled = not rainToggled;
-    rainSystem->toggle(rainToggled);
+    cloud->toggleRain(not cloud->rainToggled());
     pressedKeys.erase(GLFW_KEY_R);
   }
 

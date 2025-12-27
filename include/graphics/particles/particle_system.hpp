@@ -78,7 +78,7 @@ public:
     }
 
     // Automatic emission
-    if (emitter and toggled) {
+    if (emitter and toggled()) {
       int emitCount = emitter->updateEmission(deltaTime);
       for (int i = 0; i < emitCount && activeParticles.size() < maxParticles;
            ++i) {
@@ -122,7 +122,7 @@ public:
 
   /// Emit particles dynamically
   virtual void emitParticle() {
-    if (not toggled) {
+    if (not toggled()) {
       return;
     }
     if (activeParticles.size() >= maxParticles) {
@@ -151,7 +151,7 @@ public:
 
   /// Emit a burst amout of particles
   virtual void emitBurst(int count) {
-    if (not toggled) {
+    if (not toggled()) {
       return;
     }
 
@@ -181,7 +181,8 @@ public:
     loadTexture();
   }
 
-  void toggle(bool toggled) { this->toggled = toggled; }
+  void toggle(bool toggled) { this->m_toggled = toggled; }
+  bool toggled() { return m_toggled; }
 
   void setShader(std::shared_ptr<Shader> shader) { this->shader = shader; }
 
@@ -221,7 +222,7 @@ protected:
 
   std::shared_ptr<Shader> shader;
 
-  bool toggled = false;
+  bool m_toggled = false;
 
   // Simulation space configuration
   SimulationSpace simulationSpace;

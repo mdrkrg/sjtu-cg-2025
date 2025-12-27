@@ -7,8 +7,11 @@
 #include <memory>
 
 #include "core/movement.hpp"
+#include "graphics/particles/particle_system.hpp"
 #include "scene/game_object.hpp"
 #include "shader.h"
+
+using graphics::particles::ParticleSystem;
 
 const float CLOUD_SPEED = 1.0f;
 
@@ -19,6 +22,11 @@ public:
   ~Cloud();
 
   bool initialize();
+  void initializeWeather(std::shared_ptr<ParticleSystem<Particle>> rainSystem,
+                         std::shared_ptr<ParticleSystem<Particle>> snowSystem) {
+    this->rainSystem = rainSystem;
+    this->snowSystem = snowSystem;
+  }
   void render(const glm::mat4 &projection, const glm::mat4 &view,
               const glm::vec3 &lightPosition, const glm::vec3 &cameraPosition);
   void setPosition(const glm::vec3 &position);
@@ -33,6 +41,12 @@ public:
 
   const GameObject *getGameObject() const { return obj.get(); }
 
+  bool snowToggled() { return snowSystem->toggled(); }
+  void toggleSnow(bool toggled) { snowSystem->toggle(toggled); }
+
+  bool rainToggled() { return rainSystem->toggled(); }
+  void toggleRain(bool toggled) { rainSystem->toggle(toggled); }
+
 private:
   float movementSpeed = CLOUD_SPEED;
 
@@ -41,6 +55,9 @@ private:
   unsigned int VAO, VBO;
   unsigned int volumeTexture;
   std::shared_ptr<Shader> cloudShader;
+
+  std::shared_ptr<ParticleSystem<Particle>> rainSystem;
+  std::shared_ptr<ParticleSystem<Particle>> snowSystem;
 
   /// Layered billboard slice count
   static const int SLICE_COUNT = 16;

@@ -117,22 +117,25 @@ bool GraphicsRenderer::initialize() {
   }
 
   // Initialize cloud
-  cloud = std::make_shared<Cloud>();
-  if (not cloud->initialize()) {
-    std::println(std::cerr, "Failed to initialize volumetric cloud");
-    return false;
+  {
+    cloud = std::make_shared<Cloud>();
+    if (not cloud->initialize()) {
+      std::println(std::cerr, "Failed to initialize volumetric cloud");
+      return false;
+    }
+
+    // Position the cloud above the table
+    cloud->setPosition(glm::vec3(0.0f, 0.65f, 2.0f));
+    cloud->setScale(glm::vec3(2.0f, 0.5f, 2.0f));
+
+    rainSystem = ParticleFactory::createRainSystem(
+        terrainMesh, terrainModel, particleShader, weatherPosition, 100000,
+        500.f, cloud->getGameObject());
+    snowSystem = ParticleFactory::createSnowSystem(
+        terrainMesh, terrainModel, particleShader, weatherPosition, 1000000,
+        500.f, cloud->getGameObject());
+    cloud->initializeWeather(rainSystem, snowSystem);
   }
-
-  // Position the cloud above the table
-  cloud->setPosition(glm::vec3(0.0f, 0.65f, 2.0f));
-  cloud->setScale(glm::vec3(2.0f, 0.5f, 2.0f));
-
-  rainSystem = ParticleFactory::createRainSystem(
-      terrainMesh, terrainModel, particleShader, weatherPosition, 100000, 500.f,
-      cloud->getGameObject());
-  snowSystem = ParticleFactory::createSnowSystem(
-      terrainMesh, terrainModel, particleShader, weatherPosition, 1000000,
-      500.f, cloud->getGameObject());
 
   // Create a simple test particle system with cube model
   testCubeSystem =
