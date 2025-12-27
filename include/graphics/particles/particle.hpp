@@ -10,6 +10,10 @@ struct Particle {
   glm::vec4 color;
   float life;
   float size;
+
+  /// Check if particle is alive
+  /// @return True if particle has life remaining
+  bool alive() const { return life > 0.0f; }
 };
 
 /// The simulation space the particle is in

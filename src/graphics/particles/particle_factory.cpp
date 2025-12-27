@@ -7,7 +7,7 @@
 #include "graphics/particles/emitters/area_emitter.hpp"
 #include <glm/glm.hpp>
 
-std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(
+std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createRainSystem(
     std::shared_ptr<TerrainMesh> terrain, const glm::mat4 &terrainModel,
     const glm::vec3 &position, size_t maxParticles, float emissionRate,
     const GameObject *parent) {
@@ -75,7 +75,7 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(
 
   // Create particle system
   // Rain system in world space
-  auto system = std::make_unique<ParticleSystem>(
+  auto system = std::make_unique<ParticleSystem<Particle>>(
       emitter, SimulationSpace::WORLD, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
@@ -83,7 +83,7 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createRainSystem(
   return system;
 }
 
-std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
+std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createSnowSystem(
     std::shared_ptr<TerrainMesh> terrain, const glm::mat4 &terrainModel,
     const glm::vec3 &position, size_t maxParticles, float emissionRate,
     const GameObject *parent) {
@@ -170,7 +170,7 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
 
   // Create particle system
   // Snow system in world space
-  auto system = std::make_unique<ParticleSystem>(
+  auto system = std::make_unique<ParticleSystem<Particle>>(
       emitter, SimulationSpace::WORLD, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();
@@ -178,7 +178,7 @@ std::unique_ptr<ParticleSystem> ParticleFactory::createSnowSystem(
   return system;
 }
 
-std::unique_ptr<ParticleSystem>
+std::unique_ptr<ParticleSystem<Particle>>
 ParticleFactory::createOrbAuraSystem(GameObject *const parent,
                                      const glm::vec4 &glowColor,
                                      float intensity, int maxParticles) {
@@ -203,7 +203,7 @@ ParticleFactory::createOrbAuraSystem(GameObject *const parent,
 
   // Create particle system
   // Orb aura should use LOCAL space to follow parent movement
-  auto system = std::make_unique<ParticleSystem>(
+  auto system = std::make_unique<ParticleSystem<Particle>>(
       emitter, SimulationSpace::LOCAL, nullptr);
   system->setMaxParticles(maxParticles);
   system->init();

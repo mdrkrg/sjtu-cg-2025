@@ -7,6 +7,9 @@
 #include <memory>
 #include <random>
 
+template<typename ParticleType>
+class ParticleSystem;
+
 class ParticleEmitter {
 public:
   ParticleEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
@@ -74,6 +77,7 @@ protected:
   static std::random_device rd;
   static std::mt19937 gen;
 
+  template<typename ParticleType>
   friend class ParticleSystem;
 
   const GameObject *parent = nullptr;
@@ -90,6 +94,21 @@ protected:
       // LOCAL or CUSTOM space, or no parent
       // Use local coordinates
       return localPos;
+    }
+  }
+
+  glm::vec3
+  calculateVelocityBySimulationSpace(const glm::vec3 &localVel) const {
+    if (simulationSpace == SimulationSpace::WORLD && parent) {
+      const auto parentMatrix = parent->getModelMatrix();
+      // Use 0 for the w component
+      // w = 1 for points (translation)
+      // w = 0 for vectors (ignore translation, apply rotation and scale)
+      return glm::vec3(parentMatrix * glm::vec4(localVel, 0.0f));
+    } else {
+      // LOCAL or CUSTOM space
+      // The renderer will rotate it later
+      return localVel;
     }
   }
 

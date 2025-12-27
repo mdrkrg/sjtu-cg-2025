@@ -9,25 +9,141 @@
 #include <vector>
 #include <queue>
 
-class ParticleSystem {
+template <typename ParticleType = Particle> class ParticleSystem {
 public:
   ParticleSystem(std::shared_ptr<ParticleEmitter> emitter,
                  SimulationSpace space = SimulationSpace::WORLD,
-                 GameObject *customTransform = nullptr);
-  ~ParticleSystem();
+                 GameObject *customTransform = nullptr)
+      : emitter(emitter), simulationSpace(space),
+        customSimulationTransform(customTransform) {
+    // Set emitter's simulation space
+    if (emitter) {
+      emitter->simulationSpace = space;
+    }
+  }
+
+  virtual ~ParticleSystem() { cleanup(); }
 
   /// Update all particles
-  void update(float deltaTime);
+  virtual void update(float deltaTime) {
+    const auto &model = getModelMatrix();
+    // Update existing particles
+    auto it = activeParticles.begin();
+    while (it != activeParticles.end()) {
+      ParticleType &p = *it;
+
+      // Update life
+      p.life -= deltaTime;
+
+      // Check if particle should be removed
+      const bool shouldRemove = [&, this] {
+        if (emitter && emitter->getBehaviour()) {
+          return not emitter->getBehaviour()->isAlive(p, model,
+                                                      simulationSpace);
+        } else {
+          return p.life <= 0.0f;
+        }
+      }();
+
+      if (shouldRemove) {
+        // Add to pool for reuse
+        particlePool.push(p);
+        it = activeParticles.erase(it);
+      } else {
+        // Update particle behaviour
+        if (emitter && emitter->getBehaviour()) {
+          emitter->getBehaviour()->update(p, deltaTime, model, simulationSpace);
+        }
+
+        // Update position
+        p.position += p.velocity * deltaTime;
+        ++it;
+      }
+    }
+
+    // Automatic emission
+    if (emitter and toggled) {
+      int emitCount = emitter->updateEmission(deltaTime);
+      for (int i = 0; i < emitCount && activeParticles.size() < maxParticles;
+           ++i) {
+        emitParticle();
+      }
+    }
+
+    // Update buffer data
+    updateBuffers();
+  }
 
   /// Render all particles
-  void render(Shader &shader, const glm::mat4 &view,
-              const glm::mat4 &projection);
+  virtual void render(Shader &shader, const glm::mat4 &view,
+                      const glm::mat4 &projection) {
+    const auto &model = getModelMatrix();
+    if (activeParticles.empty()) {
+      return;
+    }
+
+    shader.use();
+
+    { // Uniforms
+      shader.setMat4("view", view);
+      shader.setMat4("projection", projection);
+      shader.setMat4("model", model);
+    }
+
+    { // Bind texture
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, particleTexture);
+      shader.setInt("particleTexture", 0);
+    }
+
+    // Update buffer data before rendering
+    updateBuffers();
+
+    // Render particles
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_POINTS, 0, activeParticles.size());
+    glBindVertexArray(0);
+  }
 
   /// Emit particles dynamically
-  void emitParticle();
+  virtual void emitParticle() {
+    if (not toggled) {
+      return;
+    }
+    if (activeParticles.size() >= maxParticles) {
+      // Maximum particles exceeded
+      return;
+    }
+
+    auto p = [this] {
+      if (particlePool.empty()) {
+        // Create new particle if empty
+        return ParticleType{};
+      }
+      // Reuse
+      const auto p = particlePool.front();
+      particlePool.pop();
+      return p;
+    }();
+
+    // Emit the particle
+    if (emitter) {
+      emitter->emit(p);
+    }
+
+    activeParticles.push_back(p);
+  }
 
   /// Emit a burst amout of particles
-  void emitBurst(int count);
+  virtual void emitBurst(int count) {
+    if (not toggled) {
+      return;
+    }
+
+    for (int i = 0; i < count && activeParticles.size() < maxParticles; ++i) {
+      emitParticle();
+    }
+  }
 
   /// Set maximum number of particles
   void setMaxParticles(size_t max) { maxParticles = max; }
@@ -36,17 +152,26 @@ public:
   size_t getActiveParticleCount() const { return activeParticles.size(); }
 
   /// Reset the system
-  void reset();
+  virtual void reset() {
+    // Move all active particles to the pool
+    for (const auto &p : activeParticles) {
+      particlePool.push(p);
+    }
+    activeParticles.clear();
+  }
 
   /// Initialize OpenGL resources
-  void init();
+  virtual void init() {
+    setupBuffers();
+    loadTexture();
+  }
 
   inline void toggle(bool toggled) { this->toggled = toggled; }
 
-private:
+protected:
   std::shared_ptr<ParticleEmitter> emitter;
-  std::vector<Particle> activeParticles;
-  std::queue<Particle> particlePool; // For reuse
+  std::vector<ParticleType> activeParticles;
+  std::queue<ParticleType> particlePool; // For reuse
   size_t maxParticles = 1000;
 
   bool toggled = false;
@@ -55,21 +180,111 @@ private:
   SimulationSpace simulationSpace;
   GameObject *customSimulationTransform;
 
+  /// Get model matrix based on simulation space
+  glm::mat4 getModelMatrix() const {
+    switch (simulationSpace) {
+    case SimulationSpace::WORLD:
+      // Identity
+      return glm::mat4{1.0f};
+    case SimulationSpace::LOCAL:
+      // For LOCAL space, use emitter's parent
+      if (emitter && emitter->parent) {
+        return emitter->parent->getModelMatrix();
+      }
+      // Fallback to identity if no parent
+      return glm::mat4{1.0f};
+    case SimulationSpace::CUSTOM:
+      // For CUSTOM space, use the custom transform
+      if (customSimulationTransform) {
+        return customSimulationTransform->getModelMatrix();
+      }
+      // Fallback to identity if no custom transform
+      return glm::mat4(1.0f);
+    default:
+      return glm::mat4(1.0f);
+    }
+  }
+
   // OpenGL resources
   unsigned int VAO = 0, VBO = 0;
   unsigned int particleTexture = 0;
 
   /// Setup OpenGL buffers
-  void setupBuffers();
+  virtual void setupBuffers() {
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, maxParticles * sizeof(ParticleType), nullptr,
+                 GL_DYNAMIC_DRAW);
+
+    // Position attribute
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ParticleType),
+                          (void *)0);
+
+    // Color attribute
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleType),
+                          (void *)offsetof(ParticleType, color));
+
+    // Size attribute
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleType),
+                          (void *)offsetof(ParticleType, size));
+
+    glBindVertexArray(0);
+  }
+
   /// Setup OpenGL textures
-  void loadTexture();
+  virtual void loadTexture() {
+    // Create a simple white texture for particles
+    glGenTextures(1, &particleTexture);
+    glBindTexture(GL_TEXTURE_2D, particleTexture);
+
+    // Create a simple white texture
+    unsigned char whitePixel[3] = {255, 255, 255};
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE,
+                 whitePixel);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  }
 
   /// Cleanup OpenGL resources
-  void cleanup();
+  virtual void cleanup() {
+    if (VAO != 0) {
+      glDeleteVertexArrays(1, &VAO);
+      VAO = 0;
+    }
+    if (VBO != 0) {
+      glDeleteBuffers(1, &VBO);
+      VBO = 0;
+    }
+    if (particleTexture != 0) {
+      glDeleteTextures(1, &particleTexture);
+      particleTexture = 0;
+    }
+
+    // Clear particles
+    activeParticles.clear();
+    std::queue<ParticleType> empty;
+    std::swap(particlePool, empty);
+  }
 
   /// Update buffer data
-  void updateBuffers();
+  virtual void updateBuffers() {
+    if (activeParticles.empty())
+      return;
 
-  /// Get model matrix based on simulation space
-  glm::mat4 getModelMatrix() const;
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,
+                    activeParticles.size() * sizeof(ParticleType),
+                    activeParticles.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+  }
 };

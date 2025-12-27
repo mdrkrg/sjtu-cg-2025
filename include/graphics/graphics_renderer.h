@@ -29,8 +29,12 @@ public:
 
   // Pass to the input handler
   std::shared_ptr<Cloud> getCloud() { return cloud; }
-  std::shared_ptr<ParticleSystem> getRainSystem() { return rainSystem; }
-  std::shared_ptr<ParticleSystem> getSnowSystem() { return snowSystem; }
+  std::shared_ptr<ParticleSystem<Particle>> getRainSystem() {
+    return rainSystem;
+  }
+  std::shared_ptr<ParticleSystem<Particle>> getSnowSystem() {
+    return snowSystem;
+  }
   void activateOrbAura(GameObject *const parent);
 
   // Mouse interaction
@@ -70,9 +74,9 @@ private:
 
   std::shared_ptr<TerrainMesh> terrainMesh;
 
-  std::shared_ptr<ParticleSystem> rainSystem;
-  std::shared_ptr<ParticleSystem> snowSystem;
-  std::shared_ptr<ParticleSystem> orbAuraSystem;
+  std::shared_ptr<ParticleSystem<Particle>> rainSystem;
+  std::shared_ptr<ParticleSystem<Particle>> snowSystem;
+  std::shared_ptr<ParticleSystem<Particle>> orbAuraSystem;
 
   // Cloud
   std::shared_ptr<Cloud> cloud;

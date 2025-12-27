@@ -29,8 +29,8 @@ public:
   void framebufferSizeCallback(int width, int height);
 
   void initWeather(std::shared_ptr<Cloud> &&cloud,
-                   std::shared_ptr<ParticleSystem> &&rainSystem,
-                   std::shared_ptr<ParticleSystem> &&snowSystem) {
+                   std::shared_ptr<ParticleSystem<Particle>> &&rainSystem,
+                   std::shared_ptr<ParticleSystem<Particle>> &&snowSystem) {
     this->cloud = std::move(cloud);
     this->rainSystem = std::move(rainSystem);
     this->snowSystem = std::move(snowSystem);
@@ -48,8 +48,8 @@ private:
   Camera &camera;
 
   std::shared_ptr<Cloud> cloud;
-  std::shared_ptr<ParticleSystem> rainSystem;
-  std::shared_ptr<ParticleSystem> snowSystem;
+  std::shared_ptr<ParticleSystem<Particle>> rainSystem;
+  std::shared_ptr<ParticleSystem<Particle>> snowSystem;
 
   std::unordered_set<int> pressedKeys{};
 

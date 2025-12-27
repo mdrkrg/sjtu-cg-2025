@@ -6,7 +6,7 @@
 
 class ParticleFactory {
 public:
-  static std::unique_ptr<ParticleSystem>
+  static std::unique_ptr<ParticleSystem<Particle>>
   /// Snow particle system in world space (independent particles)
   /// Even if there's a parent (cloud), particles should not follow it
   createRainSystem(std::shared_ptr<TerrainMesh> terrain,
@@ -17,7 +17,7 @@ public:
 
   /// Rain particle system in world space (independent particles)
   /// Even if there's a parent (cloud), particles should not follow it
-  static std::unique_ptr<ParticleSystem>
+  static std::unique_ptr<ParticleSystem<Particle>>
   createSnowSystem(std::shared_ptr<TerrainMesh> terrain,
                    const glm::mat4 &terrainModel,
                    const glm::vec3 &position = glm::vec3(0.0f, 10.0f, 0.0f),
@@ -25,7 +25,7 @@ public:
                    const GameObject *parent = nullptr);
 
   /// Create an orb aura particle system (glowing particles orbiting a center)
-  static std::unique_ptr<ParticleSystem> createOrbAuraSystem(
+  static std::unique_ptr<ParticleSystem<Particle>> createOrbAuraSystem(
       GameObject *const parent,
       const glm::vec4 &glowColor = glm::vec4(0.2f, 0.8f, 1.0f, 1.0f),
       float intensity = 1.0f, int maxParticles = 1000Z);
