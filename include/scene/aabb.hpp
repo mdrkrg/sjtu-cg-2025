@@ -57,5 +57,19 @@ struct AABB {
     }
     return AABB(glm::min(min, other.min), glm::max(max, other.max));
   }
+
+  /// Check if this AABB overlaps with another AABB
+  /// @param other Other AABB to check
+  /// @param margin Optional margin around AABBs for collision detection
+  /// @return True if AABBs overlap (with margin)
+  bool overlaps(const AABB &other, float margin = 0.0f) const {
+    const bool outOfBound = (max.x + margin < other.min.x - margin or
+                             min.x - margin > other.max.x + margin or
+                             max.y + margin < other.min.y - margin or
+                             min.y - margin > other.max.y + margin or
+                             max.z + margin < other.min.z - margin or
+                             min.z - margin > other.max.z + margin);
+    return not outOfBound;
+  }
 };
 } // namespace scene

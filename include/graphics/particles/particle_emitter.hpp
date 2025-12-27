@@ -38,6 +38,9 @@ public:
   /// Get associated behaviour
   std::shared_ptr<ParticleBehaviour> getBehaviour() const { return behaviour; }
 
+  /// Set associated behaviour
+  void setBehaviour(std::shared_ptr<ParticleBehaviour> newBehaviour) { behaviour = newBehaviour; }
+
   /// Update emission timing and return number of particles to emit
   size_t updateEmission(float deltaTime) {
     size_t totalEmitCount = 0;

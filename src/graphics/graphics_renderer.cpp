@@ -133,7 +133,8 @@ bool GraphicsRenderer::initialize() {
           50,                          // max particles
           2.0f,                        // emission rate (2 cubes/sec)
           0.1f,                        // cube size
-          glm::vec3{1.0f, 0.0f, 0.0f}  // red color
+          glm::vec3{1.0f, 0.0f, 0.0f}, // red color
+          gameManager->getObjects()    // AABB collision targets
       );
 
   return true;

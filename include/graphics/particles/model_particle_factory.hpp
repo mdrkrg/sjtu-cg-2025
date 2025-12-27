@@ -15,12 +15,14 @@ public:
   /// @param emissionRate Particles per second
   /// @param cubeSize Size of each cube
   /// @param cubeColor Color of cubes
+  /// @param collisionTargets Optional list of GameObjects for AABB collision
   /// @return ModelParticleSystem with falling cubes
-  static std::shared_ptr<ModelParticleSystem> createCubeTestSystem(
-      std::shared_ptr<Shader> shader,
-      const glm::vec3 &position = glm::vec3{0.0f, 0.0f, 0.0f},
-      size_t maxParticles = 50, float emissionRate = 2.0f,
-      float cubeSize = 0.1f,
-      const glm::vec3 &cubeColor = glm::vec3{1.0f, 1.0f, 1.0f});
+  static std::shared_ptr<ModelParticleSystem>
+  createCubeTestSystem(std::shared_ptr<Shader> shader,
+                       const glm::vec3 &position = glm::vec3{0.0f, 0.0f, 0.0f},
+                       size_t maxParticles = 50, float emissionRate = 2.0f,
+                       float cubeSize = 0.1f,
+                       const glm::vec3 &cubeColor = glm::vec3{1.0f, 1.0f, 1.0f},
+                       const std::vector<GameObject *> &collisionTargets = {});
 };
 } // namespace graphics::particles
