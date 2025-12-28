@@ -18,16 +18,14 @@ public:
   /// Constructor
   /// @param shader The particle shader used for the system
   /// @param emitter Particle emitter
+  /// @param modelWithMaterials Shared model with materials for all particles
   /// @param space Simulation space
   /// @param customTransform Custom transform for CUSTOM simulation space
-  /// @param particleModel Shared model for all particles
-  /// @param particleMaterial Shared material for all particles
   ModelParticleSystem(std::shared_ptr<Shader> shader,
                       std::shared_ptr<ParticleEmitter> emitter,
+                      ModelWithMaterials modelWithMaterials,
                       SimulationSpace space = SimulationSpace::WORLD,
-                      GameObject *customTransform = nullptr,
-                      std::shared_ptr<Model> particleModel = nullptr,
-                      std::shared_ptr<Material> particleMaterial = nullptr);
+                      GameObject *customTransform = nullptr);
 
   ~ModelParticleSystem() override;
 
@@ -41,13 +39,11 @@ public:
   /// Get world AABB for the particle system combined. Good for debugging
   scene::AABB getWorldAABB() const;
 
+  /// Get individual world AABBs for all active particles
+  std::vector<scene::AABB> getParticleWorldAABBs() const;
+
   bool isVisible() const;
 
-  // Resource access
-  std::shared_ptr<Model> getParticleModel() const { return particleModel; }
-  std::shared_ptr<Material> getParticleMaterial() const {
-    return particleMaterial;
-  }
   const scene::AABB &getParticleLocalAABB() const { return particleLocalAABB; }
 
   void setMaxParticles(size_t max);
@@ -61,8 +57,7 @@ public:
 
 private:
   // Shared resources (shared by all particles)
-  std::shared_ptr<Model> particleModel;
-  std::shared_ptr<Material> particleMaterial;
+  ModelWithMaterials particleModel;
   scene::AABB particleLocalAABB;
 
   // Instanced rendering

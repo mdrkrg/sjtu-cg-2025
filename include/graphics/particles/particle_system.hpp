@@ -34,6 +34,8 @@ public:
       ParticleType &p = *it;
 
       // Update life
+      // WARN: Life should not update here?
+      // TODO: Move life update to the actual base behaviour?
       p.life -= deltaTime;
 
       // Check if particle should be removed

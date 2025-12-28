@@ -21,17 +21,6 @@ std::shared_ptr<ModelParticleSystem> ModelParticleFactory::createCubeTestSystem(
 
   auto cubeModelWithMaterials =
       ModelFactory::createCube(cubeSize, cubeMaterial);
-  auto cubeModel =
-      std::shared_ptr<Model>(std::move(cubeModelWithMaterials.model));
-
-  // Use first material from loaded model or create default
-  std::shared_ptr<Material> particleMaterial;
-  if (!cubeModelWithMaterials.materials.empty()) {
-    particleMaterial =
-        std::make_shared<Material>(cubeModelWithMaterials.materials[0]);
-  } else {
-    particleMaterial = std::make_shared<Material>(cubeMaterial);
-  }
 
   // Wrapper behaviour that combines gravity and AABB collision
   class CombinedGravityCollisionBehaviour : public ParticleBehaviour {
@@ -91,8 +80,8 @@ std::shared_ptr<ModelParticleSystem> ModelParticleFactory::createCubeTestSystem(
 
   // Create model particle system
   auto cubeParticleSystem = std::make_shared<ModelParticleSystem>(
-      shader, cubeEmitter, SimulationSpace::WORLD, nullptr, cubeModel,
-      particleMaterial);
+      shader, cubeEmitter, std::move(cubeModelWithMaterials),
+      SimulationSpace::WORLD, nullptr);
   cubeParticleSystem->setMaxParticles(maxParticles);
   cubeParticleSystem->init();
   cubeParticleSystem->toggle(true);

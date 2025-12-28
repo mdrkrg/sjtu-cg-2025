@@ -1,16 +1,16 @@
 #include "graphics/particles/model_particle_system.hpp"
 #include "graphics/particles/particle_emitter.hpp"
+#include "graphics/rendering.hpp"
 #include "scene/aabb.hpp"
 
 namespace graphics::particles {
 
 ModelParticleSystem::ModelParticleSystem(
     std::shared_ptr<Shader> shader, std::shared_ptr<ParticleEmitter> emitter,
-    SimulationSpace space, GameObject *customTransform,
-    std::shared_ptr<Model> particleModel,
-    std::shared_ptr<Material> particleMaterial)
+    ModelWithMaterials modelWithMaterials, SimulationSpace space,
+    GameObject *customTransform)
     : ParticleSystem{shader, emitter, space, customTransform},
-      particleModel{particleModel}, particleMaterial{particleMaterial} {
+      particleModel{std::move(modelWithMaterials)} {
 
   // Compute local AABB from model
   computeModelAABB();
@@ -43,7 +43,7 @@ void ModelParticleSystem::render(const glm::mat4 &view,
                                  const glm::mat4 &projection) {
   // Override to use instanced rendering instead of GL_POINTS
   // Instanced rendering implementation
-  if (not particleModel or not isVisible()) {
+  if (not particleModel.model or not isVisible()) {
     return;
   }
   shader->use();
@@ -52,25 +52,18 @@ void ModelParticleSystem::render(const glm::mat4 &view,
   shader->setMat4("view", view);
   shader->setMat4("projection", projection);
 
-  // Set material properties if material is provided
-  if (particleMaterial) {
-    shader->setVec3("material.ambient", particleMaterial->ambient);
-    shader->setVec3("material.diffuse", particleMaterial->diffuse);
-    shader->setVec3("material.specular", particleMaterial->specular);
-    shader->setFloat("material.shininess", particleMaterial->shininess);
+  const auto &model = *particleModel.model;
+  const auto &materials = particleModel.materials;
 
-    if (particleMaterial->isEmissive()) {
-      shader->setBool("material.emissive", true);
-      shader->setVec3("material.emission", particleMaterial->emissionColor);
-      shader->setFloat("material.emissionStrength",
-                       particleMaterial->emissionStrength);
-    } else {
-      shader->setBool("material.emissive", false);
-    }
+  const size_t meshCount = model.meshes.size();
+  const size_t materialCount = materials.size();
+
+  for (size_t i = 0; i < meshCount and i < materialCount; ++i) {
+    const auto &meshMat = materials[i];
+    const auto &mesh = model.meshes[i];
+    graphics::renderMeshInstanced(mesh, meshMat, *shader,
+                                  instanceMatrices.size());
   }
-
-  // Render instanced
-  particleModel->DrawInstanced(*shader, instanceMatrices.size());
 }
 
 void ModelParticleSystem::emitParticle() {
@@ -125,10 +118,25 @@ scene::AABB ModelParticleSystem::getWorldAABB() const {
   return combined;
 }
 
+std::vector<scene::AABB> ModelParticleSystem::getParticleWorldAABBs() const {
+  std::vector<scene::AABB> particleAABBs;
+  const glm::mat4 systemModel = getModelMatrix();
+
+  for (const auto &particle : activeParticles) {
+    // Transform particle local AABB to world space
+    glm::mat4 particleTransform = systemModel * particle.getTransformMatrix();
+    const auto &particleAABB = particleLocalAABB.transform(particleTransform);
+
+    particleAABBs.push_back(particleAABB);
+  }
+
+  return particleAABBs;
+}
+
 bool ModelParticleSystem::isVisible() const { return !activeParticles.empty(); }
 
 void ModelParticleSystem::setupInstancedRendering() {
-  if (instanceBufferInitialized or not particleModel) {
+  if (instanceBufferInitialized or not particleModel.model) {
     return;
   }
 
@@ -176,7 +184,7 @@ void ModelParticleSystem::updateInstanceData() {
 }
 
 void ModelParticleSystem::computeModelAABB() {
-  if (!particleModel || particleModel->meshes.empty()) {
+  if (!particleModel.model || particleModel.model->meshes.empty()) {
     // Default small cube AABB
     particleLocalAABB = scene::AABB{glm::vec3{-0.1f}, glm::vec3{0.1f}};
     return;
@@ -186,7 +194,7 @@ void ModelParticleSystem::computeModelAABB() {
   glm::vec3 max{std::numeric_limits<float>::lowest()};
 
   // Compute AABB from all meshes
-  for (const auto &mesh : particleModel->meshes) {
+  for (const auto &mesh : particleModel.model->meshes) {
     for (const auto &vertex : mesh.vertices) {
       min = glm::min(min, vertex.Position);
       max = glm::max(max, vertex.Position);
@@ -202,7 +210,7 @@ void ModelParticleSystem::computeModelAABB() {
 }
 
 void ModelParticleSystem::setupInstanceBuffer() {
-  if (not particleModel or particleModel->meshes.empty()) {
+  if (not particleModel.model or particleModel.model->meshes.empty()) {
     return;
   }
 
@@ -215,7 +223,7 @@ void ModelParticleSystem::setupInstanceBuffer() {
                GL_DYNAMIC_DRAW);
 
   // For each mesh VAO, set up instance attribute
-  for (const auto &mesh : particleModel->meshes) {
+  for (const auto &mesh : particleModel.model->meshes) {
     glBindVertexArray(mesh.VAO);
 
     // mat4 takes 4 attribute locations (3-6)

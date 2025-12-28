@@ -14,9 +14,7 @@
 #include "scene/aabb.hpp"
 #include "scene/game_object_behaviour.hpp"
 #include "graphics/material.hpp"
-
-inline void renderMesh(const Mesh &mesh, const Material &material,
-                       const Shader &shader);
+#include "graphics/rendering.hpp"
 
 class GameObject {
 public:
@@ -202,7 +200,7 @@ private:
     for (size_t i = 0; i < meshCount and i < materialCount; ++i) {
       const auto &meshMat = meshMaterials[i];
       const auto &mesh = model->meshes[i];
-      renderMesh(mesh, meshMat, shader);
+      graphics::renderMesh(mesh, meshMat, shader);
     }
   }
 
@@ -381,27 +379,4 @@ inline void GameObject::animateTo(const glm::vec3 &targetPosition,
 inline glm::vec3 GameObject::lerp(const glm::vec3 &a, const glm::vec3 &b,
                                   float t) {
   return a * (1.0f - t) + b * t;
-}
-
-/// Render a mesh with material and shader
-inline void renderMesh(const Mesh &mesh, const Material &material,
-                       const Shader &shader) {
-
-  shader.use();
-  shader.setVec3("material.ambient", material.ambient);
-  shader.setVec3("material.diffuse", material.diffuse);
-  shader.setVec3("material.specular", material.specular);
-  shader.setFloat("material.shininess", material.shininess);
-  // For textured materials, shader uses textures from model
-  shader.setBool("material.use_texture", material.usesTextures());
-
-  // Set emission if enabled
-  if (material.isEmissive()) {
-    shader.setBool("material.emissive", true);
-    shader.setVec3("material.emission", material.emissionColor);
-    shader.setFloat("material.emissionStrength", material.emissionStrength);
-  } else {
-    shader.setBool("material.emissive", false);
-  }
-  mesh.Draw(shader);
 }
