@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <algorithm>
+
 namespace scene {
 
 // Axis-aligned bounding box
@@ -70,6 +72,53 @@ struct AABB {
                              max.z + margin < other.min.z - margin or
                              min.z - margin > other.max.z + margin);
     return not outOfBound;
+  }
+
+  /// Check if this AABB wraps a point (Point-in-AABB test)
+  /// @param point The point to check
+  /// @param margin Optional margin around AABBs for collision detection
+  /// @return True if point in AABB (with margin)
+  bool wraps(const glm::vec3 &point, float margin = 0.0f) const {
+    const bool outOfBound = (max.x + margin < point.x - margin or
+                             min.x - margin > point.x + margin or
+                             max.y + margin < point.y - margin or
+                             min.y - margin > point.y + margin or
+                             max.z + margin < point.z - margin or
+                             min.z - margin > point.z + margin);
+    return not outOfBound;
+  }
+
+  /// Calculate approximate normal from AABB to point, for collision
+  /// @param point Collision point in world space
+  /// @return Approximate collision normal
+  glm::vec3 closestNormalFrom(const glm::vec3 &point) {
+    // Calculate distance from arrow to each AABB face
+    float distToMinX = std::abs(point.x - min.x);
+    float distToMaxX = std::abs(point.x - max.x);
+    float distToMinY = std::abs(point.y - min.y);
+    float distToMaxY = std::abs(point.y - max.y);
+    float distToMinZ = std::abs(point.z - min.z);
+    float distToMaxZ = std::abs(point.z - max.z);
+
+    // Find closest face
+    float minDist = std::min({distToMinX, distToMaxX, distToMinY, distToMaxY,
+                              distToMinZ, distToMaxZ});
+
+    // Return normal pointing away from closest face
+    if (minDist == distToMinX) {
+      return glm::vec3{-1.0f, 0.0f, 0.0f}; // Left
+    } else if (minDist == distToMaxX) {
+      return glm::vec3{1.0f, 0.0f, 0.0f}; // Right
+    } else if (minDist == distToMinY) {
+      return glm::vec3{0.0f, -1.0f, 0.0f}; // Bottom
+    } else if (minDist == distToMaxY) {
+      return glm::vec3{0.0f, 1.0f, 0.0f}; // Top
+    } else if (minDist == distToMinZ) {
+      return glm::vec3{0.0f, 0.0f, -1.0f}; // Front
+    } else {
+      // minDist == distToMaxZ
+      return glm::vec3{0.0f, 0.0f, 1.0f}; // Back
+    }
   }
 };
 } // namespace scene
