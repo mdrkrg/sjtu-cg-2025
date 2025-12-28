@@ -130,4 +130,7 @@ private:
   void renderParticles(const glm::mat4 &projection, const glm::mat4 &view,
                        const glm::vec3 &cameraPosition);
   void renderDebugAABBs(const glm::mat4 &projection, const glm::mat4 &view);
+
+  /// Render an individual AABB for debugging
+  void renderDebugAABB(const scene::AABB &aabb) const;
 };

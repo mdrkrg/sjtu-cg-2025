@@ -654,6 +654,8 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
 
     // Get world AABB
     scene::AABB aabb = obj->getWorldAABB();
+    renderDebugAABB(aabb);
+  }
 
     // Compute scale and translation from AABB min/max
     glm::vec3 center = (aabb.min + aabb.max) * 0.5f;
@@ -665,12 +667,16 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
     // unit cube is from -0.5 to 0.5, scaling expands
     model = glm::scale(model, size);
 
-    debugShader->setMat4("model", model);
+  // Render debug AABB for test cube particles (yellow color)
+  if (testCubeSystem && testCubeSystem->isVisible()) {
+    // Yellow
+    debugShader->setVec3("color", glm::vec3(1.0f, 1.0f, 0.0f));
 
-    // Draw lines
-    glBindVertexArray(debugCubeLines.VAO);
-    glDrawArrays(GL_LINES, 0, debugCubeLines.vertexCount);
-    glBindVertexArray(0);
+    // Get individual world AABBs for particles
+    const auto cubeAABBs = testCubeSystem->getParticleWorldAABBs();
+    for (const auto &cubeAABB : cubeAABBs) {
+      renderDebugAABB(cubeAABB);
+    }
   }
 }
 
@@ -887,4 +893,25 @@ void GraphicsRenderer::setupTrap() {
     // Add to GameManager
     gameManager->addObject(std::move(panelObj));
   }
+}
+
+void GraphicsRenderer::renderDebugAABB(const scene::AABB &aabb) const {
+  const auto model = [&aabb] {
+    const glm::vec3 center = (aabb.min + aabb.max) * 0.5f;
+    const glm::vec3 size = aabb.max - aabb.min;
+
+    auto model = glm::mat4{1.0f};
+    // translate to center
+    model = glm::translate(model, center);
+    // scale to size
+    model = glm::scale(model, size);
+    return model;
+  }();
+
+  debugShader->setMat4("model", model);
+
+  // Draw lines
+  glBindVertexArray(debugCubeLines.VAO);
+  glDrawArrays(GL_LINES, 0, debugCubeLines.vertexCount);
+  glBindVertexArray(0);
 }
