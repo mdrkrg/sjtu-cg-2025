@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
 #include "graphics/particles/model_particle_factory.hpp"
+#include "graphics/particles/arrow_launcher.hpp"
 #include "graphics/model_factory.hpp"
 #include "graphics/texture.hpp"
 #include "scene/behaviours/lamp_lighting_behaviour.hpp"
@@ -33,11 +34,13 @@ const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
 
 GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
-      modelSimpleInstancedShader(nullptr), lightCubeShader(nullptr),
-      windowShader(nullptr), particleShader(nullptr), debugShader(nullptr),
-      windowDiffuseMap(0), gameManager(gameManager), selectedObject(nullptr),
+      modelSimpleInstancedShader(nullptr), modelInstancedShader(nullptr),
+      lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
+      debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
+      selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
-      orbAuraSystem(nullptr), testCubeSystem(nullptr), cloud(nullptr) {
+      orbAuraSystem(nullptr), testCubeSystem(nullptr), arrowLauncher(nullptr),
+      cloud(nullptr) {
   // Initialize geometry components
   ceiling = {0, 0, 0};
   floor = {0, 0, 0};
@@ -137,6 +140,33 @@ bool GraphicsRenderer::initialize() {
           gameManager->getObjects()    // AABB collision targets
       );
 
+  // Initialize arrow launcher
+  arrowLauncher =
+      std::make_shared<graphics::particles::ArrowLauncher>(gameManager);
+
+  auto arrowModelWithMaterials =
+      ModelFactory::loadModel("resources/objects/arrow/arrow1.obj");
+
+  arrowLauncher->init(std::move(arrowModelWithMaterials), modelInstancedShader,
+                      100);
+
+  // Set emitter position and direction
+  // Position: From behind of camera, slightly above
+  // Direction: Forward and slightly downward
+  arrowLauncher->setEmitter(glm::vec3{0.0f, 1.5f, 4.0f},   // Position
+                            glm::vec3{0.0f, -0.5f, -1.0f}, // Direction
+                            5.0f,                          // Speed
+                            10.0f                          // Spread angle
+  );
+
+  // Add collision targets
+  for (auto obj : gameManager->getObjects()) {
+    arrowLauncher->addCollisionTarget(obj);
+  }
+
+  // Fire arrows for testing
+  arrowLauncher->launch(10);
+
   return true;
 }
 
@@ -172,6 +202,11 @@ void GraphicsRenderer::update(float deltaTime) {
   // Update test cube system
   if (testCubeSystem) {
     testCubeSystem->update(deltaTime);
+  }
+
+  // Update arrow launcher
+  if (arrowLauncher && arrowLauncher->isInitialized()) {
+    arrowLauncher->update(deltaTime);
   }
 }
 
@@ -227,6 +262,8 @@ bool GraphicsRenderer::setupShaders() {
         "shaders/model.vs.glsl", "shaders/model-simple.fs.glsl");
     modelSimpleInstancedShader = std::make_shared<Shader>(
         "shaders/model-instanced.vs.glsl", "shaders/model-simple.fs.glsl");
+    modelInstancedShader = std::make_shared<Shader>(
+        "shaders/model-instanced.vs.glsl", "shaders/model.fs.glsl");
     lightCubeShader = std::make_shared<Shader>("shaders/lightcube.vs.glsl",
                                                "shaders/lightcube.fs.glsl");
     windowShader = std::make_shared<Shader>("shaders/window.vs.glsl",
@@ -625,6 +662,14 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
   if (testCubeSystem && testCubeSystem->isVisible()) {
     testCubeSystem->render(view, projection);
   }
+
+  // Render arrow launcher system
+  if (arrowLauncher && arrowLauncher->isInitialized()) {
+    auto arrowSystem = arrowLauncher->getArrowSystem();
+    if (arrowSystem && arrowSystem->isVisible()) {
+      arrowSystem->render(view, projection);
+    }
+  }
 }
 
 void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
@@ -657,15 +702,20 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
     renderDebugAABB(aabb);
   }
 
-    // Compute scale and translation from AABB min/max
-    glm::vec3 center = (aabb.min + aabb.max) * 0.5f;
-    glm::vec3 size = aabb.max - aabb.min;
+  // Render debug AABB for arrow particles (blue color)
+  if (arrowLauncher && arrowLauncher->isInitialized()) {
+    auto arrowSystem = arrowLauncher->getArrowSystem();
+    if (arrowSystem && arrowSystem->isVisible()) {
+      // Set color for arrow particle AABB (blue)
+      debugShader->setVec3("color", glm::vec3(0.0f, 0.0f, 1.0f));
 
-    // Create model matrix: translate to center, scale to size
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, center);
-    // unit cube is from -0.5 to 0.5, scaling expands
-    model = glm::scale(model, size);
+      // Get individual world AABBs for all arrow particles
+      auto arrowParticleAABBs = arrowSystem->getParticleWorldAABBs();
+      for (const auto &arrowAABB : arrowParticleAABBs) {
+        renderDebugAABB(arrowAABB);
+      }
+    }
+  }
 
   // Render debug AABB for test cube particles (yellow color)
   if (testCubeSystem && testCubeSystem->isVisible()) {

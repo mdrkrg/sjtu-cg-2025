@@ -48,6 +48,7 @@ executable(
     'src/graphics/particles/particle_factory.cpp',
     'src/graphics/particles/model_particle_system.cpp',
     'src/graphics/particles/model_particle_factory.cpp',
+    'src/graphics/particles/arrow_launcher.cpp',
     'src/scene/game_manager.cpp',
   ],
   dependencies: dependencies,
