@@ -20,8 +20,8 @@ public:
                        SimulationSpace space) const = 0;
 
   /// Handle particle death events
-  virtual void onDeath(Particle &particle) {}
+  virtual void onDeath(Particle &particle) { (void)particle; }
 
   /// Handle particle respawn events
-  virtual void onRespawn(Particle &particle) {}
+  virtual void onRespawn(Particle &particle) { (void)particle; }
 };

@@ -93,10 +93,6 @@ protected:
   virtual void onGameObjectCollision(ModelParticle &particle,
                                      GameObject &target,
                                      const scene::AABB &collisionAABB) {
-    const auto &center = collisionAABB.center();
-    std::println(std::clog,
-                 "ModelParticle collided with {} at AABB center ({}, {}, {})",
-                 target.getName(), center.x, center.y, center.z);
     particle.velocity = -particle.velocity * 0.8f;
     particle.life *= 1.5;
     if (particle.velocity.y <= 0.001f) {

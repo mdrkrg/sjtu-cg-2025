@@ -7,8 +7,7 @@
 #include <memory>
 #include <random>
 
-template<typename ParticleType>
-class ParticleSystem;
+template <typename ParticleType> class ParticleSystem;
 
 class ParticleEmitter {
 public:
@@ -39,7 +38,9 @@ public:
   std::shared_ptr<ParticleBehaviour> getBehaviour() const { return behaviour; }
 
   /// Set associated behaviour
-  void setBehaviour(std::shared_ptr<ParticleBehaviour> newBehaviour) { behaviour = newBehaviour; }
+  void setBehaviour(std::shared_ptr<ParticleBehaviour> newBehaviour) {
+    behaviour = newBehaviour;
+  }
 
   /// Update emission timing and return number of particles to emit
   size_t updateEmission(float deltaTime) {
@@ -50,12 +51,21 @@ public:
     }
 
     // Handle burst emission
-    if (burstCount > 0 && burstInterval > 0.0f) {
-      timeSinceLastBurst += deltaTime;
-      if (timeSinceLastBurst >= burstInterval) {
+    if (burstCount > 0) {
+      if (burstInterval > 0.0f) {
+        // Scheduled burst: wait for interval
+        timeSinceLastBurst += deltaTime;
+        if (timeSinceLastBurst >= burstInterval) {
+          totalEmitCount += burstCount;
+          timeSinceLastBurst = 0.0f;
+          burstCount = 0; // Clear burst after emitting
+        }
+      } else if (burstInterval == 0.0f) {
+        // Immediate burst: emit now
         totalEmitCount += burstCount;
-        timeSinceLastBurst = 0.0f;
+        burstCount = 0; // Clear burst after emitting
       }
+      // If burstInterval < 0.0f, do nothing (invalid interval)
     }
 
     return totalEmitCount;
@@ -80,8 +90,7 @@ protected:
   static std::random_device rd;
   static std::mt19937 gen;
 
-  template<typename ParticleType>
-  friend class ParticleSystem;
+  template <typename ParticleType> friend class ParticleSystem;
 
   const GameObject *parent = nullptr;
   SimulationSpace simulationSpace = SimulationSpace::WORLD;
