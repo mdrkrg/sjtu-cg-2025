@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base_behaviour.hpp"
+#include "base_updater.hpp"
 #include "graphics/particles/model_particle.hpp"
 #include "graphics/particles/model_particle_system.hpp"
 #include "scene/game_object.hpp"
@@ -10,21 +10,21 @@ namespace graphics::particles {
 
 /// AABB-AABB collision behaviour for ModelParticles
 /// Checks collision between ModelParticle AABB and GameObject AABB
-class ModelParticleAABBCollisionBehaviour : public BaseBehaviour {
+class ModelParticleAABBCollisionUpdater : public BaseUpdater {
 public:
   /// Constructor
   /// @param particleSystem ModelParticleSystem reference (for particle local
   /// AABB)
   /// @param collisionTargets List of GameObjects to check for collision
   /// @param collisionMargin Margin around AABBs for collision detection
-  ModelParticleAABBCollisionBehaviour(
+  ModelParticleAABBCollisionUpdater(
       ModelParticleSystem *particleSystem,
       const std::vector<GameObject *> &collisionTargets = {},
       float collisionMargin = 0.01f)
       : particleSystem{particleSystem}, collisionTargets{collisionTargets},
         collisionMargin{collisionMargin} {
     if (!particleSystem) {
-      std::cerr << "Warning: ModelParticleAABBCollisionBehaviour created with "
+      std::cerr << "Warning: ModelParticleAABBCollisionUpdater created with "
                    "null particleSystem"
                 << std::endl;
     }
@@ -82,7 +82,7 @@ public:
   /// @return True if particle is alive
   bool isAlive(const Particle &particle, const glm::mat4 &model,
                SimulationSpace space) const override {
-    return BaseBehaviour::isAlive(particle, model, space);
+    return BaseUpdater::isAlive(particle, model, space);
   }
 
 protected:
@@ -117,11 +117,11 @@ private:
                           scene::AABB &collisionAABB) const;
 };
 
-inline void ModelParticleAABBCollisionBehaviour::update(Particle &particle,
-                                                        float deltaTime,
-                                                        const glm::mat4 &model,
-                                                        SimulationSpace space) {
-  BaseBehaviour::update(particle, deltaTime, model, space);
+inline void ModelParticleAABBCollisionUpdater::update(Particle &particle,
+                                                      float deltaTime,
+                                                      const glm::mat4 &model,
+                                                      SimulationSpace space) {
+  BaseUpdater::update(particle, deltaTime, model, space);
 
   // Cast to ModelParticle (this behaviour only works with ModelParticle)
   auto &modelParticle = static_cast<ModelParticle &>(particle);
@@ -145,7 +145,7 @@ inline void ModelParticleAABBCollisionBehaviour::update(Particle &particle,
   }
 }
 
-inline bool ModelParticleAABBCollisionBehaviour::checkAABBCollision(
+inline bool ModelParticleAABBCollisionUpdater::checkAABBCollision(
     const ModelParticle &particle, const GameObject &target,
     const glm::mat4 &particleSystemModel, scene::AABB &collisionAABB) const {
   if (!particleSystem) {

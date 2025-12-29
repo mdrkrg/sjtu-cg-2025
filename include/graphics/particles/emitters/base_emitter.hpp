@@ -1,22 +1,24 @@
 #pragma once
 
-#include "graphics/particles/particle_emitter.hpp"
+#include "graphics/particles/base/emitter.hpp"
+#include "graphics/particles/initializers/base_initializer.hpp"
 #include <glm/glm.hpp>
-#include <random>
 
-constexpr float PARTICLE_SPEED = 28.0f;
+namespace graphics::particles {
 
-class BaseEmitter : public ParticleEmitter {
+class BaseEmitter : public Emitter {
 public:
-  BaseEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
+  BaseEmitter(std::shared_ptr<Initializer> initializer = nullptr,
               const GameObject *parent = nullptr,
               SimulationSpace space = SimulationSpace::WORLD)
-      : ParticleEmitter(behaviour, 0.0f, parent, space) {}
+      // default
+      : Emitter(initializer ? initializer : std::make_shared<BaseInitializer>(),
+                0.0f, parent, space) {}
   virtual ~BaseEmitter() = default;
 
   /// Emit a particle with emitter-specific positioning
   virtual void emit(Particle &particle) override {
-    ParticleEmitter::emit(particle);
+    Emitter::emit(particle);
 
     // Get emission origin (local coordinates)
     glm::vec3 localPos = getEmissionOrigin();
@@ -32,13 +34,5 @@ protected:
   // Position and direction for emission
   glm::vec3 position = glm::vec3(0.0f);
   glm::vec3 direction = glm::vec3(0.0f, 1.0f, 0.0f);
-
-  static std::random_device rd;
-  static std::mt19937 gen;
-  static std::uniform_real_distribution<float> uniformDist;
 };
-
-inline std::random_device BaseEmitter::rd{};
-inline std::mt19937 BaseEmitter::gen{rd()};
-inline std::uniform_real_distribution<float> BaseEmitter::uniformDist{0.0f,
-                                                                      1.0f};
+} // namespace graphics::particles

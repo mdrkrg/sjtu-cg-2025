@@ -1,15 +1,18 @@
 #pragma once
 
-#include "graphics/particles/behaviours/base_behaviour.hpp"
+#include "base_updater.hpp"
 #include "math/transform.hpp"
+#include "math/random.hpp"
 #include <glm/glm.hpp>
 
-class WindBehaviour : public BaseBehaviour {
+namespace graphics::particles {
+
+class WindUpdater : public BaseUpdater {
 public:
-  WindBehaviour(const glm::vec3 &windForce = glm::vec3(0.0f),
-                float turbulence = 0.0f)
+  WindUpdater(const glm::vec3 &windForce = glm::vec3(0.0f),
+              float turbulence = 0.0f)
       : windForce(windForce), turbulence(turbulence) {}
-  virtual ~WindBehaviour() = default;
+  virtual ~WindUpdater() = default;
 
   /// Update particle with wind effect
   inline virtual void update(Particle &particle, float deltaTime,
@@ -28,8 +31,8 @@ public:
 
     // Turbulence (always in local space)
     if (turbulence > 0.0f) {
-      float turbulenceX = (uniformDist(gen) - 0.5f) * 2.0f * turbulence;
-      float turbulenceZ = (uniformDist(gen) - 0.5f) * 2.0f * turbulence;
+      float turbulenceX = (math::uniformDist() - 0.5f) * 2.0f * turbulence;
+      float turbulenceZ = (math::uniformDist() - 0.5f) * 2.0f * turbulence;
       particle.velocity.x += turbulenceX * deltaTime;
       particle.velocity.z += turbulenceZ * deltaTime;
     }
@@ -45,3 +48,4 @@ private:
   glm::vec3 windForce;
   float turbulence;
 };
+} // namespace graphics::particles

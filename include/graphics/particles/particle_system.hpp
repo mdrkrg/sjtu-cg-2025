@@ -1,6 +1,7 @@
 #pragma once
 
-#include "particle_emitter.hpp"
+#include "base/emitter.hpp"
+#include "base/updater.hpp"
 #include "particle.hpp"
 #include "scene/game_object.hpp"
 #include <graphics/shader.h>
@@ -9,10 +10,12 @@
 #include <vector>
 #include <queue>
 
+namespace graphics::particles {
+
 template <typename ParticleType = Particle> class ParticleSystem {
 public:
   ParticleSystem(std::shared_ptr<Shader> shader,
-                 std::shared_ptr<ParticleEmitter> emitter,
+                 std::shared_ptr<Emitter> emitter,
                  SimulationSpace space = SimulationSpace::WORLD,
                  GameObject *customTransform = nullptr)
       : shader{shader}, emitter(emitter), simulationSpace(space),
@@ -38,14 +41,22 @@ public:
       // TODO: Move life update to the actual base behaviour?
       p.life -= deltaTime;
 
+      // FIXME: isAlive check is not quite flexible. Some may just skip
       // Check if particle should be removed
       const bool shouldRemove = [&, this] {
-        if (emitter && emitter->getBehaviour()) {
-          return not emitter->getBehaviour()->isAlive(p, model,
-                                                      simulationSpace);
-        } else {
-          return p.life <= 0.0f;
+        // if (emitter && emitter->getBehaviour()) {
+        //   return not emitter->getBehaviour()->isAlive(p, model,
+        //                                               simulationSpace);
+        // } else {
+        //   return p.life <= 0.0f;
+        // }
+        if (p.life <= 0.0f) {
+          return true;
         }
+        return std::ranges::any_of(
+            updaters, [this, &model, &p](std::shared_ptr<Updater> updater) {
+              return not updater->isAlive(p, model, simulationSpace);
+            });
       }();
 
       if (shouldRemove) {
@@ -54,8 +65,12 @@ public:
         it = activeParticles.erase(it);
       } else {
         // Update particle behaviour
-        if (emitter && emitter->getBehaviour()) {
-          emitter->getBehaviour()->update(p, deltaTime, model, simulationSpace);
+        // if (emitter && emitter->getBehaviour()) {
+        //   emitter->getBehaviour()->update(p, deltaTime, model,
+        //   simulationSpace);
+        // }
+        for (const auto &updater : updaters) {
+          updater->update(p, deltaTime, model, simulationSpace);
         }
 
         // Update position
@@ -172,11 +187,17 @@ public:
 
   void setShader(std::shared_ptr<Shader> shader) { this->shader = shader; }
 
+  void addUpdater(std::shared_ptr<Updater> updater) {
+    updaters.push_back(updater);
+  }
+
 protected:
-  std::shared_ptr<ParticleEmitter> emitter;
+  std::shared_ptr<Emitter> emitter;
   std::vector<ParticleType> activeParticles;
   std::queue<ParticleType> particlePool; // For reuse
   size_t maxParticles = 1000;
+
+  std::vector<std::shared_ptr<Updater>> updaters;
 
   std::shared_ptr<Shader> shader;
 
@@ -294,3 +315,4 @@ protected:
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 };
+} // namespace graphics::particles

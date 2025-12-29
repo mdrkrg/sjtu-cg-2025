@@ -21,6 +21,8 @@
 #include <cstring>
 #include <memory>
 
+using graphics::particles::ParticleFactory;
+
 const glm::mat4 GraphicsRenderer::weatherModel =
     glm::scale(glm::mat4(1.0), glm::vec3(0.04));
 

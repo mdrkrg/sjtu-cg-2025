@@ -3,13 +3,15 @@
 #include "base_emitter.hpp"
 #include <glm/glm.hpp>
 
+namespace graphics::particles {
+
 /// Emitter that emits particle from a single point.
 class PointEmitter : public BaseEmitter {
 public:
-  PointEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
+  PointEmitter(std::shared_ptr<Initializer> initializer,
                GameObject *const parent = nullptr,
                const glm::vec3 &position = glm::vec3(0.0f))
-      : BaseEmitter(behaviour, parent) {
+      : BaseEmitter(initializer, parent) {
     setPosition(position);
   }
   virtual ~PointEmitter() = default;
@@ -26,3 +28,4 @@ public:
   /// Get emission position
   const glm::vec3 &getPosition() const { return position; }
 };
+} // namespace graphics::particles

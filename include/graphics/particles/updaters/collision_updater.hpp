@@ -1,24 +1,26 @@
 #pragma once
 
-#include "graphics/particles/behaviours/base_behaviour.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
+#include "graphics/particles/updaters/base_updater.hpp"
 #include "graphics/terrain_mesh.hpp"
 
-/// Behaviour that triggers a callback when on collision with a terrain.
-class CollisionBehaviour : public BaseBehaviour {
+namespace graphics::particles {
+
+/// Updater that triggers a callback when on collision with a terrain.
+class CollisionUpdater : public BaseUpdater {
 public:
-  inline CollisionBehaviour(std::shared_ptr<TerrainMesh> terrain,
-                            const glm::mat4 &terrainModel)
+  inline CollisionUpdater(std::shared_ptr<TerrainMesh> terrain,
+                          const glm::mat4 &terrainModel)
       : terrain(terrain), terrainModel(terrainModel) {}
-  virtual ~CollisionBehaviour() = default;
+  virtual ~CollisionUpdater() = default;
 
   /// Update particle with collision detection
   inline virtual void update(Particle &particle, float deltaTime,
                              const glm::mat4 &model,
                              SimulationSpace space) override {
-    BaseBehaviour::update(particle, deltaTime, model, space);
+    BaseUpdater::update(particle, deltaTime, model, space);
 
     // Check for collision with terrain
     if (const auto heightResult = getCollisionHeight(particle, model);
@@ -29,7 +31,7 @@ public:
 
   inline virtual bool isAlive(const Particle &particle, const glm::mat4 &model,
                               SimulationSpace space) const override {
-    if (!BaseBehaviour::isAlive(particle, model, space)) {
+    if (!BaseUpdater::isAlive(particle, model, space)) {
       return false;
     }
 
@@ -71,12 +73,12 @@ private:
   }
 };
 
-/// CollisionBehaviour that covers the terrain with particles on collision.
-class CoverBehaviour : public CollisionBehaviour {
+/// CollisionUpdater that covers the terrain with particles on collision.
+class CoverUpdater : public CollisionUpdater {
 public:
-  inline CoverBehaviour(std::shared_ptr<TerrainMesh> terrain,
-                        const glm::mat4 &terrainModel)
-      : CollisionBehaviour(terrain, terrainModel) {}
+  inline CoverUpdater(std::shared_ptr<TerrainMesh> terrain,
+                      const glm::mat4 &terrainModel)
+      : CollisionUpdater(terrain, terrainModel) {}
 
 protected:
   inline void onCollision(Particle &particle, float height) const {
@@ -90,13 +92,13 @@ protected:
   }
 };
 
-/// CollisionBehaviour that eliminate the particle on collision with the
+/// CollisionUpdater that eliminate the particle on collision with the
 /// terrain.
-class DissolveBehaviour : public CollisionBehaviour {
+class DissolveUpdater : public CollisionUpdater {
 public:
-  inline DissolveBehaviour(std::shared_ptr<TerrainMesh> terrain,
-                           const glm::mat4 &terrainModel)
-      : CollisionBehaviour(terrain, terrainModel) {}
+  inline DissolveUpdater(std::shared_ptr<TerrainMesh> terrain,
+                         const glm::mat4 &terrainModel)
+      : CollisionUpdater(terrain, terrainModel) {}
 
 protected:
   inline void onCollision(Particle &particle, float) const {
@@ -104,3 +106,4 @@ protected:
     particle.life = 0.0f;
   }
 };
+} // namespace graphics::particles

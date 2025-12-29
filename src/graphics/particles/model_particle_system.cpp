@@ -1,14 +1,14 @@
 #include "graphics/particles/model_particle_system.hpp"
-#include "graphics/particles/particle_emitter.hpp"
 #include "graphics/rendering.hpp"
 #include "scene/aabb.hpp"
 
 namespace graphics::particles {
 
-ModelParticleSystem::ModelParticleSystem(
-    std::shared_ptr<Shader> shader, std::shared_ptr<ParticleEmitter> emitter,
-    ModelWithMaterials modelWithMaterials, SimulationSpace space,
-    GameObject *customTransform)
+ModelParticleSystem::ModelParticleSystem(std::shared_ptr<Shader> shader,
+                                         std::shared_ptr<Emitter> emitter,
+                                         ModelWithMaterials modelWithMaterials,
+                                         SimulationSpace space,
+                                         GameObject *customTransform)
     : ParticleSystem{shader, emitter, space, customTransform},
       particleModel{std::move(modelWithMaterials)} {
 

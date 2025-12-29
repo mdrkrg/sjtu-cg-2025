@@ -4,6 +4,8 @@
 #include "graphics/terrain_mesh.hpp"
 #include <memory>
 
+namespace graphics::particles {
+
 class ParticleFactory {
 public:
   static std::unique_ptr<ParticleSystem<Particle>>
@@ -32,3 +34,4 @@ public:
       const glm::vec4 &glowColor = glm::vec4(0.2f, 0.8f, 1.0f, 1.0f),
       float intensity = 1.0f, int maxParticles = 1000Z);
 };
+} // namespace graphics::particles

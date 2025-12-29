@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base_behaviour.hpp"
+#include "base_updater.hpp"
 #include "graphics/particles/model_particle.hpp"
 #include "math/transform.hpp"
 #include <glm/glm.hpp>
@@ -9,31 +9,17 @@
 namespace graphics::particles {
 
 /// Arrow physics behaviour
-/// Extends BaseBehaviour for arrow-specific physics (gravity, drag, rotation)
-class ArrowPhysicsBehaviour : public BaseBehaviour {
+/// Extends BaseUpdater for arrow-specific physics (gravity, drag, rotation)
+class ArrowPhysicsUpdater : public BaseUpdater {
 
 public:
   /// Constructor
   /// @param gravity Gravity strength (m/s^2)
   /// @param drag Air drag coefficient (0-1)
   /// @param lifetime Maximum lifetime in seconds
-  ArrowPhysicsBehaviour(float gravity = 9.81f, float drag = 0.01f,
-                        float lifetime = 10.0f)
+  ArrowPhysicsUpdater(float gravity = 9.81f, float drag = 0.01f,
+                      float lifetime = 10.0f)
       : gravity{gravity}, drag{drag}, lifetime{lifetime} {}
-
-  /// Initialize arrow particle
-  /// @param particle Particle to initialize
-  void initialize(Particle &particle) override {
-    BaseBehaviour::initialize(particle);
-
-    auto &arrow = static_cast<ModelParticle &>(particle);
-
-    arrow.life = lifetime; // Use custom lifetime
-    arrow.stuck = false;
-    arrow.stickTime = 0.0f;
-    arrow.rotation = glm::vec3{0.0f};
-    arrow.angularVelocity = glm::vec3{0.0f};
-  }
 
   /// Update arrow physics
   /// @param particle Particle to update
@@ -71,7 +57,7 @@ public:
   }
 
   /// Using default alive check
-  using BaseBehaviour::isAlive;
+  using BaseUpdater::isAlive;
 
   /// Handle arrow death (when it hits something or times out)
   /// @param particle Particle that died
@@ -80,9 +66,10 @@ public:
     arrow.reset();
   }
 
-  /// Handle arrow respawn
-  /// @param particle Particle being respawned
-  void onRespawn(Particle &particle) override { initialize(particle); }
+  /// FIXME: This is needed?
+  /// /// Handle arrow respawn
+  /// /// @param particle Particle being respawned
+  /// void onRespawn(Particle &particle) override { initialize(particle); }
 
   /// Set gravity strength
   /// @param gravity Gravity in m/s^2

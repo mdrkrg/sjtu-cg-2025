@@ -1,15 +1,15 @@
 #pragma once
-
-#include "graphics/particles/behaviours/base_behaviour.hpp"
-#include "graphics/particles/particle.hpp"
+#include "graphics/particles/updaters/base_updater.hpp"
 #include "math/transform.hpp"
-#include <glm/glm.hpp>
 
-class GravityBehaviour : public BaseBehaviour {
+namespace graphics::particles {
+
+class GravityUpdater : public BaseUpdater {
 public:
-  GravityBehaviour(const glm::vec3 &gravity = glm::vec3(0.0f, -9.81f, 0.0f))
+  GravityUpdater(const glm::vec3 &gravity = glm::vec3(0.0f, -9.81f, 0.0f))
       : gravity(gravity) {}
-  virtual ~GravityBehaviour() = default;
+
+  virtual ~GravityUpdater() = default;
 
   /// Update particle with gravity effect
   inline virtual void update(Particle &particle, float deltaTime,
@@ -36,3 +36,5 @@ public:
 private:
   glm::vec3 gravity;
 };
+
+} // namespace graphics::particles

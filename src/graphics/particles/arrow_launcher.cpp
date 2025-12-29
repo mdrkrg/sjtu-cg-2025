@@ -1,5 +1,9 @@
 #include "graphics/particles/arrow_launcher.hpp"
-#include "graphics/particles/behaviours/arrow_physics_behaviour.hpp"
+// #include "graphics/particles/behaviours/arrow_collision_behaviour.hpp"
+// #include "graphics/particles/behaviours/arrow_physics_behaviour.hpp"
+#include "graphics/particles/initializers/arrow_initializer.hpp"
+#include "graphics/particles/updaters/arrow_collision_updater.hpp"
+#include "graphics/particles/updaters/arrow_physics_updater.hpp"
 #include "scene/game_manager.hpp"
 #include <algorithm>
 #include <iostream>
@@ -20,7 +24,8 @@ void ArrowLauncher::init(ModelWithMaterials arrowModelWithMaterials,
 
   { // behaviours
     // arrowBehaviour is created locally in setEmitter()
-    collisionBehaviour = std::make_shared<ArrowCollisionBehaviour>();
+    // collisionBehaviour = std::make_shared<ArrowCollisionBehaviour>();
+    collisionUpdater = std::make_shared<ArrowCollisionUpdater>();
   }
 
   { // Create arrow system without emitter initially
@@ -50,68 +55,75 @@ void ArrowLauncher::setEmitter(const glm::vec3 &position,
   }
 
   // Composite behaviour for emitter (arrow physics + collision)
-  class ArrowBehaviour : public ParticleBehaviour {
-  public:
-    ArrowBehaviour(std::shared_ptr<ArrowPhysicsBehaviour> arrow,
-                   std::shared_ptr<ArrowCollisionBehaviour> collision)
-        : arrowBehaviour{arrow}, collisionBehaviour{collision} {}
+  // WARN: Deprecated
+  // class ArrowBehaviour : public ParticleBehaviour {
+  // public:
+  //   ArrowBehaviour(std::shared_ptr<ArrowPhysicsBehaviour> arrow,
+  //                  std::shared_ptr<ArrowCollisionBehaviour> collision)
+  //       : arrowBehaviour{arrow}, collisionBehaviour{collision} {}
+  //
+  //   void initialize(Particle &particle) override {
+  //     if (arrowBehaviour) {
+  //       arrowBehaviour->initialize(particle);
+  //     }
+  //   }
+  //
+  //   void update(Particle &particle, float deltaTime, const glm::mat4 &model,
+  //               SimulationSpace space) override {
+  //     if (arrowBehaviour) {
+  //       arrowBehaviour->update(particle, deltaTime, model, space);
+  //     }
+  //     if (collisionBehaviour) {
+  //       collisionBehaviour->update(particle, deltaTime, model, space);
+  //     }
+  //   }
+  //
+  //   bool isAlive(const Particle &particle, const glm::mat4 &model,
+  //                SimulationSpace space) const override {
+  //     bool alive = true;
+  //     if (arrowBehaviour) {
+  //       alive = alive && arrowBehaviour->isAlive(particle, model, space);
+  //     }
+  //     if (collisionBehaviour) {
+  //       alive = alive && collisionBehaviour->isAlive(particle, model, space);
+  //     }
+  //     return alive;
+  //   }
+  //
+  //   void onDeath(Particle &particle) override {
+  //     if (arrowBehaviour) {
+  //       arrowBehaviour->onDeath(particle);
+  //     }
+  //   }
+  //
+  //   void onRespawn(Particle &particle) override {
+  //     if (arrowBehaviour) {
+  //       arrowBehaviour->onRespawn(particle);
+  //     }
+  //   }
+  //
+  // private:
+  //   std::shared_ptr<ArrowPhysicsBehaviour> arrowBehaviour;
+  //   std::shared_ptr<ArrowCollisionBehaviour> collisionBehaviour;
+  // };
 
-    void initialize(Particle &particle) override {
-      if (arrowBehaviour) {
-        arrowBehaviour->initialize(particle);
-      }
-    }
+  // auto arrowBehaviour = createArrowPhysicsBehaviour(1.0f, 0.01f);
+  // auto compositeBehaviour =
+  //     std::make_shared<ArrowBehaviour>(arrowBehaviour, collisionBehaviour);
 
-    void update(Particle &particle, float deltaTime, const glm::mat4 &model,
-                SimulationSpace space) override {
-      if (arrowBehaviour) {
-        arrowBehaviour->update(particle, deltaTime, model, space);
-      }
-      if (collisionBehaviour) {
-        collisionBehaviour->update(particle, deltaTime, model, space);
-      }
-    }
+  auto arrowInitializer = std::make_shared<ArrowInitializer>();
 
-    bool isAlive(const Particle &particle, const glm::mat4 &model,
-                 SimulationSpace space) const override {
-      bool alive = true;
-      if (arrowBehaviour) {
-        alive = alive && arrowBehaviour->isAlive(particle, model, space);
-      }
-      if (collisionBehaviour) {
-        alive = alive && collisionBehaviour->isAlive(particle, model, space);
-      }
-      return alive;
-    }
-
-    void onDeath(Particle &particle) override {
-      if (arrowBehaviour) {
-        arrowBehaviour->onDeath(particle);
-      }
-    }
-
-    void onRespawn(Particle &particle) override {
-      if (arrowBehaviour) {
-        arrowBehaviour->onRespawn(particle);
-      }
-    }
-
-  private:
-    std::shared_ptr<ArrowPhysicsBehaviour> arrowBehaviour;
-    std::shared_ptr<ArrowCollisionBehaviour> collisionBehaviour;
-  };
-
-  auto arrowBehaviour = createArrowPhysicsBehaviour(1.0f, 0.01f);
-  auto compositeBehaviour =
-      std::make_shared<ArrowBehaviour>(arrowBehaviour, collisionBehaviour);
+  auto arrowPhysicsUpdater = std::make_shared<ArrowPhysicsUpdater>();
 
   // Always create new emitter with updated parameters
   emitter = std::make_shared<ArrowEmitter>(
-      compositeBehaviour, position, direction, speed, spreadAngle,
+      arrowInitializer, position, direction, speed, spreadAngle,
       nullptr // No parent GameObject (world space)
   );
   emitter->setEmissionRate(0.0f);
   arrowSystem->emitter = emitter;
+  arrowSystem->addUpdater(collisionUpdater);
+  arrowSystem->addUpdater(arrowPhysicsUpdater);
 
   std::println(std::clog,
                "Arrow emitter set at ({}, {}, {}) direction ({}, {}, {})",
@@ -153,22 +165,24 @@ void ArrowLauncher::stopContinuousFire() {
 }
 
 void ArrowLauncher::addCollisionTarget(GameObject *target) {
-  if (not target or not collisionBehaviour) {
+  // if (not target or not collisionBehaviour) {
+  if (not target or not collisionUpdater) {
     return;
   }
 
-  collisionBehaviour->addCollisionTarget(target);
+  // collisionBehaviour->addCollisionTarget(target);
+  collisionUpdater->addCollisionTarget(target);
   collisionTargets.push_back(target);
 
   std::println("Added collision target: {}", target->getName());
 }
 
 void ArrowLauncher::removeCollisionTarget(GameObject *target) {
-  if (not collisionBehaviour) {
+  if (not collisionUpdater) {
     return;
   }
 
-  collisionBehaviour->removeCollisionTarget(target);
+  collisionUpdater->removeCollisionTarget(target);
 
   // Remove from local list
   auto it = std::find(collisionTargets.begin(), collisionTargets.end(), target);
@@ -178,8 +192,8 @@ void ArrowLauncher::removeCollisionTarget(GameObject *target) {
 }
 
 void ArrowLauncher::clearCollisionTargets() {
-  if (collisionBehaviour) {
-    collisionBehaviour->clearCollisionTargets();
+  if (collisionUpdater) {
+    collisionUpdater->clearCollisionTargets();
   }
   collisionTargets.clear();
 }
@@ -190,11 +204,4 @@ void ArrowLauncher::update(float deltaTime) {
   }
   arrowSystem->update(deltaTime);
 }
-
-std::shared_ptr<ArrowPhysicsBehaviour>
-ArrowLauncher::createArrowPhysicsBehaviour(float gravity, float drag,
-                                           float lifetime) {
-  return std::make_shared<ArrowPhysicsBehaviour>(gravity, drag, lifetime);
-}
-
 } // namespace graphics::particles

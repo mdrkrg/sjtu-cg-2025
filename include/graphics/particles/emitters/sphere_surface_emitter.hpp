@@ -1,16 +1,19 @@
 #pragma once
 
 #include "base_emitter.hpp"
+#include "math/random.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <cmath>
 
+namespace graphics::particles {
+
 /// Emitter that emits particles from the surface of a sphere.
 class SphereSurfaceEmitter : public BaseEmitter {
 public:
-  SphereSurfaceEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
+  SphereSurfaceEmitter(std::shared_ptr<Initializer> initializer,
                        GameObject *obj = nullptr, float radius = 1.0f)
-      : BaseEmitter{behaviour, obj, SimulationSpace::WORLD}, radius{radius} {}
+      : BaseEmitter{initializer, obj, SimulationSpace::WORLD}, radius{radius} {}
   virtual ~SphereSurfaceEmitter() = default;
 
   /// Emit a particle from a random point on sphere surface
@@ -18,8 +21,8 @@ public:
     BaseEmitter::emit(particle);
 
     // Generate random point on sphere surface using spherical coordinates
-    float theta = 2.0f * glm::pi<float>() * uniformDist(gen); // [0, 2pi]
-    float phi = glm::acos(2.0f * uniformDist(gen) - 1.0f);    // [0, pi]
+    float theta = 2.0f * glm::pi<float>() * math::uniformDist(); // [0, 2pi]
+    float phi = glm::acos(2.0f * math::uniformDist() - 1.0f);    // [0, pi]
 
     // Convert to Cartesian coordinates (local shape position)
     const auto x = radius * sinf(phi) * cosf(theta);
@@ -50,3 +53,4 @@ public:
 private:
   float radius;
 };
+} // namespace graphics::particles

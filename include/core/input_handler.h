@@ -11,6 +11,8 @@
 #include "graphics/cloud.h"
 #include "graphics/particles/particle_system.hpp"
 
+using graphics::particles::ParticleSystem;
+
 class InputHandler {
 public:
   InputHandler(Camera &camera, float screenWidth, float screenHeight);

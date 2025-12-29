@@ -1,27 +1,27 @@
 #pragma once
 
 #include "scene/game_object.hpp"
-#include "particle_behaviour.hpp"
-#include "particle.hpp"
+#include "graphics/particles/particle.hpp"
+#include "initializer.hpp"
 #include <glm/glm.hpp>
 #include <memory>
-#include <random>
 
-template <typename ParticleType> class ParticleSystem;
+namespace graphics::particles {
 
-class ParticleEmitter {
+class Emitter {
 public:
-  ParticleEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
-                  float emissionRate = 0.0f, const GameObject *parent = nullptr,
-                  SimulationSpace space = SimulationSpace::WORLD)
-      : behaviour(behaviour), emissionRate(emissionRate), parent(parent),
-        simulationSpace(space) {}
-  virtual ~ParticleEmitter() = default;
+  Emitter(std::shared_ptr<Initializer> initializer, float emissionRate = 0.0f,
+          const GameObject *parent = nullptr,
+          SimulationSpace space = SimulationSpace::WORLD)
+      : initializer{initializer}, emissionRate{emissionRate}, parent{parent},
+        simulationSpace{space} {}
+
+  virtual ~Emitter() = default;
 
   /// Emit a single particle
   inline virtual void emit(Particle &particle) {
-    if (behaviour) {
-      behaviour->initialize(particle);
+    if (initializer) {
+      initializer->initialize(particle);
     }
   }
 
@@ -34,12 +34,12 @@ public:
     burstInterval = intervalSeconds;
   }
 
-  /// Get associated behaviour
-  std::shared_ptr<ParticleBehaviour> getBehaviour() const { return behaviour; }
+  /// Get associated initializer
+  std::shared_ptr<Initializer> getInitializer() const { return initializer; }
 
-  /// Set associated behaviour
-  void setBehaviour(std::shared_ptr<ParticleBehaviour> newBehaviour) {
-    behaviour = newBehaviour;
+  /// Set associated initializer
+  void setInitializer(std::shared_ptr<Initializer> newInitializer) {
+    initializer = newInitializer;
   }
 
   /// Update emission timing and return number of particles to emit
@@ -78,7 +78,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<ParticleBehaviour> behaviour;
+  std::shared_ptr<Initializer> initializer;
   float emissionRate = 10.0f; // particles per second
 
   int burstCount = 0;
@@ -86,9 +86,6 @@ protected:
 
   float timeSinceLastEmission = 0.0f;
   float timeSinceLastBurst = 0.0f;
-
-  static std::random_device rd;
-  static std::mt19937 gen;
 
   template <typename ParticleType> friend class ParticleSystem;
 
@@ -134,6 +131,4 @@ private:
     return emitCount;
   }
 };
-
-inline std::random_device ParticleEmitter::rd{};
-inline std::mt19937 ParticleEmitter::gen{rd()};
+} // namespace graphics::particles

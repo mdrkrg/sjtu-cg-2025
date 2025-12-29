@@ -7,7 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <memory>
 
-#include "particles/particle_system.hpp"
+#include "graphics/particles/particle_system.hpp"
 #include "particles/model_particle_system.hpp"
 #include "particles/arrow_launcher.hpp"
 #include "shader.h"
@@ -15,6 +15,8 @@
 #include "cloud.h"
 #include "scene/game_object.hpp"
 #include "graphics/light_manager.hpp"
+
+using graphics::particles::ParticleSystem;
 
 class GameManager;
 

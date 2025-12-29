@@ -2,9 +2,9 @@
 
 #include "base_emitter.hpp"
 #include "graphics/particles/model_particle.hpp"
+#include "math/random.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-#include <random>
 
 namespace graphics::particles {
 
@@ -12,13 +12,14 @@ namespace graphics::particles {
 class ArrowEmitter : public BaseEmitter {
 public:
   /// Constructor
-  /// @param behaviour Arrow behaviour (should be ArrowBehaviour or derived)
+  /// @param initializer Arrow initializer (should be ArrowInitializer or
+  /// derived)
   /// @param position Emission position
   /// @param direction Base emission direction (normalized)
   /// @param speed Arrow speed in units per second
   /// @param spreadAngle Spread angle in degrees (0 = straight, 45 = wide cone)
   /// @param parent Parent GameObject for LOCAL/CUSTOM simulation space
-  ArrowEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
+  ArrowEmitter(std::shared_ptr<Initializer> initializer,
                // WARN: unused param
                const glm::vec3 &position = glm::vec3{0.0f},
                const glm::vec3 &direction = glm::vec3{0.0f, 0.0f, -1.0f},
@@ -66,12 +67,12 @@ private:
   // glm::vec3 randomPointOnUnitSphere() const;
 };
 
-inline ArrowEmitter::ArrowEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
+inline ArrowEmitter::ArrowEmitter(std::shared_ptr<Initializer> initializer,
                                   // WARN: unused param
                                   const glm::vec3 &position,
                                   const glm::vec3 &direction, float speed,
                                   float spreadAngle, const GameObject *parent)
-    : BaseEmitter{behaviour, parent}, speed{speed}, spreadAngle{spreadAngle} {
+    : BaseEmitter{initializer, parent}, speed{speed}, spreadAngle{spreadAngle} {
   // Set position (protected member from BaseEmitter)
   this->position = position;
   setDirection(direction);
@@ -81,29 +82,9 @@ inline void ArrowEmitter::emit(Particle &particle) {
   // Call base emitter for position calculation
   BaseEmitter::emit(particle);
 
-  // Cast to ModelParticle
-  auto &arrow = static_cast<ModelParticle &>(particle);
-
   // Set initial velocity with spread
   glm::vec3 spreadDir = calculateSpreadDirection();
-  arrow.velocity = spreadDir * speed;
-
-  // No initial rotation for now
-  // TODO: rotate with the velocity vector
-  arrow.rotation = glm::vec3{-90.0f, 0.0f, 0.0f};
-
-  // Arrow-specific initialization
-  arrow.stuck = false;
-  arrow.stickTime = 0.0f;
-  arrow.life = 1000.0f;
-
-  // Set arrow color (could be parameterized)
-  arrow.color = glm::vec4{0.8f, 0.6f, 0.2f, 1.0f}; // Bronze color
-
-  // Set arrow size (could be parameterized)
-  // arrow.size = 1.0f;
-  // TODO: parameterize this
-  arrow.size = 0.2f;
+  particle.velocity = spreadDir * speed;
 }
 
 inline void ArrowEmitter::setDirection(const glm::vec3 &direction) {
@@ -138,11 +119,11 @@ inline glm::vec3 ArrowEmitter::calculateSpreadDirection() const {
   axis = glm::normalize(axis);
 
   // Apply random rotation around axis
-  float randomAngle = uniformDist(gen) * spreadRad;
+  float randomAngle = math::uniformDist() * spreadRad;
   glm::vec3 spreadDir = glm::rotate(direction, randomAngle, axis);
 
   // Apply additional random rotation around direction axis
-  float randomTwist = uniformDist(gen) * glm::two_pi<float>();
+  float randomTwist = math::uniformDist() * glm::two_pi<float>();
   spreadDir = glm::rotate(spreadDir, randomTwist, direction);
 
   return glm::normalize(spreadDir);

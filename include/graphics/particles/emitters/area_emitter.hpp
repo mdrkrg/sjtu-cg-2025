@@ -1,17 +1,20 @@
 #pragma once
 
 #include "base_emitter.hpp"
+#include "math/random.hpp"
 #include <glm/glm.hpp>
+
+namespace graphics::particles {
 
 /// Emitter that emits particle within a square area.
 class AreaEmitter : public BaseEmitter {
 public:
-  AreaEmitter(std::shared_ptr<ParticleBehaviour> behaviour,
+  AreaEmitter(std::shared_ptr<Initializer> initializer = nullptr,
               const glm::vec3 &position = glm::vec3(0.0f),
               const glm::vec3 &size = glm::vec3(1.0f),
               const GameObject *parent = nullptr,
               SimulationSpace space = SimulationSpace::WORLD)
-      : BaseEmitter(behaviour, parent, space), size(size) {
+      : BaseEmitter(initializer, parent, space), size(size) {
     this->position = position;
   }
   virtual ~AreaEmitter() = default;
@@ -22,9 +25,9 @@ public:
 
     // Generate random position within the area (local coordinates)
     const auto &position = getEmissionOrigin();
-    float x = position.x + (uniformDist(gen) - 0.5f) * size.x;
-    float y = position.y + (uniformDist(gen) - 0.5f) * size.y;
-    float z = position.z + (uniformDist(gen) - 0.5f) * size.z;
+    float x = position.x + (math::uniformDist() - 0.5f) * size.x;
+    float y = position.y + (math::uniformDist() - 0.5f) * size.y;
+    float z = position.z + (math::uniformDist() - 0.5f) * size.z;
 
     glm::vec3 localPos = glm::vec3(x, y, z);
 
@@ -47,3 +50,4 @@ public:
 private:
   glm::vec3 size;
 };
+} // namespace graphics::particles

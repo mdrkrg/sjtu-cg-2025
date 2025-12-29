@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/emitter.hpp"
 #include "particle_system.hpp"
 #include "model_particle.hpp"
 #include <graphics/model.hpp>
@@ -22,7 +23,7 @@ public:
   /// @param space Simulation space
   /// @param customTransform Custom transform for CUSTOM simulation space
   ModelParticleSystem(std::shared_ptr<Shader> shader,
-                      std::shared_ptr<ParticleEmitter> emitter,
+                      std::shared_ptr<Emitter> emitter,
                       ModelWithMaterials modelWithMaterials,
                       SimulationSpace space = SimulationSpace::WORLD,
                       GameObject *customTransform = nullptr);

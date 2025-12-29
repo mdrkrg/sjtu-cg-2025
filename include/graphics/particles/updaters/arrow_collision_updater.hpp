@@ -1,23 +1,22 @@
 #pragma once
 
-#include "base_behaviour.hpp"
+#include "base_updater.hpp"
 #include "graphics/particles/model_particle.hpp"
 #include "scene/game_object.hpp"
 #include <vector>
 
 namespace graphics::particles {
 
-/// AABB-based collision behaviour for arrows
-/// Separate from terrain-specific CollisionBehaviour, uses GameObject AABB
+/// AABB-based collision updater for arrows
+/// Separate from terrain-specific CollisionUpdater, uses GameObject AABB
 /// collision
-class ArrowCollisionBehaviour : public BaseBehaviour {
+class ArrowCollisionUpdater : public BaseUpdater {
 public:
   /// Constructor
   /// @param collisionTargets List of GameObjects to check for collision
   /// @param collisionMargin Margin around AABB for collision detection
-  ArrowCollisionBehaviour(
-      const std::vector<GameObject *> &collisionTargets = {},
-      float collisionMargin = 0.01f)
+  ArrowCollisionUpdater(const std::vector<GameObject *> &collisionTargets = {},
+                        float collisionMargin = 0.01f)
       : collisionTargets{collisionTargets}, collisionMargin{collisionMargin} {}
 
   /// Update with collision detection
@@ -27,7 +26,7 @@ public:
   /// @param space Simulation space
   void update(Particle &particle, float deltaTime, const glm::mat4 &model,
               SimulationSpace space) override {
-    BaseBehaviour::update(particle, deltaTime, model, space);
+    BaseUpdater::update(particle, deltaTime, model, space);
 
     auto &arrow = static_cast<ModelParticle &>(particle);
     // Skip
@@ -88,7 +87,7 @@ public:
     if (arrow.stuck) {
       return arrow.stickTime < STUCK_TIMEOUT;
     }
-    return BaseBehaviour::isAlive(particle, model, space);
+    return BaseUpdater::isAlive(particle, model, space);
   }
 
 protected:
@@ -166,5 +165,4 @@ private:
     return std::nullopt;
   }
 };
-
 } // namespace graphics::particles

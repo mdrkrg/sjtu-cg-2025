@@ -1,7 +1,6 @@
 #pragma once
 
-#include "graphics/particles/behaviours/arrow_physics_behaviour.hpp"
-#include "graphics/particles/behaviours/arrow_collision_behaviour.hpp"
+#include "graphics/particles/updaters/arrow_collision_updater.hpp"
 #include "model_particle_system.hpp"
 #include "emitters/arrow_emitter.hpp"
 #include "scene/game_manager.hpp"
@@ -78,18 +77,10 @@ private:
   std::shared_ptr<GameManager> gameManager;
   std::shared_ptr<ModelParticleSystem> arrowSystem;
   std::shared_ptr<ArrowEmitter> emitter;
-  std::shared_ptr<ArrowCollisionBehaviour> collisionBehaviour;
+  // std::shared_ptr<ArrowCollisionBehaviour> collisionBehaviour;
+  std::shared_ptr<ArrowCollisionUpdater> collisionUpdater;
   std::vector<GameObject *> collisionTargets;
   bool initialized{false};
-
-  /// Create arrow behaviour with customizable parameters
-  /// @param gravity Gravity strength (m/s^2)
-  /// @param drag Air drag coefficient (0-1)
-  /// @param lifetime Maximum lifetime in seconds
-  /// @return Shared pointer to ArrowBehaviour
-  static std::shared_ptr<ArrowPhysicsBehaviour>
-  createArrowPhysicsBehaviour(float gravity = 9.81f, float drag = 0.01f,
-                              float lifetime = 10.0f);
 };
 
 } // namespace graphics::particles
