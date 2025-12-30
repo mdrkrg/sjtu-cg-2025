@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base_initializer.hpp"
+#include "graphics/particles/config/orbital_config.hpp"
 #include "math/random.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
@@ -11,13 +12,10 @@ namespace graphics::particles {
 /// Particle behaviour for orbital motion around a center point.
 class OrbitalParticleInitializer : public BaseInitializer {
 public:
-  OrbitalParticleInitializer(const glm::vec3 &center,
-                             const glm::vec4 &glowColor = glm::vec4{1.0f, 1.0f,
-                                                                    1.0f, 1.0f},
-                             float orbitSpeed = 1.0f, float minRadius = 0.5f,
-                             float maxRadius = 1.5f)
-      : center(center), glowColor(glowColor), orbitSpeed(orbitSpeed),
-        minRadius(minRadius), maxRadius(maxRadius) {}
+  OrbitalParticleInitializer(const OrbitalConfig &config)
+      : center(config.center), glowColor(config.glowColor),
+        orbitSpeed(config.orbitSpeed), minRadius(config.minRadius),
+        maxRadius(config.maxRadius) {}
 
   virtual ~OrbitalParticleInitializer() = default;
 

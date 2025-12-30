@@ -4,7 +4,6 @@
 #include "graphics/particles/initializers/arrow_initializer.hpp"
 #include "graphics/particles/updaters/arrow_collision_updater.hpp"
 #include "graphics/particles/updaters/arrow_physics_updater.hpp"
-#include "graphics/particles/death_checks/timeout_death_check.hpp"
 #include "graphics/particles/death_checks/arrow_collision_death_check.hpp"
 #include "scene/game_manager.hpp"
 #include <algorithm>

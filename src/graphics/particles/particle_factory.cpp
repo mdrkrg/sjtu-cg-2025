@@ -8,6 +8,7 @@
 #include "graphics/particles/initializers/orbital_initializer.hpp"
 #include "graphics/particles/updaters/collision_updater.hpp"
 #include "graphics/particles/updaters/gravity_updater.hpp"
+#include "graphics/particles/updaters/orbital_updater.hpp"
 #include "graphics/particles/updaters/wind_updater.hpp"
 #include "math/random.hpp"
 #include <glm/glm.hpp>
@@ -261,13 +262,17 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createOrbAuraSystem(
   // Create orbital behaviour
   const auto minRadius = 0.2f;
   const auto maxRadius = 0.5f;
-  auto orbitalInitializer = std::make_shared<OrbitalParticleInitializer>(
-      parent->position, // center
-      glowColor,        // color
-      0.2f * intensity, // orbit speed scaled by intensity
-      minRadius,        // min radius
-      maxRadius         // max radius
-  );
+  const OrbitalConfig config{
+      .center = parent->position,
+      .glowColor = glowColor,
+      .orbitSpeed = 0.2f * intensity,
+      .minRadius = minRadius,
+      .maxRadius = maxRadius,
+  };
+  auto orbitalInitializer =
+      std::make_shared<OrbitalParticleInitializer>(config);
+  auto orbitalUpdater = std::make_shared<OrbitalParticleUpdater>(config);
+
   // auto orbitalBehaviour = std::make_shared<OrbitalParticleBehaviour>(
   //     parent->position, // center
   //     glowColor,        // color
@@ -291,8 +296,7 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createOrbAuraSystem(
 
   // TODO: This should be default, can use a config in ParticleSystem
   system->addDeathCheck(system->defaultDeathCheck());
-
-  // TODO: Add OrbitalParticleUpdater
+  system->addUpdater(orbitalUpdater);
 
   system->init();
 
