@@ -1,6 +1,4 @@
 #include "graphics/particles/arrow_launcher.hpp"
-// #include "graphics/particles/behaviours/arrow_collision_behaviour.hpp"
-// #include "graphics/particles/behaviours/arrow_physics_behaviour.hpp"
 #include "graphics/particles/initializers/arrow_initializer.hpp"
 #include "graphics/particles/updaters/arrow_collision_updater.hpp"
 #include "graphics/particles/updaters/arrow_physics_updater.hpp"
@@ -23,12 +21,6 @@ void ArrowLauncher::init(ModelWithMaterials arrowModelWithMaterials,
     return;
   }
 
-  { // behaviours
-    // arrowBehaviour is created locally in setEmitter()
-    // collisionBehaviour = std::make_shared<ArrowCollisionBehaviour>();
-    collisionUpdater = std::make_shared<ArrowCollisionUpdater>();
-  }
-
   { // Create arrow system without emitter initially
     arrowSystem = std::make_shared<ModelParticleSystem>(
         arrowShader,
@@ -39,6 +31,20 @@ void ArrowLauncher::init(ModelWithMaterials arrowModelWithMaterials,
 
     arrowSystem->setMaxParticles(maxArrows);
     arrowSystem->init();
+  }
+
+  { // Add updaters
+    collisionUpdater = std::make_shared<ArrowCollisionUpdater>();
+    auto arrowPhysicsUpdater = std::make_shared<ArrowPhysicsUpdater>();
+
+    arrowSystem->addUpdater(collisionUpdater);
+    arrowSystem->addUpdater(arrowPhysicsUpdater);
+  }
+
+  { // Add death checks
+    // TODO: This should be default, can use a config in ParticleSystem
+    arrowSystem->addDeathCheck(arrowSystem->defaultDeathCheck());
+    arrowSystem->addDeathCheck(std::make_shared<ArrowCollisionDeathCheck>());
   }
 
   initialized = true;
@@ -55,66 +61,7 @@ void ArrowLauncher::setEmitter(const glm::vec3 &position,
     return;
   }
 
-  // Composite behaviour for emitter (arrow physics + collision)
-  // WARN: Deprecated
-  // class ArrowBehaviour : public ParticleBehaviour {
-  // public:
-  //   ArrowBehaviour(std::shared_ptr<ArrowPhysicsBehaviour> arrow,
-  //                  std::shared_ptr<ArrowCollisionBehaviour> collision)
-  //       : arrowBehaviour{arrow}, collisionBehaviour{collision} {}
-  //
-  //   void initialize(Particle &particle) override {
-  //     if (arrowBehaviour) {
-  //       arrowBehaviour->initialize(particle);
-  //     }
-  //   }
-  //
-  //   void update(Particle &particle, float deltaTime, const glm::mat4 &model,
-  //               SimulationSpace space) override {
-  //     if (arrowBehaviour) {
-  //       arrowBehaviour->update(particle, deltaTime, model, space);
-  //     }
-  //     if (collisionBehaviour) {
-  //       collisionBehaviour->update(particle, deltaTime, model, space);
-  //     }
-  //   }
-  //
-  //   bool isAlive(const Particle &particle, const glm::mat4 &model,
-  //                SimulationSpace space) const override {
-  //     bool alive = true;
-  //     if (arrowBehaviour) {
-  //       alive = alive && arrowBehaviour->isAlive(particle, model, space);
-  //     }
-  //     if (collisionBehaviour) {
-  //       alive = alive && collisionBehaviour->isAlive(particle, model, space);
-  //     }
-  //     return alive;
-  //   }
-  //
-  //   void onDeath(Particle &particle) override {
-  //     if (arrowBehaviour) {
-  //       arrowBehaviour->onDeath(particle);
-  //     }
-  //   }
-  //
-  //   void onRespawn(Particle &particle) override {
-  //     if (arrowBehaviour) {
-  //       arrowBehaviour->onRespawn(particle);
-  //     }
-  //   }
-  //
-  // private:
-  //   std::shared_ptr<ArrowPhysicsBehaviour> arrowBehaviour;
-  //   std::shared_ptr<ArrowCollisionBehaviour> collisionBehaviour;
-  // };
-
-  // auto arrowBehaviour = createArrowPhysicsBehaviour(1.0f, 0.01f);
-  // auto compositeBehaviour =
-  //     std::make_shared<ArrowBehaviour>(arrowBehaviour, collisionBehaviour);
-
   auto arrowInitializer = std::make_shared<ArrowInitializer>();
-
-  auto arrowPhysicsUpdater = std::make_shared<ArrowPhysicsUpdater>();
 
   // Always create new emitter with updated parameters
   emitter = std::make_shared<ArrowEmitter>(
@@ -123,15 +70,6 @@ void ArrowLauncher::setEmitter(const glm::vec3 &position,
   );
   emitter->setEmissionRate(0.0f);
   arrowSystem->emitter = emitter;
-
-  // Add updaters
-  arrowSystem->addUpdater(collisionUpdater);
-  arrowSystem->addUpdater(arrowPhysicsUpdater);
-
-  // Add death checks
-  // TODO: This should be default, can use a config in ParticleSystem
-  arrowSystem->addDeathCheck(arrowSystem->defaultDeathCheck());
-  arrowSystem->addDeathCheck(std::make_shared<ArrowCollisionDeathCheck>());
 
   std::println(std::clog,
                "Arrow emitter set at ({}, {}, {}) direction ({}, {}, {})",

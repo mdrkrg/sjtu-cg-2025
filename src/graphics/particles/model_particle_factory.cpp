@@ -1,6 +1,5 @@
 #include "graphics/particles/model_particle_factory.hpp"
 #include "graphics/particles/emitters/area_emitter.hpp"
-// #include "graphics/particles/particle_behaviour.hpp"
 #include "graphics/particles/updaters/aabb_collision_updater.hpp"
 #include "graphics/model_factory.hpp"
 #include "graphics/particles/updaters/gravity_updater.hpp"
@@ -23,60 +22,11 @@ std::shared_ptr<ModelParticleSystem> ModelParticleFactory::createCubeTestSystem(
   auto cubeModelWithMaterials =
       ModelFactory::createCube(cubeSize, cubeMaterial);
 
-  // Wrapper behaviour that combines gravity and AABB collision
-  // WARN: Deprecated
-  // class CombinedGravityCollisionBehaviour : public ParticleBehaviour {
-  // public:
-  //   CombinedGravityCollisionBehaviour(
-  //       std::shared_ptr<ParticleBehaviour> gravity,
-  //       std::shared_ptr<ParticleBehaviour> collision)
-  //       : gravity{std::move(gravity)}, collision{std::move(collision)} {}
-  //
-  //   void initialize(Particle &p) override {
-  //     if (gravity)
-  //       gravity->initialize(p);
-  //   }
-  //
-  //   void update(Particle &p, float dt, const glm::mat4 &m,
-  //               SimulationSpace s) override {
-  //     if (gravity)
-  //       gravity->update(p, dt, m, s);
-  //     if (collision)
-  //       collision->update(p, dt, m, s);
-  //   }
-  //
-  //   bool isAlive(const Particle &p, const glm::mat4 &m,
-  //                SimulationSpace s) const override {
-  //     bool alive = true;
-  //     if (gravity)
-  //       alive = alive && gravity->isAlive(p, m, s);
-  //     if (collision)
-  //       alive = alive && collision->isAlive(p, m, s);
-  //     return alive;
-  //   }
-  //
-  //   void onDeath(Particle &p) override {
-  //     if (gravity)
-  //       gravity->onDeath(p);
-  //   }
-  //
-  //   void onRespawn(Particle &p) override {
-  //     if (gravity)
-  //       gravity->onRespawn(p);
-  //   }
-  //
-  // private:
-  //   std::shared_ptr<ParticleBehaviour> gravity;
-  //   std::shared_ptr<ParticleBehaviour> collision;
-  // };
-
-  // Create gravity behaviour
-  // auto gravityBehaviour =
-  //     std::make_shared<GravityBehaviour>(glm::vec3{0.0f, -9.81f, 0.0f});
+  // Create gravity updater
   auto gravityUpdater =
       std::make_shared<GravityUpdater>(glm::vec3{0.0f, -9.81f, 0.0f});
 
-  // Create area emitter with gravity behaviour initially
+  // Create area emitter
   auto cubeEmitter = std::make_shared<AreaEmitter>(
       nullptr, // default, TODO: improve signature
       position, glm::vec3{0.1f, 0.0f, 0.1f}, nullptr);
@@ -93,22 +43,13 @@ std::shared_ptr<ModelParticleSystem> ModelParticleFactory::createCubeTestSystem(
   cubeParticleSystem->init();
   cubeParticleSystem->toggle(true);
 
-  // If collision targets not empty, create combined behaviour
+  // If collision targets not empty, create collision updater
   if (!collisionTargets.empty()) {
-    // Create collision behaviour
-    // auto collisionBehaviour =
-    //     std::make_shared<ModelParticleAABBCollisionBehaviour>(
-    //         cubeParticleSystem.get(), collisionTargets, 0.01f);
+    // Create collision updater
     auto collisionUpdater = std::make_shared<ModelParticleAABBCollisionUpdater>(
         cubeParticleSystem.get(), collisionTargets, 0.01f);
 
-    // Create combined behaviour
-    // auto combinedBehaviour =
-    //     std::make_shared<CombinedGravityCollisionBehaviour>(gravityUpdater,
-    //                                                         collisionBehaviour);
     cubeParticleSystem->addUpdater(collisionUpdater);
-
-    // cubeEmitter->setBehaviour(combinedBehaviour);
   }
 
   std::println(

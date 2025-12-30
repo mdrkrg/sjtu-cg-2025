@@ -71,14 +71,16 @@ void ModelParticleSystem::emitParticle() {
     return;
   }
 
-  ModelParticle particle{};
-  if (!particlePool.empty()) {
-    particle = particlePool.front();
-    particlePool.pop();
-  } else {
-    // Create new particle
-    particle = ModelParticle{};
-  }
+  auto particle = [this] {
+    if (!particlePool.empty()) {
+      const auto particle{std::move(particlePool.front())};
+      particlePool.pop();
+      return particle;
+    } else {
+      // Create new particle
+      return ModelParticle{};
+    }
+  }();
 
   // Initialize particle using emitter
   if (emitter) {
@@ -120,6 +122,7 @@ scene::AABB ModelParticleSystem::getWorldAABB() const {
 
 std::vector<scene::AABB> ModelParticleSystem::getParticleWorldAABBs() const {
   std::vector<scene::AABB> particleAABBs;
+  particleAABBs.reserve(activeParticles.size());
   const glm::mat4 systemModel = getModelMatrix();
 
   for (const auto &particle : activeParticles) {
