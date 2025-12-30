@@ -75,16 +75,6 @@ public:
   /// @return Current collision margin
   float getCollisionMargin() const { return collisionMargin; }
 
-  /// Check if particle is alive (override to handle collision termination)
-  /// @param particle Particle to check
-  /// @param model Parent transformation matrix
-  /// @param space Simulation space
-  /// @return True if particle is alive
-  bool isAlive(const Particle &particle, const glm::mat4 &model,
-               SimulationSpace space) const override {
-    return BaseUpdater::isAlive(particle, model, space);
-  }
-
 protected:
   /// Called when ModelParticle collides with a GameObject
   /// @param particle ModelParticle that collided

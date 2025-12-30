@@ -76,20 +76,6 @@ public:
   /// Clear all collision targets
   void clearCollisionTargets() { collisionTargets.clear(); }
 
-  /// Check if particle is alive (override to handle stuck particles)
-  /// @param particle Particle to check
-  /// @param model Parent transformation matrix
-  /// @param space Simulation space
-  /// @return True if particle is alive
-  bool isAlive(const Particle &particle, const glm::mat4 &model,
-               SimulationSpace space) const override {
-    const auto &arrow = static_cast<const ModelParticle &>(particle);
-    if (arrow.stuck) {
-      return arrow.stickTime < STUCK_TIMEOUT;
-    }
-    return BaseUpdater::isAlive(particle, model, space);
-  }
-
 protected:
   struct CollisionResult {
     glm::vec3 point;

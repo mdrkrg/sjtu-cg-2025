@@ -113,6 +113,9 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createRainSystem(
   system->addUpdater(gravityUpdater);
   system->addUpdater(dissolveUpdater);
 
+  // TODO: This should be default, can use a config in ParticleSystem
+  system->addDeathCheck(system->defaultDeathCheck());
+
   system->setMaxParticles(maxParticles);
   system->init();
 
@@ -239,10 +242,12 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createSnowSystem(
       shader, emitter, SimulationSpace::WORLD, nullptr);
   system->setMaxParticles(maxParticles);
 
-  // FIXME: isAlive check is not quite flexible
   system->addUpdater(gravityUpdater);
   system->addUpdater(coverUpdater);
   system->addUpdater(windUpdater);
+
+  // TODO: This should be default, can use a config in ParticleSystem
+  system->addDeathCheck(system->defaultDeathCheck());
 
   system->init();
 
@@ -283,6 +288,12 @@ std::unique_ptr<ParticleSystem<Particle>> ParticleFactory::createOrbAuraSystem(
   auto system = std::make_unique<ParticleSystem<Particle>>(
       shader, emitter, SimulationSpace::LOCAL, nullptr);
   system->setMaxParticles(maxParticles);
+
+  // TODO: This should be default, can use a config in ParticleSystem
+  system->addDeathCheck(system->defaultDeathCheck());
+
+  // TODO: Add OrbitalParticleUpdater
+
   system->init();
 
   return system;

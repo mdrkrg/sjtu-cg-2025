@@ -4,6 +4,8 @@
 #include "graphics/particles/initializers/arrow_initializer.hpp"
 #include "graphics/particles/updaters/arrow_collision_updater.hpp"
 #include "graphics/particles/updaters/arrow_physics_updater.hpp"
+#include "graphics/particles/death_checks/timeout_death_check.hpp"
+#include "graphics/particles/death_checks/arrow_collision_death_check.hpp"
 #include "scene/game_manager.hpp"
 #include <algorithm>
 #include <iostream>
@@ -122,8 +124,15 @@ void ArrowLauncher::setEmitter(const glm::vec3 &position,
   );
   emitter->setEmissionRate(0.0f);
   arrowSystem->emitter = emitter;
+
+  // Add updaters
   arrowSystem->addUpdater(collisionUpdater);
   arrowSystem->addUpdater(arrowPhysicsUpdater);
+
+  // Add death checks
+  // TODO: This should be default, can use a config in ParticleSystem
+  arrowSystem->addDeathCheck(arrowSystem->defaultDeathCheck());
+  arrowSystem->addDeathCheck(std::make_shared<ArrowCollisionDeathCheck>());
 
   std::println(std::clog,
                "Arrow emitter set at ({}, {}, {}) direction ({}, {}, {})",

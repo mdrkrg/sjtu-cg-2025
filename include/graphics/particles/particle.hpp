@@ -25,3 +25,17 @@ enum class SimulationSpace {
   /// Custom space simulation
   CUSTOM,
 };
+
+/// Reason for particle death
+enum class DeathReason {
+  /// Life expired
+  Timeout,
+  /// Collided with something
+  Collision,
+  /// Left visible area
+  OutOfBounds,
+  /// Animation finished
+  Dissolved,
+  /// Other reasons
+  Custom
+};

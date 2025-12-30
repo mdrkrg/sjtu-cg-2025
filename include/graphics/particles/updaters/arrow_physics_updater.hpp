@@ -56,21 +56,6 @@ public:
     // arrow.life -= deltaTime;
   }
 
-  /// Using default alive check
-  using BaseUpdater::isAlive;
-
-  /// Handle arrow death (when it hits something or times out)
-  /// @param particle Particle that died
-  void onDeath(Particle &particle) override {
-    auto &arrow = static_cast<ModelParticle &>(particle);
-    arrow.reset();
-  }
-
-  /// FIXME: This is needed?
-  /// /// Handle arrow respawn
-  /// /// @param particle Particle being respawned
-  /// void onRespawn(Particle &particle) override { initialize(particle); }
-
   /// Set gravity strength
   /// @param gravity Gravity in m/s^2
   void setGravity(float gravity) { this->gravity = gravity; }

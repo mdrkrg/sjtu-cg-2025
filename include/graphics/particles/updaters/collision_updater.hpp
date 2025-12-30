@@ -29,16 +29,6 @@ public:
     }
   }
 
-  inline virtual bool isAlive(const Particle &particle, const glm::mat4 &model,
-                              SimulationSpace space) const override {
-    if (!BaseUpdater::isAlive(particle, model, space)) {
-      return false;
-    }
-
-    // Fallen too far below
-    return particle.position.y > -10.0f;
-  }
-
 protected:
   /// Child classes should implement
   virtual void onCollision(Particle &, float) const {

@@ -89,6 +89,7 @@ std::shared_ptr<ModelParticleSystem> ModelParticleFactory::createCubeTestSystem(
       SimulationSpace::WORLD, nullptr);
   cubeParticleSystem->setMaxParticles(maxParticles);
   cubeParticleSystem->addUpdater(gravityUpdater);
+  cubeParticleSystem->addDeathCheck(cubeParticleSystem->defaultDeathCheck());
   cubeParticleSystem->init();
   cubeParticleSystem->toggle(true);
 

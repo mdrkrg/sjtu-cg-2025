@@ -20,12 +20,10 @@ public:
     (void)space;
   }
 
-  /// Default implementation for alive check
-  virtual bool isAlive(const Particle &particle, const glm::mat4 &model,
-                       SimulationSpace space) const override {
-    (void)model;
-    (void)space;
-    return particle.life > 0.0f;
+  /// Default implementation for onDeath
+  virtual void onDeath(Particle &particle, DeathReason reason) override {
+    (void)particle;
+    (void)reason;
   }
 };
 } // namespace graphics::particles

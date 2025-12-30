@@ -1,7 +1,9 @@
 #pragma once
 
+#include "base/death_check.hpp"
 #include "base/emitter.hpp"
 #include "base/updater.hpp"
+#include "graphics/particles/death_checks/timeout_death_check.hpp"
 #include "particle.hpp"
 #include "scene/game_object.hpp"
 #include <graphics/shader.h>
@@ -41,34 +43,30 @@ public:
       // TODO: Move life update to the actual base behaviour?
       p.life -= deltaTime;
 
-      // FIXME: isAlive check is not quite flexible. Some may just skip
-      // Check if particle should be removed
-      const bool shouldRemove = [&, this] {
-        // if (emitter && emitter->getBehaviour()) {
-        //   return not emitter->getBehaviour()->isAlive(p, model,
-        //                                               simulationSpace);
-        // } else {
-        //   return p.life <= 0.0f;
-        // }
-        if (p.life <= 0.0f) {
-          return true;
+      // Check if particle should die
+      const std::optional<DeathReason> deathReason = [this, &p] {
+        for (const auto &checker : deathChecks) {
+          if (checker->shouldCheck(p)) {
+            if (const auto reason = checker->check(p); reason.has_value()) {
+              // Notify death event
+              checker->onDeath(p, reason.value());
+              return reason; // Only check once
+            }
+          }
         }
-        return std::ranges::any_of(
-            updaters, [this, &model, &p](std::shared_ptr<Updater> updater) {
-              return not updater->isAlive(p, model, simulationSpace);
-            });
+        return std::optional<DeathReason>(std::nullopt);
       }();
 
-      if (shouldRemove) {
+      if (deathReason.has_value()) {
+        // Notify all updaters of death
+        for (const auto &updater : updaters) {
+          updater->onDeath(p, deathReason.value());
+        }
         // Add to pool for reuse
         particlePool.push(p);
         it = activeParticles.erase(it);
       } else {
         // Update particle behaviour
-        // if (emitter && emitter->getBehaviour()) {
-        //   emitter->getBehaviour()->update(p, deltaTime, model,
-        //   simulationSpace);
-        // }
         for (const auto &updater : updaters) {
           updater->update(p, deltaTime, model, simulationSpace);
         }
@@ -191,6 +189,19 @@ public:
     updaters.push_back(updater);
   }
 
+  /// Add a death check to the system
+  /// @param deathCheck Death check to add
+  void addDeathCheck(std::shared_ptr<DeathCheck> deathCheck) {
+    deathChecks.push_back(deathCheck);
+  }
+
+  /// Remove all death checks
+  void clearDeathChecks() { deathChecks.clear(); }
+
+  static std::shared_ptr<DeathCheck> defaultDeathCheck() {
+    return std::make_shared<TimeoutDeathCheck>();
+  }
+
 protected:
   std::shared_ptr<Emitter> emitter;
   std::vector<ParticleType> activeParticles;
@@ -198,6 +209,7 @@ protected:
   size_t maxParticles = 1000;
 
   std::vector<std::shared_ptr<Updater>> updaters;
+  std::vector<std::shared_ptr<DeathCheck>> deathChecks;
 
   std::shared_ptr<Shader> shader;
 
