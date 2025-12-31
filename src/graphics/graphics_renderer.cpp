@@ -23,9 +23,6 @@
 
 using graphics::particles::ParticleFactory;
 
-const glm::mat4 GraphicsRenderer::weatherModel =
-    glm::scale(glm::mat4(1.0), glm::vec3(0.04));
-
 const glm::vec3 GraphicsRenderer::weatherPosition = {0.0f, 0.0f, 0.0f};
 
 // Scale terrain to fit on the table
@@ -33,6 +30,13 @@ const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
     // Position terrain on the table
     glm::translate(glm::mat4(1.0f), glm::vec3(0.15f, 0.15f, 2.0f)),
     glm::vec3(0.24f));
+
+// Position on right wall (behind bookcase)
+static constexpr glm::vec3 panelPosition = glm::vec3(0.98f, 0.15f, 2.0f);
+static constexpr glm::vec3 cavityPosition =
+    panelPosition + glm::vec3(0.01f, 0.2f, 0.0f);
+static constexpr glm::vec3 cavityArrowPosition =
+    cavityPosition + glm::vec3(0.2f, 0.0f, 0.0f);
 
 GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
@@ -152,30 +156,24 @@ bool GraphicsRenderer::initialize() {
   arrowLauncher->init(std::move(arrowModelWithMaterials), modelInstancedShader,
                       100);
 
-  // Add multiple emitters at different positions
-  arrowLauncher->addEmitter(glm::vec3{-2.0f, 1.5f, 4.0f},  // Left emitter
-                            glm::vec3{0.0f, -0.5f, -1.0f}, // Direction
-                            5.0f,                          // Speed
-                            10.0f                          // Spread angle
+  arrowLauncher->addEmitter(glm::vec3{0.0f, 1.5f, 0.0f},  // Center emitter
+                            glm::vec3{0.0f, -0.5f, 1.0f}, // Direction
+                            5.0f,                         // Speed
+                            10.0f                         // Spread angle
   );
-  arrowLauncher->addEmitter(glm::vec3{0.0f, 1.5f, 4.0f},   // Center emitter
-                            glm::vec3{0.0f, -0.5f, -1.0f}, // Direction
-                            5.0f,                          // Speed
-                            10.0f                          // Spread angle
-  );
-  arrowLauncher->addEmitter(glm::vec3{2.0f, 1.5f, 4.0f},   // Right emitter
-                            glm::vec3{0.0f, -0.5f, -1.0f}, // Direction
-                            5.0f,                          // Speed
-                            10.0f                          // Spread angle
+  arrowLauncher->addEmitter(cavityArrowPosition,          // Right emitter
+                            glm::vec3{-1.0f, 0.0f, 0.0f}, // Direction
+                            5.0f,                         // Speed
+                            10.0f                         // Spread angle
   );
 
   // Add collision targets
   for (auto obj : gameManager->getObjects()) {
+    if (obj->getName() == "wall_cavity") {
+      continue;
+    }
     arrowLauncher->addCollisionTarget(obj);
   }
-
-  // Fire arrows for testing (round-robin)
-  arrowLauncher->launch(10);
 
   return true;
 }
@@ -901,12 +899,8 @@ void GraphicsRenderer::setupTrap() {
         std::make_unique<TrapTriggerBehaviour>(gameManager->getTrapManager()));
   }
 
-  // Position on right wall (behind bookcase)
-  const glm::vec3 panelPosition = glm::vec3(0.98f, 0.15f, 2.0f);
-  const glm::vec3 cavityPosition = panelPosition + glm::vec3(0.01f, 0.2f, 0.0f);
-
   // Cavity
-  GameObject *cavityObj = [this, &cavityPosition] {
+  GameObject *cavityObj = [this] {
     Material cavityMaterial{};
     cavityMaterial.type = MaterialType::UNIFORM;
     cavityMaterial.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
@@ -948,7 +942,12 @@ void GraphicsRenderer::setupTrap() {
     auto panelBehaviour = std::make_unique<WallPanelBehaviour>(
         gameManager->getTrapManager(),
         cavityObj, // Cavity GameObject pointer
-        []() { std::println(std::clog, "Arrow triggerred!"); },
+        [this]() {
+          std::println(std::clog, "Arrow triggerred!");
+          // Fire arrows for testing (round-robin)
+          arrowLauncher->launch(30);
+          arrowLauncher->startContinuousFire(10);
+        },
         glm::vec3(0.3f, 0.3f, 0.1f), // Cavity size
         0.8f                         // Reveal duration
     );

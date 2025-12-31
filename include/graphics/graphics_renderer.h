@@ -66,7 +66,6 @@ private:
   // For simplicity we define it here
 
   constexpr static glm::vec3 lightPosition{0.0f, 0.75f, 1.65f};
-  const static glm::mat4 weatherModel;
   const static glm::vec3 weatherPosition;
   const static glm::mat4 terrainModel;
 

@@ -76,7 +76,6 @@ public:
     // Panel becomes non-interactable during animation
     obj->interactable = false;
 
-    // TODO: Trigger arrow particle system
     triggerArrowSystem();
   }
 
