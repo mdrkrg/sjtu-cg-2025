@@ -115,11 +115,12 @@ void Application::updateDeltaTime() {
 
 void Application::screenshot() {
   const int num = SCR_WIDTH * SCR_HEIGHT * 3;
-  uint8_t pixels[num];
+  std::vector<uint8_t> pixels(num);
 
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  glReadBuffer(GL_FRONT);
-  glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+  glReadBuffer(GL_BACK);
+  glReadPixels(0, 0, SCR_WIDTH, SCR_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE,
+               pixels.data());
 
   std::time_t time = std::time({});
   char timeString[std::size("yyyy-mm-ddThh:mm:ssZ")];
@@ -152,6 +153,6 @@ void Application::screenshot() {
                       24};
 
   fwrite(&header, sizeof(header), 1, outputFile);
-  fwrite(pixels, num, 1, outputFile);
+  fwrite(pixels.data(), num, 1, outputFile);
   fclose(outputFile);
 }
