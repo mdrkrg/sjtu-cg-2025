@@ -31,8 +31,9 @@ public:
 
     arrow.stuck = false;
     arrow.stickTime = 0.0f;
-    // TODO: rotate with the velocity vector
-    arrow.rotation = glm::vec3{-90.0f, 0.0f, 0.0f};
+
+    initRotationFromVelocity(arrow);
+
     arrow.angularVelocity = glm::vec3{0.0f};
   }
 
@@ -42,5 +43,21 @@ public:
 
 private:
   float lifetime; // Maximum lifetime in seconds
+
+  /// Set initial rotation based on velocity direction
+  void initRotationFromVelocity(ModelParticle &arrow) {
+    // Arrow points along +Y initially
+    static constexpr glm::vec3 modelForward{0.0f, 1.0f, 0.0f};
+
+    if (glm::length2(arrow.velocity) > 0.000001f) {
+      const auto direction = glm::normalize(arrow.velocity);
+      const auto q = glm::rotation(modelForward, direction);
+      // Convert to degrees
+      arrow.rotation = glm::degrees(glm::eulerAngles(q));
+    } else {
+      // Default to up
+      arrow.rotation = glm::vec3{0.0f, 0.0f, 0.0f};
+    }
+  }
 };
 } // namespace graphics::particles

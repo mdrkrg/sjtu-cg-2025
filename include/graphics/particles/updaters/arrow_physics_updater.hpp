@@ -50,10 +50,7 @@ public:
     // Apply air drag
     arrow.velocity *= (1.0f - drag * deltaTime);
 
-    // TODO: Update rotation
-
-    // Update life (countdown)
-    // arrow.life -= deltaTime;
+    updateRotationFromVelocity(arrow);
   }
 
   /// Set gravity strength
@@ -72,6 +69,18 @@ private:
   float gravity;  // G force (m/s^2)
   float drag;     // Air drag coefficient
   float lifetime; // Maximum lifetime in seconds
-};
 
+  /// Update rotation to align with velocity direction
+  void updateRotationFromVelocity(ModelParticle &arrow) {
+    // Arrow points along +Y initially
+    static constexpr glm::vec3 modelForward{0.0f, 1.0f, 0.0f};
+
+    if (glm::length2(arrow.velocity) > 0.000001f) {
+      const auto direction = glm::normalize(arrow.velocity);
+      const auto q = glm::rotation(modelForward, direction);
+      // Convert to degrees
+      arrow.rotation = glm::degrees(glm::eulerAngles(q));
+    }
+  }
+};
 } // namespace graphics::particles
