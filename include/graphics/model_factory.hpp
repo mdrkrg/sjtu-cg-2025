@@ -15,12 +15,24 @@
 #include <memory>
 
 struct ModelWithMaterials {
-  std::unique_ptr<Model> model;
+  std::shared_ptr<Model> model;
   std::vector<Material> materials; // One per mesh in the model
 
-  ModelWithMaterials(std::unique_ptr<Model> &&model,
-                     std::vector<Material> &&materials = {})
+  ModelWithMaterials(std::shared_ptr<Model> model,
+                     std::vector<Material> materials = {})
       : model(std::move(model)), materials(std::move(materials)) {}
+
+  // Copy constructor
+  ModelWithMaterials(const ModelWithMaterials &other) = default;
+
+  // Move constructor
+  ModelWithMaterials(ModelWithMaterials &&other) noexcept = default;
+
+  // Copy assignment
+  ModelWithMaterials &operator=(const ModelWithMaterials &other) = default;
+
+  // Move assignment
+  ModelWithMaterials &operator=(ModelWithMaterials &&other) noexcept = default;
 };
 
 class ModelFactory {
@@ -39,8 +51,8 @@ public:
 
   /// Create sphere with material
   static ModelWithMaterials createSphere(float radius = 1.0f,
-                                        const Material &material = Material(),
-                                        const std::string &name = "");
+                                         const Material &material = Material(),
+                                         const std::string &name = "");
 
 private:
   // Helper to load texture from disk (Moved from Model)
@@ -82,7 +94,7 @@ inline ModelWithMaterials ModelFactory::loadModel(const std::string &path) {
   context.processNode(scene->mRootNode, scene);
 
   // Construct final Model object
-  auto model = std::make_unique<Model>(std::move(context.meshes),
+  auto model = std::make_shared<Model>(std::move(context.meshes),
                                        std::move(context.textures_loaded));
 
   return {std::move(model), std::move(context.materials)};
@@ -91,7 +103,7 @@ inline ModelWithMaterials ModelFactory::loadModel(const std::string &path) {
 inline ModelWithMaterials
 ModelFactory::createFromMeshes(std::vector<Mesh> &&meshes,
                                std::vector<Material> &&materials) {
-  auto model = std::make_unique<Model>(std::move(meshes));
+  auto model = std::make_shared<Model>(std::move(meshes));
   return {std::move(model), std::move(materials)};
 }
 

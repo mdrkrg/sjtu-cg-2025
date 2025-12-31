@@ -18,7 +18,7 @@
 
 class GameObject {
 public:
-  GameObject(std::unique_ptr<Model> model, std::shared_ptr<Shader> shader,
+  GameObject(std::shared_ptr<Model> model, std::shared_ptr<Shader> shader,
              const Material &material, const std::string &name = "");
   GameObject(ModelWithMaterials &&modelMaterials,
              std::shared_ptr<Shader> shader, const std::string &name = "");
@@ -161,7 +161,7 @@ public:
   }
 
 private:
-  std::unique_ptr<Model> model;
+  std::shared_ptr<Model> model;
   // Pointer to shader (owned by GraphicsRenderer)
   std::weak_ptr<Shader> shader;
   // One material per mesh
@@ -228,7 +228,7 @@ inline GameObject::~GameObject() {
   }
 }
 
-inline GameObject::GameObject(std::unique_ptr<Model> model,
+inline GameObject::GameObject(std::shared_ptr<Model> model,
                               std::shared_ptr<Shader> shader,
                               const Material &material, const std::string &name)
     : model(std::move(model)), shader(shader), name(name) {
