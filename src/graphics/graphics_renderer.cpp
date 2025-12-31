@@ -199,6 +199,9 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
 }
 
 void GraphicsRenderer::update(float deltaTime) {
+  if (paused) {
+    return;
+  }
   // Update game objects (animations) via GameManager
   gameManager->update(deltaTime);
 

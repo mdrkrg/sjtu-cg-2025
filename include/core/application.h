@@ -44,8 +44,11 @@ public:
   /// Toggle debug
   void debug() { renderer->toggleDebug(); }
 
+  /// Toggle pause
+  void togglePause() { renderer->togglePause(); }
+
 private:
-  Application();
+  explicit Application();
   /// Application singleton
   static std::shared_ptr<Application> singleton;
   static std::once_flag init_flag;

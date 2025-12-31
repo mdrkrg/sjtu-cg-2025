@@ -30,6 +30,7 @@ public:
               const glm::vec3 &cameraPosition);
   void update(float deltaTime);
   void cleanup();
+  void togglePause() { paused = not paused; }
 
   // Pass to the input handler
   std::shared_ptr<Cloud> getCloud() { return cloud; }
@@ -48,6 +49,8 @@ public:
   void toggleDebug() { debugAABBsEnabled = not debugAABBsEnabled; }
 
 private:
+  /// Whether the update is paused
+  bool paused = false;
   // Shaders
   std::shared_ptr<Shader> lightingShader;
   std::shared_ptr<Shader> modelShader;
