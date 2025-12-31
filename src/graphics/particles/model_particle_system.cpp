@@ -61,8 +61,11 @@ void ModelParticleSystem::render(const glm::mat4 &view,
   for (size_t i = 0; i < meshCount and i < materialCount; ++i) {
     const auto &meshMat = materials[i];
     const auto &mesh = model.meshes[i];
-    graphics::renderMeshInstanced(mesh, meshMat, *shader,
-                                  instanceMatrices.size());
+
+    graphics::setMaterialToShader(*shader, meshMat);
+    // Draw with external instance buffer
+    mesh.drawWithExternalInstanceBuffer(*shader, instanceVBO,
+                                        instanceMatrices.size());
   }
 }
 
@@ -224,22 +227,6 @@ void ModelParticleSystem::setupInstanceBuffer() {
   // Initial empty buffer
   glBufferData(GL_ARRAY_BUFFER, maxParticles * sizeof(glm::mat4), nullptr,
                GL_DYNAMIC_DRAW);
-
-  // For each mesh VAO, set up instance attribute
-  for (const auto &mesh : particleModel.model->meshes) {
-    glBindVertexArray(mesh.VAO);
-
-    // mat4 takes 4 attribute locations (3-6)
-    size_t baseLocation = 3; // After position(0), normal(1), texcoord(2)
-    for (int i = 0; i < 4; ++i) {
-      glEnableVertexAttribArray(baseLocation + i);
-      glVertexAttribPointer(baseLocation + i, 4, GL_FLOAT, GL_FALSE,
-                            sizeof(glm::mat4), (void *)(i * sizeof(glm::vec4)));
-      glVertexAttribDivisor(baseLocation + i, 1); // Update once per instance
-    }
-
-    glBindVertexArray(0);
-  }
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
