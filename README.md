@@ -86,3 +86,9 @@ CONTAINER_RUNTIME=podman bash ./run.sh
 ```ps1
 ./run.ps1
 ```
+
+## 引用与依赖
+
+美术素材
+
+- [地面木板纹理](https://polyhaven.com/a/dark_wooden_planks)

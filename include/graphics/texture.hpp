@@ -47,4 +47,8 @@ inline unsigned int loadTexture(char const *path) {
 
   return textureID;
 }
+
+inline unsigned int loadTexture(std::filesystem::path path) {
+  return loadTexture(path.c_str());
+}
 #endif

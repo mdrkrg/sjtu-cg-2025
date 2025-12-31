@@ -42,8 +42,8 @@ GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       modelSimpleInstancedShader(nullptr), modelInstancedShader(nullptr),
       lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
-      debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
-      selectedObject(nullptr),
+      debugShader(nullptr), windowDiffuseMap(0), floorDiffuseMap(0),
+      gameManager(gameManager), selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
       orbAuraSystem(nullptr), testCubeSystem(nullptr), arrowLauncher(nullptr),
       cloud(nullptr) {
@@ -294,9 +294,15 @@ bool GraphicsRenderer::setupShaders() {
 }
 
 bool GraphicsRenderer::loadTextures() {
-  windowDiffuseMap = loadTexture(
-      std::filesystem::path("resources/textures/window.png").c_str());
-  return windowDiffuseMap != 0;
+  static const std::filesystem::path texturePath{"resources/textures"};
+  windowDiffuseMap = loadTexture(texturePath / "window.png");
+  std::println(std::clog, "Loaded window texture: {}", windowDiffuseMap);
+
+  floorDiffuseMap = loadTexture(texturePath / "dark_wooden_planks_4k.blend" /
+                                "textures" / "dark_wooden_planks_diff_4k.jpg");
+  std::println(std::clog, "Loaded floor texture: {}", floorDiffuseMap);
+
+  return windowDiffuseMap != 0 && floorDiffuseMap != 0;
 }
 
 bool GraphicsRenderer::loadModels() {
@@ -385,7 +391,7 @@ bool GraphicsRenderer::setupRoomGeometry() {
       0.5f,  0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
 
       -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
+      0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 0.0f, //
       0.5f,  -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
       0.5f,  -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
       -0.5f, -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, //
@@ -519,6 +525,7 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
   lightingShader->setVec3("material.diffuse", glm::vec3(1.0f, 1.0f, 1.0f));
   lightingShader->setVec3("material.specular", glm::vec3(0.1f, 0.1f, 0.1f));
   lightingShader->setFloat("material.shininess", 64.0f);
+  lightingShader->setBool("material.use_texture", false);
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
@@ -533,11 +540,22 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
   lightingShader->setVec3("material.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
   lightingShader->setVec3("material.specular", glm::vec3(0.3f, 0.3f, 0.3f));
   lightingShader->setFloat("material.shininess", 64.0f);
+  lightingShader->setBool("material.use_texture", true);
+  // Set texture samplers to use texture unit 0
+  lightingShader->setInt("material.texture_diffuse1", 0);
+  lightingShader->setInt("material.texture_specular1", 0);
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
   model = glm::scale(model, glm::vec3(2.0f, 1.0f, 1.0f));
   lightingShader->setMat4("model", model);
+
+  // Bind floor texture to texture unit 0
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, floorDiffuseMap);
+  // Set texture scaling for floor (2x wide)
+  lightingShader->setVec2("texScale", glm::vec2(2.0f, 1.0f));
+  lightingShader->setVec2("texOffset", glm::vec2(0.0f, 0.0f));
 
   glBindVertexArray(floor.VAO);
   glDrawArrays(GL_TRIANGLES, 0, floor.vertexCount);
@@ -547,6 +565,10 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
   lightingShader->setVec3("material.diffuse", glm::vec3(1.0f, 0.0f, 0.31f));
   lightingShader->setVec3("material.specular", glm::vec3(1.0f, 0.0f, 0.31f));
   lightingShader->setFloat("material.shininess", 64.0f);
+  lightingShader->setBool("material.use_texture", false);
+  // Reset texture scaling for walls
+  lightingShader->setVec2("texScale", glm::vec2(1.0f, 1.0f));
+  lightingShader->setVec2("texOffset", glm::vec2(0.0f, 0.0f));
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
@@ -561,6 +583,7 @@ void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
   lightingShader->setVec3("material.diffuse", glm::vec3(1.0f, 0.0f, 0.31f));
   lightingShader->setVec3("material.specular", glm::vec3(1.0f, 0.0f, 0.31f));
   lightingShader->setFloat("material.shininess", 64.0f);
+  lightingShader->setBool("material.use_texture", false);
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));

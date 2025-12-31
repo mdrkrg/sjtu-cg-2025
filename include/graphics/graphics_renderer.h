@@ -74,6 +74,7 @@ private:
 
   // Textures
   unsigned int windowDiffuseMap;
+  unsigned int floorDiffuseMap;
 
   std::shared_ptr<GameManager> gameManager;
 
