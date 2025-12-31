@@ -198,6 +198,14 @@ public:
   /// Remove all death checks
   void clearDeathChecks() { deathChecks.clear(); }
 
+  /// Get the emitter
+  /// @return Shared pointer to emitter
+  std::shared_ptr<Emitter> getEmitter() const { return emitter; }
+
+  /// Set the emitter
+  /// @param newEmitter New emitter to set
+  void setEmitter(std::shared_ptr<Emitter> newEmitter) { emitter = newEmitter; }
+
   static std::shared_ptr<DeathCheck> defaultDeathCheck() {
     return std::make_shared<TimeoutDeathCheck>();
   }

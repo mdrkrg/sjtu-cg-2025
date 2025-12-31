@@ -142,9 +142,9 @@ bool GraphicsRenderer::initialize() {
           gameManager->getObjects()    // AABB collision targets
       );
 
-  // Initialize arrow launcher
-  arrowLauncher =
-      std::make_shared<graphics::particles::ArrowLauncher>(gameManager);
+  // Initialize arrow launcher with multiple emitters
+  arrowLauncher = std::make_shared<graphics::particles::ArrowLauncher>(
+      gameManager, graphics::particles::EmissionPolicy::RoundRobin);
 
   auto arrowModelWithMaterials =
       ModelFactory::loadModel("resources/objects/arrow/arrow1.obj");
@@ -152,10 +152,18 @@ bool GraphicsRenderer::initialize() {
   arrowLauncher->init(std::move(arrowModelWithMaterials), modelInstancedShader,
                       100);
 
-  // Set emitter position and direction
-  // Position: From behind of camera, slightly above
-  // Direction: Forward and slightly downward
-  arrowLauncher->setEmitter(glm::vec3{0.0f, 1.5f, 4.0f},   // Position
+  // Add multiple emitters at different positions
+  arrowLauncher->addEmitter(glm::vec3{-2.0f, 1.5f, 4.0f},  // Left emitter
+                            glm::vec3{0.0f, -0.5f, -1.0f}, // Direction
+                            5.0f,                          // Speed
+                            10.0f                          // Spread angle
+  );
+  arrowLauncher->addEmitter(glm::vec3{0.0f, 1.5f, 4.0f},   // Center emitter
+                            glm::vec3{0.0f, -0.5f, -1.0f}, // Direction
+                            5.0f,                          // Speed
+                            10.0f                          // Spread angle
+  );
+  arrowLauncher->addEmitter(glm::vec3{2.0f, 1.5f, 4.0f},   // Right emitter
                             glm::vec3{0.0f, -0.5f, -1.0f}, // Direction
                             5.0f,                          // Speed
                             10.0f                          // Spread angle
@@ -166,7 +174,7 @@ bool GraphicsRenderer::initialize() {
     arrowLauncher->addCollisionTarget(obj);
   }
 
-  // Fire arrows for testing
+  // Fire arrows for testing (round-robin)
   arrowLauncher->launch(10);
 
   return true;
@@ -667,10 +675,7 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
 
   // Render arrow launcher system
   if (arrowLauncher && arrowLauncher->isInitialized()) {
-    auto arrowSystem = arrowLauncher->getArrowSystem();
-    if (arrowSystem && arrowSystem->isVisible()) {
-      arrowSystem->render(view, projection);
-    }
+    arrowLauncher->render(view, projection);
   }
 }
 
@@ -706,15 +711,22 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
 
   // Render debug AABB for arrow particles (blue color)
   if (arrowLauncher && arrowLauncher->isInitialized()) {
-    auto arrowSystem = arrowLauncher->getArrowSystem();
-    if (arrowSystem && arrowSystem->isVisible()) {
+    auto emitterGroup = arrowLauncher->getEmitterGroup();
+    if (emitterGroup) {
       // Set color for arrow particle AABB (blue)
       debugShader->setVec3("color", glm::vec3(0.0f, 0.0f, 1.0f));
 
-      // Get individual world AABBs for all arrow particles
-      auto arrowParticleAABBs = arrowSystem->getParticleWorldAABBs();
-      for (const auto &arrowAABB : arrowParticleAABBs) {
-        renderDebugAABB(arrowAABB);
+      // Get AABBs from all systems in the emitter group
+      const auto &systems = emitterGroup->getSystems();
+      for (const auto &arrowSystem : systems) {
+        if (not arrowSystem or not arrowSystem->isVisible()) {
+          continue;
+        }
+        // Get individual world AABBs for all arrow particles in this system
+        auto arrowParticleAABBs = arrowSystem->getParticleWorldAABBs();
+        for (const auto &arrowAABB : arrowParticleAABBs) {
+          renderDebugAABB(arrowAABB);
+        }
       }
     }
   }
