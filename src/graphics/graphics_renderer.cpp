@@ -923,6 +923,9 @@ void GraphicsRenderer::setupFloorCompartment() {
         [this, orbObj]() {
           std::println(std::clog, "Orb glow triggered!");
           activateOrbAura(orbObj);
+          if (postProcessingManager) {
+            postProcessingManager->enableOrbGlow(orbObj, 1.0f);
+          }
         },
         glm::vec3(0.2f, 0.1f, 0.2f), // Cavity size
         1.2f                         // Reveal duration

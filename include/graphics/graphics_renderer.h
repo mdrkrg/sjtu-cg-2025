@@ -18,6 +18,7 @@
 #include "graphics/postprocessing/post_processing_manager.hpp"
 
 using graphics::particles::ParticleSystem;
+using graphics::postprocessing::PostProcessingManager;
 
 class GameManager;
 
@@ -85,7 +86,7 @@ private:
   GameObject *selectedObject;
 
   // Post-processing manager
-  std::unique_ptr<graphics::postprocessing::PostProcessingManager> postProcessingManager;
+  std::unique_ptr<PostProcessingManager> postProcessingManager;
 
   std::shared_ptr<TerrainMesh> terrainMesh;
 

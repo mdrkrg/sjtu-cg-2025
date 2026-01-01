@@ -8,7 +8,6 @@ out vec4 FragColor;
 uniform sampler2D sceneTexture;
 uniform vec2 screenSize;
 
-// Debug controls
 uniform float exposure = 1.0;
 
 void main() {
