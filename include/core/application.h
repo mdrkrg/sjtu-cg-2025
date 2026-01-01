@@ -47,6 +47,10 @@ public:
   /// Toggle pause
   void togglePause() { renderer->togglePause(); }
 
+  constexpr std::tuple<unsigned int, unsigned int> windowSize() {
+    return std::make_tuple(SCR_WIDTH, SCR_HEIGHT);
+  }
+
 private:
   explicit Application();
   /// Application singleton
