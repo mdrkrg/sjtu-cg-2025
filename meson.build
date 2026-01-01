@@ -18,6 +18,21 @@ if not perlin_noise_dep.found()
   perlin_noise_dep = perlin_noise_proj.get_variable('perlin_noise_dep')
 endif
 
+cmake = import('cmake')
+
+pmp_dep = dependency('pmp-library', required: false)
+if not pmp_dep.found()
+  opt_var = cmake.subproject_options()
+  opt_var.add_cmake_defines({
+    'PMP_BUILD_EXAMPLES': false,
+    'PMP_BUILD_TESTS': false,
+    'PMP_BUILD_DOCS': false,
+    'PMP_BUILD_VIS': false,
+  })
+  pmp_proj = cmake.subproject('pmp-library', options: opt_var)
+  pmp_dep = pmp_proj.dependency('pmp')
+endif
+
 dependencies = [
   dependency('OpenGL', required: true),
   dependency('epoxy', required: true),
@@ -26,6 +41,7 @@ dependencies = [
   stb_dep,
   dependency('assimp', required: true),
   perlin_noise_dep,
+  pmp_dep,
 ]
 
 incdir = include_directories('include')
