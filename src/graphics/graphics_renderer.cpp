@@ -372,9 +372,19 @@ bool GraphicsRenderer::loadModels() {
       lamp->position = glm::vec3{0.1f, 0.18f, 2.2f};
       lamp->scale = glm::vec3{0.03f};
 
-      // Add lighting behaviour
+      // Add lighting behaviour with callback
       auto lampBehaviour = std::make_unique<LampLightingBehaviour>(
-          lightManager, glm::vec3(0.8f, 0.8f, 0.6f), 0.2f, 0.5f);
+          lightManager, glm::vec3(0.8f, 0.8f, 0.6f), 0.2f, 0.5f,
+          [this](GameObject *lampObj, bool on) {
+            if (not postProcessingManager) {
+              return;
+            }
+            if (on) {
+              postProcessingManager->enableLampAura(lampObj, 0.8f);
+            } else {
+              postProcessingManager->disableLampAura();
+            }
+          });
       lamp->addBehaviour(std::move(lampBehaviour));
 
       // Add to GameManager

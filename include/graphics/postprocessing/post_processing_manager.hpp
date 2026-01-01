@@ -9,6 +9,7 @@
 #include "frame_buffer.hpp"
 #include "basic_post_process_effect.hpp"
 #include "orb_glow_effect.hpp"
+#include "lamp_aura_effect.hpp"
 #include "screen_quad.hpp"
 
 namespace graphics::postprocessing {
@@ -61,10 +62,13 @@ public:
         if (not orbGlowEffect->initialize()) {
           throw std::runtime_error{"Failed to initialize orb glow effect"};
         }
+      }
 
-        orbGlowEffect->setGlowColor(glm::vec3{0.2f, 0.8f, 1.0f});
-        orbGlowEffect->setGlowRadius(0.3f);
-        orbGlowEffect->setGlowIntensity(1.0f);
+      { // Create lamp aura effect
+        lampAuraEffect = std::make_unique<LampAuraEffect>();
+        if (not lampAuraEffect->initialize()) {
+          throw std::runtime_error{"Failed to initialize lamp aura effect"};
+        }
       }
 
       { // Create fallback shader and quad for simple texture copy
@@ -93,6 +97,7 @@ public:
   void cleanup() {
     simpleCopyShader.reset();
     fallbackQuad.reset();
+    lampAuraEffect.reset();
     orbGlowEffect.reset();
     basicEffect.reset();
 
@@ -153,6 +158,9 @@ public:
     if (orbGlowEffect) {
       orbGlowEffect->setViewMatrices(projection, view);
     }
+    if (lampAuraEffect) {
+      lampAuraEffect->setViewMatrices(projection, view);
+    }
 
     // Apply post-processing effects in order
     applyEffects(screenSize);
@@ -164,12 +172,14 @@ public:
     if (orbGlowEffect) {
       orbGlowEffect->update(0.016f);
     }
+    if (lampAuraEffect) {
+      lampAuraEffect->update(0.016f);
+    }
   }
 
   /// Check if initialized
   bool isValid() const { return initialized; }
 
-  // Orb glow effect control
   void enableOrbGlow(GameObject *orb, float strength = 1.0f) {
     if (orbGlowEffect) {
       orbGlowEffect->enableForOrb(orb, strength);
@@ -179,6 +189,18 @@ public:
   void disableOrbGlow() {
     if (orbGlowEffect) {
       orbGlowEffect->disable();
+    }
+  }
+
+  void enableLampAura(GameObject *lamp, float strength = 1.0f) {
+    if (lampAuraEffect) {
+      lampAuraEffect->enableForLamp(lamp, strength);
+    }
+  }
+
+  void disableLampAura() {
+    if (lampAuraEffect) {
+      lampAuraEffect->disable();
     }
   }
 
@@ -200,6 +222,7 @@ private:
   std::unique_ptr<FrameBuffer> pingPongFBOs[2]; // For effect chaining
   std::unique_ptr<BasicPostProcessEffect> basicEffect;
   std::unique_ptr<OrbGlowEffect> orbGlowEffect;
+  std::unique_ptr<LampAuraEffect> lampAuraEffect;
   std::shared_ptr<Shader> simpleCopyShader;
   std::unique_ptr<ScreenQuad> fallbackQuad;
   bool initialized{false};
@@ -212,33 +235,60 @@ private:
 
     // Scene texture from main FBO
     GLuint currentTexture = mainFBO->getColorTexture();
-    int pingPongFBOIndex = 0;
+    bool pingPongFBOIndex = 0;
     GLuint targetFBO = 0; // Screen
     bool needsFinalRender = true;
 
     // Basic post processing
     if (basicEffect and basicEffect->isActive()) {
-      // Render to first ping pong FBO
-      targetFBO = pingPongFBOs[pingPongFBOIndex]->getFBO();
-      basicEffect->apply(currentTexture, targetFBO, screenSize);
-
-      currentTexture = pingPongFBOs[pingPongFBOIndex]->getColorTexture();
-      pingPongFBOIndex = 1 - pingPongFBOIndex;
+      applyPingPongEffect(*basicEffect, pingPongFBOIndex, currentTexture,
+                          screenSize);
       needsFinalRender = false;
     }
 
-    // Orb glow effect
-    if (orbGlowEffect and orbGlowEffect->isActive()) {
-      // Render to screen
-      targetFBO = 0;
-      orbGlowEffect->apply(currentTexture, targetFBO, screenSize);
-      needsFinalRender = true;
+    bool hasScreenSpaceEffect = [this] {
+      return (orbGlowEffect and orbGlowEffect->isActive()) or
+             (lampAuraEffect and lampAuraEffect->isActive());
+    }();
+
+    if (not hasScreenSpaceEffect) {
+      renderTextureToScreen(currentTexture);
+      return;
     }
 
-    // Final render when no effect is active
+    // Copy current texture to ping-pong FBO
+    targetFBO = pingPongFBOs[pingPongFBOIndex]->getFBO();
+    renderTextureToFBO(currentTexture, targetFBO, screenSize);
+    currentTexture = pingPongFBOs[pingPongFBOIndex]->getColorTexture();
+    pingPongFBOIndex = not pingPongFBOIndex;
+
+    // Apply orb glow
+    if (orbGlowEffect and orbGlowEffect->isActive()) {
+      applyPingPongEffect(*orbGlowEffect, pingPongFBOIndex, currentTexture,
+                          screenSize);
+    }
+
+    // Apply lamp aura
+    if (lampAuraEffect and lampAuraEffect->isActive()) {
+      applyPingPongEffect(*lampAuraEffect, pingPongFBOIndex, currentTexture,
+                          screenSize);
+    }
+
+    // Render final result to screen
     if (!needsFinalRender) {
       renderTextureToScreen(currentTexture);
     }
+  }
+
+  void applyPingPongEffect(PostProcessingEffect &effect, bool &pingPongFBOIndex,
+                           GLuint &currentTexture,
+                           const glm::vec2 &screenSize) {
+    GLuint targetFBO =
+        pingPongFBOs[static_cast<unsigned>(pingPongFBOIndex)]->getFBO();
+    effect.apply(currentTexture, targetFBO, screenSize);
+    currentTexture = pingPongFBOs[static_cast<unsigned>(pingPongFBOIndex)]
+                         ->getColorTexture();
+    pingPongFBOIndex = not pingPongFBOIndex;
   }
 
   /// Simple fallback: render texture directly to screen
@@ -249,6 +299,30 @@ private:
 
     // Bind screen framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    simpleCopyShader->use();
+
+    // Bind texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    simpleCopyShader->setInt("sceneTexture", 0);
+
+    fallbackQuad->render();
+
+    // Unbind
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+
+  /// Render texture to a specific FBO
+  void renderTextureToFBO(GLuint texture, GLuint targetFBO,
+                          const glm::vec2 &screenSize) {
+    if (not simpleCopyShader or not fallbackQuad) {
+      return;
+    }
+
+    // Bind FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
     glClear(GL_COLOR_BUFFER_BIT);
 
     simpleCopyShader->use();

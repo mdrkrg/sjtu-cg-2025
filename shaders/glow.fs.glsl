@@ -11,9 +11,13 @@ uniform float effectStrength;
 uniform float time;
 
 // Glow parameters
-uniform vec3 glowColor = vec3(0.2, 0.8, 1.0); // Cyan
-uniform float glowRadius = 0.3;
+uniform vec3 glowColor = vec3(1.0, 1.0, 1.0);
+uniform float glowRadius = 1.0;
 uniform float glowIntensity = 1.0;
+uniform float glowFalloffMultiplier = 10.0;
+
+uniform float pulseBaseIntensity = 0.5;
+uniform float pulseFrequency = 1.0;
 
 void main() {
     vec3 color = texture(sceneTexture, TexCoords).rgb;
@@ -22,10 +26,10 @@ void main() {
     float distanceToGlow = distance(uv, glowScreenPos);
 
     // Falloff
-    float glowFactor = exp(-distanceToGlow * 10.0 / glowRadius);
+    float glowFactor = exp(-distanceToGlow * glowFalloffMultiplier / glowRadius);
 
     // Pulsing
-    float pulse = 0.5 + 0.5 * sin(time * 2.0);
+    float pulse = pulseBaseIntensity + (1 - pulseBaseIntensity) * sin(time * pulseFrequency);
     glowFactor *= pulse * effectStrength * glowIntensity;
 
     vec3 glow = glowColor * glowFactor;

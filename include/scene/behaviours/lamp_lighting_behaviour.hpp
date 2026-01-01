@@ -5,18 +5,21 @@
 #include "graphics/light_manager.hpp"
 #include <glm/glm.hpp>
 #include <iostream>
+#include <functional>
 
 /// Lamp lighting behaviour (Strategy pattern)
 /// Toggles light on/off when selected, manages light source
 class LampLightingBehaviour : public IGameObjectBehaviour {
 public:
-  LampLightingBehaviour(graphics::LightManager &lightManager,
-                        const glm::vec3 &lightColor = glm::vec3(1.0f, 0.9f,
-                                                                0.6f),
-                        float intensity = 1.0f, float lightRadius = 2.0f)
+  LampLightingBehaviour(
+      graphics::LightManager &lightManager,
+      const glm::vec3 &lightColor = glm::vec3(1.0f, 0.9f, 0.6f),
+      float intensity = 1.0f, float lightRadius = 2.0f,
+      std::function<void(GameObject *, bool)> onToggleCallback =
+          [](GameObject *, bool) {})
       : lightManager{lightManager}, lightColor{lightColor},
         intensity{intensity}, lightRadius{lightRadius}, lightOn{false},
-        lightIndex{std::nullopt} {
+        lightIndex{std::nullopt}, onToggleCallback{onToggleCallback} {
     std::println(std::clog,
                  "LampLightingBehaviour created with color ({}, {}, {})",
                  lightColor.r, lightColor.g, lightColor.b);
@@ -76,6 +79,11 @@ public:
 
     // Update mesh emission
     updateMeshEmission(obj);
+
+    // Notify callback
+    if (onToggleCallback) {
+      onToggleCallback(obj, lightOn);
+    }
   }
 
   void onHover(GameObject *obj, bool enter) override {
@@ -172,4 +180,6 @@ private:
   // Index in LightManager array, nullopt if not active
   std::optional<uint32_t> lightIndex;
   float timeAccumulator = 0.0f;
+  // Callback for when lamp is toggled (obj, isOn)
+  std::function<void(GameObject *, bool)> onToggleCallback;
 };
