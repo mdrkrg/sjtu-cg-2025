@@ -1,3 +1,4 @@
+#include "core/application.h"
 #include "graphics/graphics_renderer.h"
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
@@ -69,6 +70,15 @@ void GraphicsRenderer::activateOrbAura(GameObject *const parent) {
 bool GraphicsRenderer::initialize() {
   if (!setupShaders()) {
     std::cout << "Failed to setup shaders" << std::endl;
+    return false;
+  }
+
+  // Initialize post-processing system
+  const auto [width, height] = Application::getInstance()->windowSize();
+  postProcessingManager =
+      std::make_unique<graphics::postprocessing::PostProcessingManager>();
+  if (!postProcessingManager->initialize(width, height)) {
+    std::cerr << "Failed to initialize post-processing system";
     return false;
   }
 
@@ -181,14 +191,37 @@ bool GraphicsRenderer::initialize() {
   return true;
 }
 
-void GraphicsRenderer::render(const glm::mat4 &projection,
-                              const glm::mat4 &view,
-                              const glm::vec3 &cameraPosition) {
+void GraphicsRenderer::preRender(const glm::mat4 &projection,
+                                 const glm::mat4 &view,
+                                 const glm::vec3 &cameraPosition) {
+  (void)projection;
+  (void)view;
   // Update LightManager with camera position
   lightManager.setViewPos(cameraPosition);
   // Send data to to GPU
   lightManager.updateUBO();
+}
 
+void GraphicsRenderer::render(const glm::mat4 &projection,
+                              const glm::mat4 &view,
+                              const glm::vec3 &cameraPosition) {
+  preRender(projection, view, cameraPosition);
+
+  if (postProcessingManager and postProcessingManager->isValid()) {
+    postProcessingManager->beginRender();
+  }
+
+  // Render scene
+  renderDirect(projection, view, cameraPosition);
+
+  if (postProcessingManager and postProcessingManager->isValid()) {
+    postProcessingManager->endRender(projection, view);
+  }
+}
+
+void GraphicsRenderer::renderDirect(const glm::mat4 &projection,
+                                    const glm::mat4 &view,
+                                    const glm::vec3 &cameraPosition) {
   renderRoom(projection, view, cameraPosition);
   renderObjects(projection, view);
   renderLightCube(projection, view);
@@ -255,6 +288,9 @@ void GraphicsRenderer::cleanup() {
   windowShader.reset();
   particleShader.reset();
   debugShader.reset();
+
+  // Cleanup post-processing system
+  postProcessingManager.reset();
 
   // Cleanup game objects
   terrainMesh.reset();

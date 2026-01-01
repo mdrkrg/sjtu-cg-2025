@@ -15,6 +15,7 @@
 #include "cloud.h"
 #include "scene/game_object.hpp"
 #include "graphics/light_manager.hpp"
+#include "graphics/postprocessing/post_processing_manager.hpp"
 
 using graphics::particles::ParticleSystem;
 
@@ -28,6 +29,8 @@ public:
   bool initialize();
   void render(const glm::mat4 &projection, const glm::mat4 &view,
               const glm::vec3 &cameraPosition);
+  void renderDirect(const glm::mat4 &projection, const glm::mat4 &view,
+                    const glm::vec3 &cameraPosition);
   void update(float deltaTime);
   void cleanup();
   void togglePause() { paused = not paused; }
@@ -81,6 +84,9 @@ private:
   // Game objects (pointers for shader selection)
   GameObject *selectedObject;
 
+  // Post-processing manager
+  std::unique_ptr<graphics::postprocessing::PostProcessingManager> postProcessingManager;
+
   std::shared_ptr<TerrainMesh> terrainMesh;
 
   std::shared_ptr<ParticleSystem<Particle>> rainSystem;
@@ -120,6 +126,9 @@ private:
   bool setupShaders();
   bool loadTextures();
   bool loadModels();
+
+  void preRender(const glm::mat4 &projection, const glm::mat4 &view,
+                 const glm::vec3 &cameraPosition);
 
   void setupTrap();
   void setupPuzzle();
