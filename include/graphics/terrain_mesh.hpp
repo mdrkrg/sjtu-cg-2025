@@ -21,7 +21,7 @@ private:
   float maxHeight;
   std::vector<float> heightData;
 
-  std::vector<Vertex> vertices;
+  std::vector<MeshVertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
 

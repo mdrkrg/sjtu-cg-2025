@@ -14,9 +14,7 @@
 #include <optional>
 #include "math/intersection.hpp"
 
-#define MAX_BONE_INFLUENCE 4
-
-struct Vertex {
+struct MeshVertex {
   // position
   glm::vec3 Position;
   // normal
@@ -27,10 +25,6 @@ struct Vertex {
   glm::vec3 Tangent;
   // bitangent
   glm::vec3 Bitangent;
-  // bone indexes which will influence this vertex
-  int m_BoneIDs[MAX_BONE_INFLUENCE];
-  // weights from each bone
-  float m_Weights[MAX_BONE_INFLUENCE];
 };
 
 struct Texture {
@@ -42,7 +36,7 @@ struct Texture {
 class Mesh {
 public:
   // mesh Data
-  std::vector<Vertex> vertices;
+  std::vector<MeshVertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
   unsigned int VAO;
@@ -51,7 +45,7 @@ public:
   std::string name;
 
   // constructor
-  Mesh(std::vector<Vertex> &&vertices, std::vector<unsigned int> &&indices,
+  Mesh(std::vector<MeshVertex> &&vertices, std::vector<unsigned int> &&indices,
        std::vector<Texture> &&textures, const std::string &name = "")
       : vertices{vertices}, indices{indices}, textures{textures}, name{name} {
 
@@ -62,7 +56,7 @@ public:
 
   /// Create a cube mesh
   static Mesh createCube(float size = 1.0f, const std::string &name = "") {
-    std::vector<Vertex> vertices;
+    std::vector<MeshVertex> vertices;
     std::vector<unsigned int> indices;
     float s = size * 0.5f;
     // 8 vertices
@@ -79,16 +73,12 @@ public:
     for (int face = 0; face < 6; ++face) {
       unsigned int baseIndex = vertices.size();
       for (int i = 0; i < 4; ++i) {
-        Vertex v;
+        MeshVertex v;
         v.Position = positions[faceVertices[face][i]];
         v.Normal = normals[face];
         v.TexCoords = texCoords[i];
         v.Tangent = glm::vec3(0.0f);
         v.Bitangent = glm::vec3(0.0f);
-        for (int j = 0; j < MAX_BONE_INFLUENCE; ++j) {
-          v.m_BoneIDs[j] = 0;
-          v.m_Weights[j] = 0.0f;
-        }
         vertices.push_back(v);
       }
       indices.push_back(baseIndex);
@@ -106,7 +96,7 @@ public:
   /// Create a sphere mesh
   static Mesh createSphere(float radius = 1.0f, int sectors = 36,
                            int stacks = 18, const std::string &name = "") {
-    std::vector<Vertex> vertices;
+    std::vector<MeshVertex> vertices;
     std::vector<unsigned int> indices;
 
     const float PI = glm::pi<float>();
@@ -125,19 +115,12 @@ public:
         float x = xy * cosf(sectorAngle);
         float z = xy * sinf(sectorAngle);
 
-        Vertex vertex;
+        MeshVertex vertex;
         vertex.Position = glm::vec3(x, y, z);
         vertex.Normal = glm::normalize(vertex.Position);
         vertex.TexCoords = glm::vec2((float)j / sectors, (float)i / stacks);
         vertex.Tangent = glm::vec3(0.0f);
         vertex.Bitangent = glm::vec3(0.0f);
-
-        // Initialize bone data
-        for (int k = 0; k < MAX_BONE_INFLUENCE; ++k) {
-          vertex.m_BoneIDs[k] = 0;
-          vertex.m_Weights[k] = 0.0f;
-        }
-
         vertices.push_back(vertex);
       }
     }
@@ -323,7 +306,7 @@ private:
     // all its items. The effect is that we can simply pass a pointer to the
     // struct and it translates perfectly to a glm::vec3/2 array which again
     // translates to 3/2 floats which translates to a byte array.
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(MeshVertex),
                  &vertices[0], GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -333,32 +316,23 @@ private:
     // set the vertex attribute pointers
     // vertex Positions
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                          (void *)0);
     // vertex normals
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *)offsetof(Vertex, Normal));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                          (void *)offsetof(MeshVertex, Normal));
     // vertex texture coords
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *)offsetof(Vertex, TexCoords));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                          (void *)offsetof(MeshVertex, TexCoords));
     // vertex tangent
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *)offsetof(Vertex, Tangent));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                          (void *)offsetof(MeshVertex, Tangent));
     // vertex bitangent
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *)offsetof(Vertex, Bitangent));
-    // ids
-    glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
-                           (void *)offsetof(Vertex, m_BoneIDs));
-
-    // weights
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                          (void *)offsetof(Vertex, m_Weights));
-    glBindVertexArray(0);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                          (void *)offsetof(MeshVertex, Bitangent));
   }
 };

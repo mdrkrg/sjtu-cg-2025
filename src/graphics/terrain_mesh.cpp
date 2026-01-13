@@ -84,7 +84,7 @@ void TerrainMesh::generateTerrainMesh() {
       float h = (idx < heightData.size()) ? heightData[idx] : 0.0f;
 
       // Create vertex
-      Vertex vertex;
+      MeshVertex vertex;
       vertex.Position =
           glm::vec3((float)x / (width - 1) - 0.5f, // Normalize x to [-0.5, 0.5]
                     h,
@@ -101,12 +101,6 @@ void TerrainMesh::generateTerrainMesh() {
       // Init other attrs
       vertex.Tangent = glm::vec3(1.0f, 0.0f, 0.0f);
       vertex.Bitangent = glm::vec3(0.0f, 0.0f, 1.0f);
-
-      // Init bone data
-      for (int i = 0; i < MAX_BONE_INFLUENCE; ++i) {
-        vertex.m_BoneIDs[i] = 0;
-        vertex.m_Weights[i] = 0.0f;
-      }
 
       vertices.push_back(vertex);
     }
@@ -186,8 +180,8 @@ void TerrainMesh::setupMesh() {
 
   // Load vertex data
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0],
-               GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(MeshVertex),
+               &vertices[0], GL_STATIC_DRAW);
 
   // Load index data
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -197,37 +191,28 @@ void TerrainMesh::setupMesh() {
   // Set vertex attribute pointers
   // Position
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                        (void *)0);
 
   // Normal
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, Normal));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                        (void *)offsetof(MeshVertex, Normal));
 
   // Texture coordinates
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, TexCoords));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                        (void *)offsetof(MeshVertex, TexCoords));
 
   // Tangent
   glEnableVertexAttribArray(3);
-  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, Tangent));
+  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                        (void *)offsetof(MeshVertex, Tangent));
 
   // Bitangent
   glEnableVertexAttribArray(4);
-  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, Bitangent));
-
-  // Bone IDs
-  glEnableVertexAttribArray(5);
-  glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex),
-                         (void *)offsetof(Vertex, m_BoneIDs));
-
-  // Weights
-  glEnableVertexAttribArray(6);
-  glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, m_Weights));
+  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
+                        (void *)offsetof(MeshVertex, Bitangent));
 
   glBindVertexArray(0);
 }

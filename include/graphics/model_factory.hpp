@@ -207,13 +207,13 @@ inline void ModelFactory::LoaderContext::processNode(aiNode *node,
 
 inline Mesh ModelFactory::LoaderContext::processMesh(aiMesh *mesh,
                                                      const aiScene *scene) {
-  std::vector<Vertex> vertices;
+  std::vector<MeshVertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
 
   // 1. Process Vertices
   for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-    Vertex vertex;
+    MeshVertex vertex;
     glm::vec3 vector;
 
     // Positions

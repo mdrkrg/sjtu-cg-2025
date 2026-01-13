@@ -25,9 +25,9 @@ bool Mesh::containsPoint(const glm::vec3 &point,
     if (i + 2 >= indices.size())
       break;
 
-    const Vertex &v0 = vertices[indices[i]];
-    const Vertex &v1 = vertices[indices[i + 1]];
-    const Vertex &v2 = vertices[indices[i + 2]];
+    const MeshVertex &v0 = vertices[indices[i]];
+    const MeshVertex &v1 = vertices[indices[i + 1]];
+    const MeshVertex &v2 = vertices[indices[i + 2]];
 
     auto hit = math::rayTriangleIntersection(localRay, v0.Position, v1.Position,
                                              v2.Position);
@@ -64,9 +64,9 @@ Mesh::rayIntersection(const math::Ray &ray,
     if (i + 2 >= indices.size())
       break;
 
-    const Vertex &v0 = vertices[indices[i]];
-    const Vertex &v1 = vertices[indices[i + 1]];
-    const Vertex &v2 = vertices[indices[i + 2]];
+    const MeshVertex &v0 = vertices[indices[i]];
+    const MeshVertex &v1 = vertices[indices[i + 1]];
+    const MeshVertex &v2 = vertices[indices[i + 2]];
 
     auto hit = math::rayTriangleIntersection(localRay, v0.Position, v1.Position,
                                              v2.Position);
