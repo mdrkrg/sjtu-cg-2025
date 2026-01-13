@@ -95,8 +95,6 @@ private:
   std::shared_ptr<ParticleSystem<Particle>> snowSystem;
   std::shared_ptr<ParticleSystem<Particle>> orbAuraSystem;
 
-  // Test cube particle system
-  std::shared_ptr<graphics::particles::ModelParticleSystem> testCubeSystem;
   std::shared_ptr<graphics::particles::ArrowLauncher> arrowLauncher;
 
   // Cloud

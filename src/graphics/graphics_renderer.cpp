@@ -2,7 +2,6 @@
 #include "graphics/graphics_renderer.h"
 #include <GLFW/glfw3.h>
 #include "graphics/particles/particle_factory.hpp"
-#include "graphics/particles/model_particle_factory.hpp"
 #include "graphics/particles/arrow_launcher.hpp"
 #include "graphics/model_factory.hpp"
 #include "graphics/texture.hpp"
@@ -46,8 +45,7 @@ GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
       debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
       selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
-      orbAuraSystem(nullptr), testCubeSystem(nullptr), arrowLauncher(nullptr),
-      cloud(nullptr) {
+      orbAuraSystem(nullptr), arrowLauncher(nullptr), cloud(nullptr) {
   // Initialize geometry components
   ceiling = {0, 0, 0};
   floor = {0, 0, 0};
@@ -152,18 +150,6 @@ bool GraphicsRenderer::initialize() {
     cloud->initializeWeather(rainSystem, snowSystem);
   }
 
-  // Create a simple test particle system with cube model
-  testCubeSystem =
-      graphics::particles::ModelParticleFactory::createCubeTestSystem(
-          modelSimpleInstancedShader,
-          glm::vec3{0.0f, 0.5f, 2.0f}, // position above table
-          50,                          // max particles
-          2.0f,                        // emission rate (2 cubes/sec)
-          0.1f,                        // cube size
-          glm::vec3{1.0f, 0.0f, 0.0f}, // red color
-          gameManager->getObjects()    // AABB collision targets
-      );
-
   // Initialize arrow launcher with multiple emitters
   arrowLauncher = std::make_shared<graphics::particles::ArrowLauncher>(
       gameManager, graphics::particles::EmissionPolicy::RoundRobin);
@@ -253,11 +239,6 @@ void GraphicsRenderer::update(float deltaTime) {
   // Update cloud
   if (cloud && cloud->isInitialized()) {
     cloud->update(deltaTime);
-  }
-
-  // Update test cube system
-  if (testCubeSystem) {
-    testCubeSystem->update(deltaTime);
   }
 
   // Update arrow launcher
@@ -820,11 +801,6 @@ void GraphicsRenderer::renderParticles(const glm::mat4 &projection,
   }
   glDisable(GL_PROGRAM_POINT_SIZE);
 
-  // Render test cube system
-  if (testCubeSystem && testCubeSystem->isVisible()) {
-    testCubeSystem->render(view, projection);
-  }
-
   // Render arrow launcher system
   if (arrowLauncher && arrowLauncher->isInitialized()) {
     arrowLauncher->render(view, projection);
@@ -880,18 +856,6 @@ void GraphicsRenderer::renderDebugAABBs(const glm::mat4 &projection,
           renderDebugAABB(arrowAABB);
         }
       }
-    }
-  }
-
-  // Render debug AABB for test cube particles (yellow color)
-  if (testCubeSystem && testCubeSystem->isVisible()) {
-    // Yellow
-    debugShader->setVec3("color", glm::vec3(1.0f, 1.0f, 0.0f));
-
-    // Get individual world AABBs for particles
-    const auto cubeAABBs = testCubeSystem->getParticleWorldAABBs();
-    for (const auto &cubeAABB : cubeAABBs) {
-      renderDebugAABB(cubeAABB);
     }
   }
 }
