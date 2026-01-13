@@ -95,3 +95,6 @@ CONTAINER_RUNTIME=podman bash ./run.sh
 - [墙纸纹理](https://polyhaven.com/a/decrepit_wallpaper)
 - [中式窗模型-Weiting Ke](https://sketchfab.com/3d-models/chinese-windows-b-fb645ed041f947c4918fa1d9020d24e2)
 - [搪瓷水杯-Tejay21](https://sketchfab.com/3d-models/chinese-vintage-iron-cup-1a722222f69d49f59759293a107822bd)
+- [盆栽-AllQuad](https://sketchfab.com/3d-models/free-livistona-chinensis-fan-palm-f59bab2a81244b869e1ca5aefd4ad94a)
+- [鼎-StephenSun](https://sketchfab.com/3d-models/chinese-ding-c79865c2b8bb414d8b88bd599e72eb42)
+- [石狮-Game industry veteran](https://sketchfab.com/3d-models/stone-chinese-lion-small-4517f1db90604deba67052c934116206)

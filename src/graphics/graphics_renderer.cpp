@@ -187,7 +187,12 @@ bool GraphicsRenderer::initialize() {
 
   // Add collision targets
   for (auto obj : gameManager->getObjects()) {
-    if (obj->getName() == "wall_cavity") {
+    static const std::unordered_set<std::string> excluded{
+        "wall_cavity",
+        "plant",
+        "lion",
+    };
+    if (excluded.contains(obj->getName())) {
       continue;
     }
     arrowLauncher->addCollisionTarget(obj);
@@ -266,7 +271,6 @@ void GraphicsRenderer::handleMouseClick(const math::Ray &ray) {
   GameObject *selected = gameManager->handleRayCast(ray);
   if (selected) {
     std::cout << "Selected object: " << selected->getName() << std::endl;
-    // TODO: Trigger object-specific behavior (e.g., lamp toggle)
   } else {
     std::cout << "No object selected" << std::endl;
   }
@@ -383,7 +387,7 @@ bool GraphicsRenderer::loadModels() {
     {
       auto lamp = GameObject::createFromModelFile(
           "resources/objects/lamp/lamp1.obj", modelShader, "lamp");
-      lamp->position = glm::vec3{0.1f, 0.18f, 2.2f};
+      lamp->position = glm::vec3{0.08f, 0.18f, 2.2f};
       lamp->scale = glm::vec3{0.03f};
 
       // Add lighting behaviour with callback
@@ -908,12 +912,42 @@ void GraphicsRenderer::setupPuzzle() {
   };
 
   // Puzzle
-  createPuzzleCube(glm::vec3(-0.3f, 0.2f, 2.0f), glm::vec3(1.0f, 0.0f, 0.0f),
-                   0.1f, "red_cube");
-  createPuzzleCube(glm::vec3(-0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
-                   0.1f, "green_cube");
-  createPuzzleCube(glm::vec3(0.1f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
-                   0.1f, "blue_cube");
+  {
+    auto plant = GameObject::createFromModelFile(
+        "resources/objects/plant/scene.gltf", modelShader, "plant");
+    plant->position = glm::vec3(-0.8f, -0.2f, 2.0f);
+    plant->rotation = glm::vec3(-90.0f, 0.0f, 90.0f);
+    plant->scale = glm::vec3(0.2f);
+    plant->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
+        gameManager->getPuzzleManager(),
+        plant->position + glm::vec3(0.0f, 0.0f, 0.3f), plant->rotation));
+    gameManager->addObject(std::move(plant));
+  }
+
+  {
+    auto lion = GameObject::createFromModelFile(
+        "resources/objects/lion/scene.gltf", modelShader, "lion");
+    lion->position = glm::vec3(0.24f, 0.12f, 2.25f);
+    lion->rotation = glm::vec3(-90.0f, 0.0f, -90.0f);
+    lion->scale = glm::vec3(0.03f);
+    lion->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
+        gameManager->getPuzzleManager(), lion->position,
+        lion->rotation + glm::vec3(0.0f, 0.0f, 90.0f)));
+    gameManager->addObject(std::move(lion));
+  }
+
+  {
+    auto chineseDing = GameObject::createFromModelFile(
+        "resources/objects/ding/ToExport.fbx", modelShader, "ding");
+    chineseDing->position = glm::vec3(0.6f, -0.1f, 2.3f);
+    chineseDing->rotation = glm::vec3(-90.0f, 0.0f, 0.0f);
+    chineseDing->scale = glm::vec3(0.08f);
+    chineseDing->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
+        gameManager->getPuzzleManager(),
+        chineseDing->position + glm::vec3(-0.5f, 0.0f, 0.0f),
+        chineseDing->rotation + glm::vec3(0.0f, 0.0f, 90.0f)));
+    gameManager->addObject(std::move(chineseDing));
+  }
 
   auto hiddenCube =
       createPuzzleCube(glm::vec3(0.3f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),

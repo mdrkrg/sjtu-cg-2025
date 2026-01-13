@@ -44,17 +44,18 @@ GameObject *GameManager::handleRayCast(const math::Ray &ray) {
         continue;
       }
       const auto [near, far] = hit.value();
-      if (near > closestDistance) {
-        continue;
-      }
-    }
-    // Then do mesh test
-    if (const auto hit = obj->rayCast(ray); hit) {
-      if (hit->distance < closestDistance) {
-        closestDistance = hit->distance;
+      if (near < closestDistance) {
+        closestDistance = near;
         closestObject = obj.get();
       }
     }
+    // Then do mesh test
+    // if (const auto hit = obj->rayCast(ray); hit) {
+    //   if (hit->distance < closestDistance) {
+    //     closestDistance = hit->distance;
+    //     closestObject = obj.get();
+    //   }
+    // }
   }
 
   // Handle selection change

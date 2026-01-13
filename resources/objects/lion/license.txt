@@ -1,0 +1,11 @@
+Model Information:
+* title:	stone_chinese_lion_small
+* source:	https://sketchfab.com/3d-models/stone-chinese-lion-small-4517f1db90604deba67052c934116206
+* author:	Game industry veteran (https://sketchfab.com/zhengzhangxun)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "stone_chinese_lion_small" (https://sketchfab.com/3d-models/stone-chinese-lion-small-4517f1db90604deba67052c934116206) by Game industry veteran (https://sketchfab.com/zhengzhangxun) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

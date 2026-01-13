@@ -11,6 +11,7 @@
 class PuzzleMovementBehaviour : public IGameObjectBehaviour {
 public:
   PuzzleMovementBehaviour(PuzzleManager *puzzleManager,
+                          // TODO: use relative position and rotation
                           const glm::vec3 &targetPosition,
                           const glm::vec3 &targetRotation = glm::vec3(0.0f),
                           float moveDuration = 1.0f)
