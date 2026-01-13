@@ -33,7 +33,7 @@ public:
   void loadTexture(const Texture &texture) {
     textures_loaded.push_back(texture);
     for (auto &mesh : meshes) {
-      mesh.textures.push_back(texture);
+      mesh.addTexture(texture);
     }
   }
 

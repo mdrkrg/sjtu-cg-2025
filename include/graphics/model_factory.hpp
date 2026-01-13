@@ -145,46 +145,94 @@ inline ModelWithMaterials ModelFactory::createSphere(float radius,
 inline ModelWithMaterials ModelFactory::createWall(const glm::vec3 &size,
                                                    const Material &material,
                                                    const std::string &name) {
-  auto mesh = Mesh::createCube(1.0f, name.empty() ? "wall" : name);
+  // Create a scaled cube mesh directly instead of scaling an existing cube
+  std::vector<MeshVertex> vertices;
+  std::vector<unsigned int> indices;
+  float halfWidth = size.x * 0.5f;
+  float halfHeight = size.y * 0.5f;
+  float halfThickness = size.z * 0.5f;
 
-  // Scale the mesh to the desired wall size
-  // We need to transform vertices to match wall dimensions
-  std::vector<Vertex> scaledVertices;
-  for (const auto &vertex : mesh.vertices) {
-    Vertex scaledVertex = vertex;
-    scaledVertex.Position.x *= size.x;
-    scaledVertex.Position.y *= size.y;
-    scaledVertex.Position.z *= size.z;
+  // 8 vertices of the wall
+  glm::vec3 positions[8]{
+      {-halfWidth, -halfHeight, halfThickness},  // front-bottom-left
+      {halfWidth, -halfHeight, halfThickness},   // front-bottom-right
+      {halfWidth, halfHeight, halfThickness},    // front-top-right
+      {-halfWidth, halfHeight, halfThickness},   // front-top-left
+      {-halfWidth, -halfHeight, -halfThickness}, // back-bottom-left
+      {halfWidth, -halfHeight, -halfThickness},  // back-bottom-right
+      {halfWidth, halfHeight, -halfThickness},   // back-top-right
+      {-halfWidth, halfHeight, -halfThickness}   // back-top-left
+  };
 
-    // Scale texture coordinates based on wall dimensions for repeating textures
-    // Front/back: scale by width (x) and height (y)
-    // Left/right: scale by depth (z) and height (y)
-    // Top/bottom: scale by width (x) and depth (z)
+  // Face normals
+  glm::vec3 normals[6]{
+      {0.0f, 0.0f, 1.0f},  // front
+      {0.0f, 0.0f, -1.0f}, // back
+      {1.0f, 0.0f, 0.0f},  // right
+      {-1.0f, 0.0f, 0.0f}, // left
+      {0.0f, 1.0f, 0.0f},  // top
+      {0.0f, -1.0f, 0.0f}  // bottom
+  };
 
-    // Determine which face this vertex belongs to based on its normal
-    if (glm::abs(scaledVertex.Normal.z) > 0.5f) {
-      // Front/back face
-      scaledVertex.TexCoords.x *= size.x;
-      scaledVertex.TexCoords.y *= size.y;
-    } else if (glm::abs(scaledVertex.Normal.x) > 0.5f) {
-      // Left/right face
-      scaledVertex.TexCoords.x *= size.z;
-      scaledVertex.TexCoords.y *= size.y;
-    } else {
-      // Top/bottom
-      scaledVertex.TexCoords.x *= size.x;
-      scaledVertex.TexCoords.y *= size.z;
+  // Texture coordinates
+  glm::vec2 texCoords[4]{
+      {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
+
+  // Face vertex indices (with scaled positions)
+  unsigned int faceVertices[6][4]{
+      {0, 1, 2, 3}, // front
+      {5, 4, 7, 6}, // back
+      {1, 5, 6, 2}, // right
+      {4, 0, 3, 7}, // left
+      {3, 2, 6, 7}, // top
+      {4, 5, 1, 0}  // bottom
+  };
+
+  // Texture scaling factors for each face
+  glm::vec2 texScales[6]{
+      {size.x, size.y}, // front/back: width x height
+      {size.x, size.y}, // back: width x height
+      {size.z, size.y}, // left/right: thickness x height
+      {size.z, size.y}, // left: thickness x height
+      {size.x, size.z}, // top/bottom: width x thickness
+      {size.x, size.z}  // bottom: width x thickness
+  };
+
+  // Create vertices for each face
+  for (int face = 0; face < 6; ++face) {
+    unsigned int baseIndex = vertices.size();
+
+    for (int i = 0; i < 4; ++i) {
+      MeshVertex vertex;
+      vertex.Position = positions[faceVertices[face][i]];
+      vertex.Normal = normals[face];
+
+      // Scale texture coordinates based on face orientation
+      vertex.TexCoords = glm::vec2(texCoords[i].x * texScales[face].x,
+                                   texCoords[i].y * texScales[face].y);
+
+      // Initialize tangent and bitangent to zero
+      // TODO: Can be computed if needed
+      vertex.Tangent = glm::vec3(0.0f);
+      vertex.Bitangent = glm::vec3(0.0f);
+
+      vertices.push_back(vertex);
     }
 
-    scaledVertices.push_back(scaledVertex);
+    // Create two triangles for each face
+    indices.push_back(baseIndex);
+    indices.push_back(baseIndex + 1);
+    indices.push_back(baseIndex + 2);
+
+    indices.push_back(baseIndex);
+    indices.push_back(baseIndex + 2);
+    indices.push_back(baseIndex + 3);
   }
 
-  // Create new mesh with scaled vertices
-  Mesh scaledMesh(std::move(scaledVertices), std::move(mesh.indices),
-                  std::move(mesh.textures), mesh.name);
-
+  std::vector<Texture> textures;
   std::vector<Mesh> meshes;
-  meshes.push_back(std::move(scaledMesh));
+  meshes.push_back(Mesh(std::move(vertices), std::move(indices),
+                        std::move(textures), name.empty() ? "wall" : name));
 
   std::vector<Material> materials;
   materials.push_back(material);

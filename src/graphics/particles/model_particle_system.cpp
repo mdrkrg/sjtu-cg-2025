@@ -196,22 +196,15 @@ void ModelParticleSystem::computeModelAABB() {
     return;
   }
 
-  glm::vec3 min{std::numeric_limits<float>::max()};
-  glm::vec3 max{std::numeric_limits<float>::lowest()};
+  // Start with first mesh's AABB
+  const auto &firstMesh = particleModel.model->meshes[0];
+  particleLocalAABB = firstMesh.getLocalAABB();
 
-  // Compute AABB from all meshes
-  for (const auto &mesh : particleModel.model->meshes) {
-    for (const auto &vertex : mesh.vertices) {
-      min = glm::min(min, vertex.Position);
-      max = glm::max(max, vertex.Position);
-    }
-  }
-
-  if (min.x == std::numeric_limits<float>::max()) {
-    // No vertices found
-    particleLocalAABB = scene::AABB{glm::vec3{-0.1f}, glm::vec3{0.1f}};
-  } else {
-    particleLocalAABB = scene::AABB{min, max};
+  // Merge with remaining meshes
+  for (size_t i = 1; i < particleModel.model->meshes.size(); ++i) {
+    const auto &mesh = particleModel.model->meshes[i];
+    scene::AABB meshAABB = mesh.getLocalAABB();
+    particleLocalAABB = particleLocalAABB.merge(meshAABB);
   }
 }
 

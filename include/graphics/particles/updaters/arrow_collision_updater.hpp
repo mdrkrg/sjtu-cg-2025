@@ -142,12 +142,23 @@ private:
       return checkPointCollision(arrowPosWorld, target);
     }
 
-    // Perform ray-mesh intersection
-    auto rayHit = target.rayCast(ray);
+    // TODO: parameterize this
+    float maxHitDistance = 1.0f; // Maximum reasonable hit distance
 
-    if (rayHit) {
+    { // First, perform AABB-ray intersection for broad phase
+      scene::AABB targetAABB = target.getWorldAABB();
+      targetAABB.min -= glm::vec3{collisionMargin};
+      targetAABB.max += glm::vec3{collisionMargin};
+
+      if (not math::raycastAABB(ray, targetAABB, maxHitDistance)) {
+        // Ray doesn't intersect AABB, no collision
+        return std::nullopt;
+      }
+    }
+
+    // Perform ray-mesh intersection (narrow phase)
+    if (const auto rayHit = target.rayCast(ray); rayHit.has_value()) {
       // Check if hit is within reasonable distance (arrow length)
-      float maxHitDistance = 1.0f; // Maximum reasonable hit distance
       if (rayHit->distance <= maxHitDistance && rayHit->distance >= 0.0f) {
         return CollisionResult{rayHit->point, rayHit->normal};
       }

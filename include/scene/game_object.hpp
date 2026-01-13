@@ -300,10 +300,9 @@ inline void GameObject::computeLocalAABB() {
   glm::vec3 max(std::numeric_limits<float>::lowest());
 
   for (const auto &mesh : model->meshes) {
-    for (const auto &vertex : mesh.vertices) {
-      min = glm::min(min, vertex.Position);
-      max = glm::max(max, vertex.Position);
-    }
+    scene::AABB meshAABB = mesh.getLocalAABB();
+    min = glm::min(min, meshAABB.min);
+    max = glm::max(max, meshAABB.max);
   }
 
   // If no vertices found (shouldn't happen), use default

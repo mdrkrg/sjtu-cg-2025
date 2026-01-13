@@ -146,7 +146,7 @@ private:
     // Find meshes with material name "Lampshade"
     for (size_t i = 0; i < meshCount; ++i) {
       const auto &mesh = model->meshes[i];
-      if (mesh.name == "Lampshade") {
+      if (mesh.getName() == "Lampshade") {
         // Update GameObject material
         auto &mat = obj->getMeshMaterial(i);
         mat.setEmissive(lightOn, lightColor, currentIntensity);

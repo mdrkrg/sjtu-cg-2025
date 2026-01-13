@@ -9,6 +9,13 @@
 #include <graphics/shader.h>
 #include <scene/aabb.hpp>
 
+// X11 conflict with pmp
+#ifdef Success
+#undef Success
+#endif
+
+#include <pmp/surface_mesh.h>
+
 #include <string>
 #include <vector>
 #include <optional>
@@ -35,24 +42,20 @@ struct Texture {
 
 class Mesh {
 public:
-  // mesh Data
-  std::vector<MeshVertex> vertices;
-  std::vector<unsigned int> indices;
-  std::vector<Texture> textures;
-  unsigned int VAO;
-
-  // Name of the material in .mtl file
-  std::string name;
-
   // constructor
   Mesh(std::vector<MeshVertex> &&vertices, std::vector<unsigned int> &&indices,
        std::vector<Texture> &&textures, const std::string &name = "")
-      : vertices{vertices}, indices{indices}, textures{textures}, name{name} {
+      : textures{std::move(textures)}, name{name} {
 
-    // now that we have all the required data, set the vertex buffers and its
-    // attribute pointers.
-    setupMesh();
+    pmpMesh = std::make_unique<pmp::SurfaceMesh>();
+    initializeFromVerticesIndices(std::move(vertices), std::move(indices));
+
+    // Generate OpenGL buffers from PMP mesh
+    updateRenderBuffers();
   }
+
+  // Default constructor (creates empty mesh)
+  Mesh() : pmpMesh{std::make_unique<pmp::SurfaceMesh>()} {}
 
   /// Create a cube mesh
   static Mesh createCube(float size = 1.0f, const std::string &name = "") {
@@ -179,7 +182,8 @@ public:
 
     // draw mesh
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()),
+    glDrawElements(GL_TRIANGLES,
+                   static_cast<unsigned int>(triangleIndices.size()),
                    GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
@@ -195,7 +199,7 @@ public:
     // draw mesh instanced
     glBindVertexArray(VAO);
     glDrawElementsInstanced(GL_TRIANGLES,
-                            static_cast<unsigned int>(indices.size()),
+                            static_cast<unsigned int>(triangleIndices.size()),
                             GL_UNSIGNED_INT, 0, instanceCount);
     glBindVertexArray(0);
 
@@ -233,7 +237,7 @@ public:
 
     // draw instanced
     glDrawElementsInstanced(GL_TRIANGLES,
-                            static_cast<unsigned int>(indices.size()),
+                            static_cast<unsigned int>(triangleIndices.size()),
                             GL_UNSIGNED_INT, 0, instanceCount);
 
     // cleanup instance attributes
@@ -250,29 +254,12 @@ public:
 
   /// Get the axis-aligned bounding box of the mesh in local space
   /// @return AABB with min and max points
-  scene::AABB getLocalAABB() const {
-    if (vertices.empty()) {
-      return scene::AABB{glm::vec3{0.0f}, glm::vec3{0.0f}};
-    }
-
-    glm::vec3 min = vertices[0].Position;
-    glm::vec3 max = vertices[0].Position;
-
-    for (const auto &vertex : vertices) {
-      min = glm::min(min, vertex.Position);
-      max = glm::max(max, vertex.Position);
-    }
-
-    return scene::AABB{min, max};
-  }
+  scene::AABB getLocalAABB() const;
 
   /// Get the axis-aligned bounding box of the mesh in world space
   /// @param modelMatrix The model matrix to transform the mesh to world space
   /// @return AABB with min and max points in world space
-  scene::AABB getWorldAABB(const glm::mat4 &modelMatrix) const {
-    scene::AABB localAABB = getLocalAABB();
-    return localAABB.transform(modelMatrix);
-  }
+  scene::AABB getWorldAABB(const glm::mat4 &modelMatrix) const;
 
   /// Check if a point is inside the mesh using ray casting parity test
   /// @param point The point to test in world space
@@ -288,51 +275,40 @@ public:
   std::optional<math::RayHit>
   rayIntersection(const math::Ray &ray, const glm::mat4 &modelMatrix) const;
 
+  /// Generate a simplified collision mesh using PMP decimation
+  /// @param quality Target quality (0.0 = most simplified, 1.0 = original)
+  /// @return New Mesh with simplified geometry for collision detection
+  Mesh generateCollisionMesh(float quality = 0.3f) const;
+
+  const std::string &getName() const { return name; }
+
+  void addTexture(const Texture &texture) { textures.push_back(texture); }
+
 private:
-  // render data
-  unsigned int VBO, EBO;
+  // Primary mesh representation
+  std::unique_ptr<pmp::SurfaceMesh> pmpMesh;
 
-  // initializes all the buffer objects/arrays
-  void setupMesh() {
-    // create buffers/arrays
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+  // Cached OpenGL render data (generated from PMP mesh)
+  unsigned int VAO = 0;
+  unsigned int VBO = 0;
+  unsigned int EBO = 0;
+  std::vector<MeshVertex> triangleVertices;  // Cached vertex data for rendering
+  std::vector<unsigned int> triangleIndices; // Cached index data for rendering
 
-    glBindVertexArray(VAO);
-    // load data into vertex buffers
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // A great thing about structs is that their memory layout is sequential for
-    // all its items. The effect is that we can simply pass a pointer to the
-    // struct and it translates perfectly to a glm::vec3/2 array which again
-    // translates to 3/2 floats which translates to a byte array.
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(MeshVertex),
-                 &vertices[0], GL_STATIC_DRAW);
+  // Mesh metadata
+  std::vector<Texture> textures;
+  std::string name;
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
-                 &indices[0], GL_STATIC_DRAW);
+  /// Initialize PMP mesh from vertex/index data
+  void initializeFromVerticesIndices(std::vector<MeshVertex> &&vertices,
+                                     std::vector<unsigned int> &&indices);
 
-    // set the vertex attribute pointers
-    // vertex Positions
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
-                          (void *)0);
-    // vertex normals
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
-                          (void *)offsetof(MeshVertex, Normal));
-    // vertex texture coords
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
-                          (void *)offsetof(MeshVertex, TexCoords));
-    // vertex tangent
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
-                          (void *)offsetof(MeshVertex, Tangent));
-    // vertex bitangent
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex),
-                          (void *)offsetof(MeshVertex, Bitangent));
-  }
+  /// Update OpenGL buffers from PMP mesh data
+  void updateRenderBuffers();
+
+  /// Generate render vertices and indices from PMP mesh
+  void generateRenderData();
+
+  /// initializes all the buffer objects/arrays
+  void setupMesh();
 };
