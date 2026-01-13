@@ -122,19 +122,23 @@ private:
   std::optional<CollisionResult>
   checkGameObjectCollision(const ModelParticle &arrow, const GameObject &target,
                            const glm::mat4 &particleModel) const {
-
+    const auto arrowDir = glm::normalize(arrow.velocity);
     // Get arrow position in world space
-    glm::mat4 arrowTransform = particleModel * arrow.getTransformMatrix();
-    glm::vec3 arrowPosWorld =
-        glm::vec3{arrowTransform[3]}; // Translation component
+    const auto arrowTransform = particleModel * arrow.getTransformMatrix();
+    auto arrowPosWorld =
+        glm::vec3{
+            arrowTransform[3] // Translation component
+        } // Move origin towards arrow tip
+          // TODO: This needs magical number
+        + arrowDir * (arrow.size / 4);
 
     // TODO: Previous position for continuous collision detection?
 
     // Simple approach:
     // treat arrow as ray from its position in direction of velocity
     const math::Ray ray{
-        arrowPosWorld,                 // origin
-        glm::normalize(arrow.velocity) //  direction (normalized)
+        arrowPosWorld, // origin
+        arrowDir,      //  direction
     };
 
     // If velocity is too small, fall back to point-in-mesh test
@@ -142,8 +146,7 @@ private:
       return checkPointCollision(arrowPosWorld, target);
     }
 
-    // TODO: parameterize this
-    float maxHitDistance = 1.0f; // Maximum reasonable hit distance
+    float maxHitDistance = 0.01; // Maximum reasonable hit distance
 
     { // First, perform AABB-ray intersection for broad phase
       scene::AABB targetAABB = target.getWorldAABB();
