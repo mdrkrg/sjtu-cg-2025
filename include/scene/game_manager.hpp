@@ -22,8 +22,7 @@ public:
 
   /// Handle ray casting for object selection
   /// Returns selected GameObject or nullptr
-  GameObject *handleRayCast(const glm::vec3 &rayOrigin,
-                            const glm::vec3 &rayDir);
+  GameObject *handleRayCast(const math::Ray &ray);
 
   /// Get all objects for rendering
   const std::vector<GameObject *> &getObjects() const { return objectPointers; }

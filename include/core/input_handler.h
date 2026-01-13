@@ -32,8 +32,7 @@ public:
   void initCloud(std::shared_ptr<Cloud> cloud) { this->cloud = cloud; }
 
   // Mouse interaction
-  void setMouseClickCallback(
-      std::function<void(const glm::vec3 &, const glm::vec3 &)> callback) {
+  void setMouseClickCallback(std::function<void(const math::Ray &)> callback) {
     onMouseClick = callback;
   }
   void toggleCursor();
@@ -56,12 +55,11 @@ private:
   float lastY;
   bool firstMouse;
   bool cursorCaptured = true;
-  std::function<void(const glm::vec3 &, const glm::vec3 &)> onMouseClick;
+  std::function<void(const math::Ray &)> onMouseClick;
 
   void processCameraInput(float deltaTime);
   void processCloudInput(float deltaTime);
 
   /// Get mouse ray at a certain screen positions from the camera position
-  void getMouseRay(float x, float y, glm::vec3 &rayOrigin,
-                   glm::vec3 &rayDir) const;
+  math::Ray getMouseRay(float x, float y) const;
 };

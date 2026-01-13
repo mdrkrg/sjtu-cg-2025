@@ -261,10 +261,9 @@ void GraphicsRenderer::update(float deltaTime) {
   }
 }
 
-void GraphicsRenderer::handleMouseClick(const glm::vec3 &rayOrigin,
-                                        const glm::vec3 &rayDir) {
+void GraphicsRenderer::handleMouseClick(const math::Ray &ray) {
   // Use GameManager for ray casting and selection
-  GameObject *selected = gameManager->handleRayCast(rayOrigin, rayDir);
+  GameObject *selected = gameManager->handleRayCast(ray);
   if (selected) {
     std::cout << "Selected object: " << selected->getName() << std::endl;
     // TODO: Trigger object-specific behavior (e.g., lamp toggle)

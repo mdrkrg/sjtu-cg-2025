@@ -146,8 +146,7 @@ void InputHandler::processCloudInput(float deltaTime) {
   }
 }
 
-void InputHandler::getMouseRay(float x, float y, glm::vec3 &rayOrigin,
-                               glm::vec3 &rayDir) const {
+math::Ray InputHandler::getMouseRay(float x, float y) const {
   // Convert screen coordinates to normalized device coordinates
   float ndcX = (2.0f * x) / screenWidth - 1.0f;
   float ndcY = 1.0f - (2.0f * y) / screenHeight; // Y inverted
@@ -164,10 +163,12 @@ void InputHandler::getMouseRay(float x, float y, glm::vec3 &rayOrigin,
   glm::mat4 viewMatrix = camera.GetViewMatrix();
   glm::mat4 invView = glm::inverse(viewMatrix);
   glm::vec4 rayWorld = invView * glm::vec4(rayView, 0.0f);
-  rayDir = glm::normalize(glm::vec3(rayWorld));
+  const auto rayDir = glm::normalize(glm::vec3(rayWorld));
 
   // Ray origin is camera position
-  rayOrigin = camera.Position;
+  const auto rayOrigin = camera.Position;
+
+  return {rayOrigin, rayDir};
 }
 
 void InputHandler::mouseCallback(double xpos, double ypos) {
@@ -199,10 +200,9 @@ void InputHandler::mouseButtonCallback(GLFWwindow *window, int button,
       double xpos, ypos;
       glfwGetCursorPos(window, &xpos, &ypos);
       if (onMouseClick) {
-        glm::vec3 rayOrigin, rayDir;
-        getMouseRay(static_cast<float>(xpos), static_cast<float>(ypos),
-                    rayOrigin, rayDir);
-        onMouseClick(rayOrigin, rayDir);
+        const auto ray =
+            getMouseRay(static_cast<float>(xpos), static_cast<float>(ypos));
+        onMouseClick(ray);
       }
     }
   }

@@ -47,7 +47,7 @@ public:
   void activateOrbAura(GameObject *const parent);
 
   // Mouse interaction
-  void handleMouseClick(const glm::vec3 &rayOrigin, const glm::vec3 &rayDir);
+  void handleMouseClick(const math::Ray &ray);
   GameObject *getSelectedObject() const { return selectedObject; }
 
   void toggleDebug() { debugAABBsEnabled = not debugAABBsEnabled; }

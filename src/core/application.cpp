@@ -65,9 +65,7 @@ bool Application::initialize() {
 
   // Set mouse click callback for object interaction
   inputHandler->setMouseClickCallback(
-      [this](const glm::vec3 &origin, const glm::vec3 &dir) {
-        renderer->handleMouseClick(origin, dir);
-      });
+      [this](const math::Ray &ray) { renderer->handleMouseClick(ray); });
 
   return true;
 }

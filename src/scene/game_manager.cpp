@@ -29,8 +29,7 @@ void GameManager::update(float deltaTime) {
   }
 }
 
-GameObject *GameManager::handleRayCast(const glm::vec3 &rayOrigin,
-                                       const glm::vec3 &rayDir) {
+GameObject *GameManager::handleRayCast(const math::Ray &ray) {
   GameObject *closestObject = nullptr;
   float closestDistance = std::numeric_limits<float>::max();
 
@@ -38,12 +37,21 @@ GameObject *GameManager::handleRayCast(const glm::vec3 &rayOrigin,
     if (not obj->interactable) {
       continue;
     }
-    auto aabb = obj->getWorldAABB();
-    auto hit = math::raycastAABB(math::Ray{rayOrigin, rayDir}, aabb);
-    if (hit) {
+    { // First, AABB test
+      auto aabb = obj->getWorldAABB();
+      const auto hit = math::raycastAABB(ray, aabb);
+      if (not hit) {
+        continue;
+      }
       const auto [near, far] = hit.value();
-      if (near < closestDistance) {
-        closestDistance = near;
+      if (near > closestDistance) {
+        continue;
+      }
+    }
+    // Then do mesh test
+    if (const auto hit = obj->rayCast(ray); hit) {
+      if (hit->distance < closestDistance) {
+        closestDistance = hit->distance;
         closestObject = obj.get();
       }
     }
