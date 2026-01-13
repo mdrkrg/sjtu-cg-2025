@@ -128,6 +128,9 @@ void ArrowLauncher::addCollisionTarget(GameObject *target) {
     return;
   }
 
+  // Cache the collision meshes
+  target->getCollisionMeshes();
+
   // Add to collision updater (shared across all systems)
   collisionUpdater->addCollisionTarget(target);
 

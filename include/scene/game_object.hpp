@@ -113,9 +113,19 @@ public:
   std::optional<math::RayHit> rayCast(const math::Ray &ray) const;
 
   /// Get simplified collision meshes for this GameObject
-  /// Generates simplified version if not already created
-  /// @return Reference to collision mesh vector
-  const std::vector<Mesh> &getCollisionMeshes() const;
+  /// Uses cached collision meshes from Mesh class
+  /// @return Vector of pointers to collision meshes
+  const std::vector<const Mesh *> &getCollisionMeshes() const;
+
+  /// Mark collision meshes as dirty (regenerate on next access)
+  void invalidateCollisionMeshes() {
+    if (model) {
+      for (auto &mesh : model->meshes) {
+        mesh.invalidateCollisionMesh();
+      }
+    }
+    collisionMeshsValid = false;
+  }
 
   // Animation
   void animateTo(const glm::vec3 &targetPosition,
@@ -191,6 +201,10 @@ private:
 
   // Local-space AABB (computed from model vertices)
   scene::AABB localAABB;
+
+  // Cached pointers to collision meshes (owned by Mesh class)
+  mutable std::vector<const Mesh *> collisionMeshPtrs;
+  mutable bool collisionMeshsValid = false;
 
   // Animation state
   struct Animation {
@@ -404,8 +418,8 @@ inline bool GameObject::checkPointCollision(const glm::vec3 &worldPoint) const {
   glm::mat4 modelMatrix = getModelMatrix();
 
   // Check each mesh in the model
-  for (const auto &collisionMesh : getCollisionMeshes()) {
-    if (collisionMesh.containsPoint(worldPoint, modelMatrix)) {
+  for (const auto collisionMeshPtr : getCollisionMeshes()) {
+    if (collisionMeshPtr->containsPoint(worldPoint, modelMatrix)) {
       return true;
     }
   }
@@ -425,8 +439,8 @@ GameObject::rayCast(const math::Ray &ray) const {
   float closestDistance = std::numeric_limits<float>::max();
 
   // Check each mesh in the model
-  for (const auto &collisionMesh : getCollisionMeshes()) {
-    const auto hit = collisionMesh.rayIntersection(ray, modelMatrix);
+  for (const auto collisionMeshPtr : getCollisionMeshes()) {
+    const auto hit = collisionMeshPtr->rayIntersection(ray, modelMatrix);
 
     if (hit and hit->distance < closestDistance) {
       closestHit = hit;
@@ -437,12 +451,27 @@ GameObject::rayCast(const math::Ray &ray) const {
   return closestHit;
 }
 
-inline const std::vector<Mesh> &GameObject::getCollisionMeshes() const {
+inline const std::vector<const Mesh *> &GameObject::getCollisionMeshes() const {
   if (not model) {
     // TODO: Better fallback
     throw std::runtime_error("Expected model to exist");
   }
 
-  // TODO: Return the simplified mesh from the model meshes
-  return model->meshes;
+  // Regenerate pointer cache if invalid
+  if (not collisionMeshsValid) {
+    collisionMeshPtrs.clear();
+    collisionMeshPtrs.reserve(model->meshes.size());
+
+    // Get cached collision mesh for each render mesh
+    for (const auto &renderMesh : model->meshes) {
+      // Get collision mesh with default quality (0.3 = 30% of vertices)
+      // Mesh class handles caching internally
+      const Mesh &collisionMesh = renderMesh.getCollisionMesh(0.3f);
+      collisionMeshPtrs.push_back(&collisionMesh);
+    }
+
+    collisionMeshsValid = true;
+  }
+
+  return collisionMeshPtrs;
 }

@@ -292,6 +292,21 @@ Mesh Mesh::generateCollisionMesh(float quality) const {
   return collisionMesh;
 }
 
+const Mesh &Mesh::getCollisionMesh(float quality) const {
+  // Check if cache is valid for requested quality
+  if (not collisionMeshCache or cachedCollisionQuality != quality) {
+    collisionMeshCache = std::make_unique<Mesh>(generateCollisionMesh(quality));
+    cachedCollisionQuality = quality;
+  }
+
+  return *collisionMeshCache;
+}
+
+void Mesh::invalidateCollisionMesh() {
+  collisionMeshCache.reset();
+  cachedCollisionQuality = -1.0f;
+}
+
 void Mesh::setupMesh() {
   // Delete existing buffers if they exist
   if (VAO != 0) {

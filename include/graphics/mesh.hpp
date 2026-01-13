@@ -275,10 +275,13 @@ public:
   std::optional<math::RayHit>
   rayIntersection(const math::Ray &ray, const glm::mat4 &modelMatrix) const;
 
-  /// Generate a simplified collision mesh using PMP decimation
+  /// Get a simplified collision mesh using PMP decimation (cached)
   /// @param quality Target quality (0.0 = most simplified, 1.0 = original)
-  /// @return New Mesh with simplified geometry for collision detection
-  Mesh generateCollisionMesh(float quality = 0.3f) const;
+  /// @return Reference to cached collision mesh
+  const Mesh &getCollisionMesh(float quality = 0.3f) const;
+
+  /// Invalidate the collision mesh cache (call if mesh geometry changes)
+  void invalidateCollisionMesh();
 
   const std::string &getName() const { return name; }
 
@@ -299,6 +302,10 @@ private:
   std::vector<Texture> textures;
   std::string name;
 
+  // Collision mesh cache (shared by all GameObjects using this mesh)
+  mutable std::unique_ptr<Mesh> collisionMeshCache;
+  mutable float cachedCollisionQuality = -1.0f;
+
   /// Initialize PMP mesh from vertex/index data
   void initializeFromVerticesIndices(std::vector<MeshVertex> &&vertices,
                                      std::vector<unsigned int> &&indices);
@@ -308,6 +315,11 @@ private:
 
   /// Generate render vertices and indices from PMP mesh
   void generateRenderData();
+
+  /// Generate a simplified collision mesh using PMP decimation
+  /// @param quality Target quality (0.0 = most simplified, 1.0 = original)
+  /// @return New Mesh with simplified geometry for collision detection
+  Mesh generateCollisionMesh(float quality = 0.3f) const;
 
   /// initializes all the buffer objects/arrays
   void setupMesh();
