@@ -31,7 +31,7 @@ bool Application::initialize() {
   }
 
   // For texture loading flag
-  stbi_set_flip_vertically_on_load(true);
+  stbi_set_flip_vertically_on_load(false);
 
   // Create window
   window.reset(

@@ -773,6 +773,8 @@ void GraphicsRenderer::renderTerrain(const glm::mat4 &projection,
   modelSimpleShader->use();
 
   // Lighting handled by UBO
+  modelSimpleShader->setBool("material.use_texture", false);
+  modelSimpleShader->setBool("material.emissive", false);
   modelSimpleShader->setFloat("material.shininess", 2.0f);
   modelSimpleShader->setMat4("projection", projection);
   modelSimpleShader->setMat4("view", view);
@@ -1042,12 +1044,15 @@ void GraphicsRenderer::setupTrap() {
   }
 
   { // Trigger that moves the bookcase
-    auto triggerCube =
-        createCube(glm::vec3{0.1f, 0.13f, 1.8f}, glm::vec3{1.0f, 1.0f, 1.0f},
-                   0.05f, "trigger_cube");
-
-    triggerCube->addBehaviour(
+    auto cup = GameObject::createFromModelFile(
+        "resources/objects/cup/VintageSteelCup.fbx", modelShader,
+        "trigger_cup");
+    cup->position = glm::vec3{0.14f, 0.11f, 1.8f};
+    cup->rotation = glm::vec3{90.0f, 180.0f, 0.0f};
+    cup->scale = glm::vec3{0.4};
+    cup->addBehaviour(
         std::make_unique<TrapTriggerBehaviour>(gameManager->getTrapManager()));
+    gameManager->addObject(std::move(cup));
   }
 
   // Cavity
