@@ -4,6 +4,7 @@
 #include "graphics/particles/model_particle.hpp"
 #include "scene/game_object.hpp"
 #include <vector>
+#include <optional>
 
 namespace graphics::particles {
 
@@ -113,7 +114,7 @@ private:
   std::vector<GameObject *> collisionTargets;
   float collisionMargin;
 
-  /// Check collision between arrow and GameObject
+  /// Check collision between arrow and GameObject using ray-mesh intersection
   /// @param arrow Arrow particle
   /// @param target GameObject to check
   /// @param particleModel Parent transformation matrix
@@ -127,25 +128,55 @@ private:
     glm::vec3 arrowPosWorld =
         glm::vec3{arrowTransform[3]}; // Translation component
 
-    // Get target's world AABB
-    scene::AABB targetAABB = target.getWorldAABB();
+    // TODO: Previous position for continuous collision detection?
 
-    // Expand AABB by collision margin
+    // Simple approach:
+    // treat arrow as ray from its position in direction of velocity
+    const math::Ray ray{
+        arrowPosWorld,                 // origin
+        glm::normalize(arrow.velocity) //  direction (normalized)
+    };
+
+    // If velocity is too small, fall back to point-in-mesh test
+    if (glm::length(arrow.velocity) < 0.001f) {
+      return checkPointCollision(arrowPosWorld, target);
+    }
+
+    // Perform ray-mesh intersection
+    auto rayHit = target.rayCast(ray);
+
+    if (rayHit) {
+      // Check if hit is within reasonable distance (arrow length)
+      float maxHitDistance = 1.0f; // Maximum reasonable hit distance
+      if (rayHit->distance <= maxHitDistance && rayHit->distance >= 0.0f) {
+        return CollisionResult{rayHit->point, rayHit->normal};
+      }
+    }
+
+    // Fallback: check if arrow tip is inside the mesh (point collision)
+    return checkPointCollision(arrowPosWorld, target);
+  }
+
+  /// Fallback method: check if point is inside mesh
+  /// @param point World space point to check
+  /// @param target GameObject to check against
+  /// @return CollisionResult if point is inside mesh, otherwise nullopt
+  std::optional<CollisionResult>
+  checkPointCollision(const glm::vec3 &point, const GameObject &target) const {
+
+    // First, do AABB check for broad phase
+    scene::AABB targetAABB = target.getWorldAABB();
     targetAABB.min -= glm::vec3{collisionMargin};
     targetAABB.max += glm::vec3{collisionMargin};
 
-    // Simple point-in-AABB test (arrow tip collision)
-    // TODO: If use full AABB, we need ModelParticleSystem
-    // Alternative: ray AABB
-    bool collision = targetAABB.wraps(arrowPosWorld);
+    if (not targetAABB.wraps(point)) {
+      return std::nullopt;
+    }
 
-    if (collision) {
-      const auto collisionPoint = arrowPosWorld;
-      const auto collisionNormal = targetAABB.closestNormalFrom(arrowPosWorld);
-      return CollisionResult{
-          std::move(collisionPoint),
-          std::move(collisionNormal),
-      };
+    // Then, do precise mesh collision check
+    if (target.checkPointCollision(point)) {
+      const auto collisionNormal = targetAABB.closestNormalFrom(point);
+      return CollisionResult{point, collisionNormal};
     }
 
     return std::nullopt;

@@ -15,6 +15,7 @@
 #include "scene/game_object_behaviour.hpp"
 #include "graphics/material.hpp"
 #include "graphics/rendering.hpp"
+#include "graphics/mesh.hpp"
 
 class GameObject {
 public:
@@ -100,6 +101,21 @@ public:
 
   // Get world-space AABB (transformed from local AABB)
   scene::AABB getWorldAABB() const;
+
+  /// Check if a point collides with this GameObject using mesh collision
+  /// @param worldPoint Point in world space to test
+  /// @return true if point is inside any mesh of this GameObject
+  bool checkPointCollision(const glm::vec3 &worldPoint) const;
+
+  /// Perform ray casting against this GameObject
+  /// @param ray The ray in world space (normalized)
+  /// @return Optional ray hit information if ray intersects any mesh
+  std::optional<math::RayHit> rayCast(const math::Ray &ray) const;
+
+  /// Get simplified collision meshes for this GameObject
+  /// Generates simplified version if not already created
+  /// @return Reference to collision mesh vector
+  const std::vector<Mesh> &getCollisionMeshes() const;
 
   // Animation
   void animateTo(const glm::vec3 &targetPosition,
@@ -379,4 +395,55 @@ inline void GameObject::animateTo(const glm::vec3 &targetPosition,
 inline glm::vec3 GameObject::lerp(const glm::vec3 &a, const glm::vec3 &b,
                                   float t) {
   return a * (1.0f - t) + b * t;
+}
+
+inline bool GameObject::checkPointCollision(const glm::vec3 &worldPoint) const {
+  if (not model or model->meshes.empty()) {
+    return false;
+  }
+
+  glm::mat4 modelMatrix = getModelMatrix();
+
+  // Check each mesh in the model
+  for (const auto &collisionMesh : getCollisionMeshes()) {
+    if (collisionMesh.containsPoint(worldPoint, modelMatrix)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+inline std::optional<math::RayHit>
+GameObject::rayCast(const math::Ray &ray) const {
+
+  if (not model or model->meshes.empty()) {
+    return std::nullopt;
+  }
+
+  glm::mat4 modelMatrix = getModelMatrix();
+  std::optional<math::RayHit> closestHit = std::nullopt;
+  float closestDistance = std::numeric_limits<float>::max();
+
+  // Check each mesh in the model
+  for (const auto &collisionMesh : getCollisionMeshes()) {
+    const auto hit = collisionMesh.rayIntersection(ray, modelMatrix);
+
+    if (hit and hit->distance < closestDistance) {
+      closestHit = hit;
+      closestDistance = hit->distance;
+    }
+  }
+
+  return closestHit;
+}
+
+inline const std::vector<Mesh> &GameObject::getCollisionMeshes() const {
+  if (not model) {
+    // TODO: Better fallback
+    throw std::runtime_error("Expected model to exist");
+  }
+
+  // TODO: Return the simplified mesh from the model meshes
+  return model->meshes;
 }

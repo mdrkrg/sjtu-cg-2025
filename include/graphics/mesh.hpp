@@ -7,9 +7,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <graphics/shader.h>
+#include <scene/aabb.hpp>
 
 #include <string>
 #include <vector>
+#include <optional>
+#include "math/intersection.hpp"
 
 #define MAX_BONE_INFLUENCE 4
 
@@ -261,6 +264,46 @@ public:
     // reset texture unit
     glActiveTexture(GL_TEXTURE0);
   }
+
+  /// Get the axis-aligned bounding box of the mesh in local space
+  /// @return AABB with min and max points
+  scene::AABB getLocalAABB() const {
+    if (vertices.empty()) {
+      return scene::AABB{glm::vec3{0.0f}, glm::vec3{0.0f}};
+    }
+
+    glm::vec3 min = vertices[0].Position;
+    glm::vec3 max = vertices[0].Position;
+
+    for (const auto &vertex : vertices) {
+      min = glm::min(min, vertex.Position);
+      max = glm::max(max, vertex.Position);
+    }
+
+    return scene::AABB{min, max};
+  }
+
+  /// Get the axis-aligned bounding box of the mesh in world space
+  /// @param modelMatrix The model matrix to transform the mesh to world space
+  /// @return AABB with min and max points in world space
+  scene::AABB getWorldAABB(const glm::mat4 &modelMatrix) const {
+    scene::AABB localAABB = getLocalAABB();
+    return localAABB.transform(modelMatrix);
+  }
+
+  /// Check if a point is inside the mesh using ray casting parity test
+  /// @param point The point to test in world space
+  /// @param modelMatrix The model matrix to transform the mesh to world space
+  /// @return true if the point is inside the mesh, false otherwise
+  bool containsPoint(const glm::vec3 &point,
+                     const glm::mat4 &modelMatrix) const;
+
+  /// Perform ray-mesh intersection test
+  /// @param ray The ray in world space (normalized)
+  /// @param modelMatrix The model matrix to transform the mesh to world space
+  /// @return Optional hit information with distance, point, and normal
+  std::optional<math::RayHit>
+  rayIntersection(const math::Ray &ray, const glm::mat4 &modelMatrix) const;
 
 private:
   // render data
