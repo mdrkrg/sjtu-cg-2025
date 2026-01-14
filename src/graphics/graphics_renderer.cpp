@@ -41,18 +41,11 @@ static constexpr glm::vec3 cavityArrowPosition =
 GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       modelSimpleInstancedShader(nullptr), modelInstancedShader(nullptr),
-      lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
-      debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
-      selectedObject(nullptr),
+      windowShader(nullptr), particleShader(nullptr), debugShader(nullptr),
+      windowDiffuseMap(0), gameManager(gameManager), selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
-      orbAuraSystem(nullptr), arrowLauncher(nullptr), cloud(nullptr) {
-  // Initialize geometry components
-  ceiling = {0, 0, 0};
-  floor = {0, 0, 0};
-  leftWall = {0, 0, 0};
-  rightWall = {0, 0, 0};
-  frontWall = {0, 0, 0};
-  lightCube = {0, 0, 0};
+      orbAuraSystem(nullptr), arrowLauncher(nullptr), cloud(nullptr),
+      lightCubeObject(nullptr) {
   debugCubeLines = {0, 0, 0};
 }
 
@@ -220,7 +213,10 @@ void GraphicsRenderer::renderDirect(const glm::mat4 &projection,
                                     const glm::mat4 &view,
                                     const glm::vec3 &cameraPosition) {
   renderObjects(projection, view);
-  renderLightCube(projection, view);
+  // Render light cube GameObject
+  if (lightCubeObject) {
+    lightCubeObject->render(projection, view);
+  }
   // Render cloud
   if (cloud && cloud->isInitialized()) {
     cloud->render(projection, view, lightPosition, cameraPosition);
@@ -262,18 +258,11 @@ void GraphicsRenderer::handleMouseClick(const math::Ray &ray) {
 
 void GraphicsRenderer::cleanup() {
   // Cleanup geometry
-  cleanupGeometryComponent(ceiling);
-  cleanupGeometryComponent(floor);
-  cleanupGeometryComponent(leftWall);
-  cleanupGeometryComponent(rightWall);
-  cleanupGeometryComponent(frontWall);
-  cleanupGeometryComponent(lightCube);
   cleanupGeometryComponent(debugCubeLines);
 
   // Cleanup shaders
   lightingShader.reset();
   modelShader.reset();
-  lightCubeShader.reset();
   windowShader.reset();
   particleShader.reset();
   debugShader.reset();
@@ -289,6 +278,9 @@ void GraphicsRenderer::cleanup() {
     cloud->cleanup();
     cloud.reset();
   }
+
+  // Cleanup light cube GameObject
+  lightCubeObject.reset();
 }
 
 bool GraphicsRenderer::setupShaders() {
@@ -303,8 +295,6 @@ bool GraphicsRenderer::setupShaders() {
         "shaders/model-instanced.vs.glsl", "shaders/model-simple.fs.glsl");
     modelInstancedShader = std::make_shared<Shader>(
         "shaders/model-instanced.vs.glsl", "shaders/model.fs.glsl");
-    lightCubeShader = std::make_shared<Shader>("shaders/lightcube.vs.glsl",
-                                               "shaders/lightcube.fs.glsl");
     windowShader = std::make_shared<Shader>("shaders/window.vs.glsl",
                                             "shaders/window.fs.glsl");
     particleShader = std::make_shared<Shader>("shaders/particle.vs.glsl",
@@ -414,56 +404,6 @@ bool GraphicsRenderer::loadModels() {
 }
 
 bool GraphicsRenderer::setupGeometry() {
-  // Define vertices for a cube (used for room geometry)
-  float vertices[] = {
-      // positions                      // normals           // texture coords
-      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  1.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  1.0f,  1.0f, 0.0f, //
-      0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  1.0f,  1.0f, 1.0f, //
-      0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  1.0f,  1.0f, 1.0f, //
-      -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  1.0f,  0.0f, 1.0f, //
-      -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  1.0f,  0.0f, 0.0f, //
-
-      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
-      0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, //
-      -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 1.0f, //
-      -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, //
-
-      -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
-      -0.5f, 0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
-      -0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f, //
-      -0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f, //
-      -0.5f, -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f, //
-      -0.5f, 0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, //
-
-      0.5f,  0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f, //
-      0.5f,  -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f, //
-      0.5f,  -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 1.0f, //
-      0.5f,  0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, //
-
-      -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
-      0.5f,  -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 0.0f, //
-      0.5f,  -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
-      0.5f,  -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f, //
-      -0.5f, -0.5f, 0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f, //
-      -0.5f, -0.5f, -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 0.0f, //
-
-      -0.5f, 0.5f,  -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
-      0.5f,  0.5f,  -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 1.0f, //
-      0.5f,  0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 1.0f, //
-      -0.5f, 0.5f,  0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 1.0f, //
-      -0.5f, 0.5f,  -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
-  };
-
-  // Setup geometry components
-  setupGeometryComponent(lightCube, vertices,
-                         VERTEX_COUNT * 6); // All vertices for the light cube
-
   // Generate line geometry for unit cube (for AABB debug visualization)
   // 12 lines, 24 vertices, each vertex 3 floats (x, y, z)
   float debugLineVertices[] = {
@@ -683,6 +623,26 @@ bool GraphicsRenderer::setupRoomGameObjects() {
     }
   }
 
+  // Create light cube GameObject
+  {
+    Material lightCubeMaterial(32.0f);
+    lightCubeMaterial.ambient = glm::vec3(1.0f, 1.0f, 1.0f);
+    lightCubeMaterial.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    lightCubeMaterial.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lightCubeMaterial.emissive = true;
+    lightCubeMaterial.emissionColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    lightCubeMaterial.emissionStrength = 1.0f;
+    lightCubeMaterial.hasNormalMap = false;
+
+    auto lightCubeModel =
+        ModelFactory::createCube(0.1f, lightCubeMaterial, "light_cube");
+    lightCubeObject = std::make_shared<GameObject>(
+        std::move(lightCubeModel), modelSimpleShader, "light_cube");
+    lightCubeObject->position = lightPosition;
+    lightCubeObject->scale = glm::vec3(1.0f);
+    lightCubeObject->interactable = false;
+  }
+
   return true;
 }
 
@@ -733,21 +693,6 @@ void GraphicsRenderer::renderObjects(const glm::mat4 &projection,
   for (const auto &obj : gameManager->getObjects()) {
     obj->render(projection, view);
   }
-}
-
-void GraphicsRenderer::renderLightCube(const glm::mat4 &projection,
-                                       const glm::mat4 &view) {
-  lightCubeShader->use();
-  lightCubeShader->setMat4("projection", projection);
-  lightCubeShader->setMat4("view", view);
-
-  glm::mat4 model = glm::mat4(1.0f);
-  model = glm::translate(model, lightPosition);
-  model = glm::scale(model, glm::vec3(0.1f));
-  lightCubeShader->setMat4("model", model);
-
-  glBindVertexArray(lightCube.VAO);
-  glDrawArrays(GL_TRIANGLES, 0, lightCube.vertexCount);
 }
 
 void GraphicsRenderer::renderTerrain(const glm::mat4 &projection,

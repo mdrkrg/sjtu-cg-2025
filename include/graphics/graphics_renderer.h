@@ -53,7 +53,9 @@ public:
   void toggleDebug() { debugAABBsEnabled = not debugAABBsEnabled; }
 
   // Arrow launcher access
-  std::shared_ptr<graphics::particles::ArrowLauncher> getArrowLauncher() const { return arrowLauncher; }
+  std::shared_ptr<graphics::particles::ArrowLauncher> getArrowLauncher() const {
+    return arrowLauncher;
+  }
 
 private:
   /// Whether the update is paused
@@ -64,7 +66,6 @@ private:
   std::shared_ptr<Shader> modelSimpleShader;
   std::shared_ptr<Shader> modelSimpleInstancedShader;
   std::shared_ptr<Shader> modelInstancedShader;
-  std::shared_ptr<Shader> lightCubeShader;
   std::shared_ptr<Shader> windowShader;
   std::shared_ptr<Shader> particleShader;
   std::shared_ptr<Shader> debugShader;
@@ -103,6 +104,9 @@ private:
   // Cloud
   std::shared_ptr<Cloud> cloud;
 
+  // Light cube GameObject
+  std::shared_ptr<GameObject> lightCubeObject;
+
   // Vertex data for room geometry
   struct RoomGeometry {
     unsigned int VAO;
@@ -110,12 +114,6 @@ private:
     unsigned int vertexCount;
   };
 
-  RoomGeometry ceiling;
-  RoomGeometry floor;
-  RoomGeometry leftWall;
-  RoomGeometry rightWall;
-  RoomGeometry frontWall;
-  RoomGeometry lightCube;
   RoomGeometry debugCubeLines;
 
   bool debugAABBsEnabled = false;
