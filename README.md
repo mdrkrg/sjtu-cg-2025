@@ -92,3 +92,4 @@ CONTAINER_RUNTIME=podman bash ./run.sh
 美术素材
 
 - [地面木板纹理](https://polyhaven.com/a/dark_wooden_planks)
+- [墙纸纹理](https://polyhaven.com/a/decrepit_wallpaper)

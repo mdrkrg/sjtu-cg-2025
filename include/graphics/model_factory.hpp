@@ -54,6 +54,15 @@ public:
                                          const Material &material = Material(),
                                          const std::string &name = "");
 
+  /// Create simple wall (quad)
+  /// @param size Wall dimensions (width, height, thickness)
+  /// @param material Wall material
+  /// @param name Model name
+  static ModelWithMaterials
+  createWall(const glm::vec3 &size = glm::vec3(2.0f, 1.0f, 0.1f),
+             const Material &material = Material(),
+             const std::string &name = "");
+
 private:
   // Helper to load texture from disk (Moved from Model)
   static unsigned int TextureFromFile(const char *path,
@@ -126,6 +135,35 @@ inline ModelWithMaterials ModelFactory::createSphere(float radius,
   auto mesh = Mesh::createSphere(radius, 36, 18, name);
   std::vector<Mesh> meshes;
   meshes.push_back(std::move(mesh));
+
+  std::vector<Material> materials;
+  materials.push_back(material);
+
+  return createFromMeshes(std::move(meshes), std::move(materials));
+}
+
+inline ModelWithMaterials ModelFactory::createWall(const glm::vec3 &size,
+                                                   const Material &material,
+                                                   const std::string &name) {
+  auto mesh = Mesh::createCube(1.0f, name.empty() ? "wall" : name);
+
+  // Scale the mesh to the desired wall size
+  // We need to transform vertices to match wall dimensions
+  std::vector<Vertex> scaledVertices;
+  for (const auto &vertex : mesh.vertices) {
+    Vertex scaledVertex = vertex;
+    scaledVertex.Position.x *= size.x;
+    scaledVertex.Position.y *= size.y;
+    scaledVertex.Position.z *= size.z;
+    scaledVertices.push_back(scaledVertex);
+  }
+
+  // Create new mesh with scaled vertices
+  Mesh scaledMesh(std::move(scaledVertices), std::move(mesh.indices),
+                  std::move(mesh.textures), mesh.name);
+
+  std::vector<Mesh> meshes;
+  meshes.push_back(std::move(scaledMesh));
 
   std::vector<Material> materials;
   materials.push_back(material);

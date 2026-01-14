@@ -14,6 +14,7 @@ struct Material {
   vec3 emission;
   float emissionStrength;
   bool use_texture;
+  bool hasNormalMap;
 };
 
 vec3 material_ambient(Material material, vec2 uv) {

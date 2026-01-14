@@ -5,6 +5,7 @@ out vec4 FragColor;
 #include "include/material.glsl"
 
 in vec3 FragPos;
+in vec3 Normal;
 in vec2 TexCoords;
 
 uniform Material material;
@@ -96,7 +97,13 @@ vec3 phong(
 
 void main()
 {
-    vec3 normDir = normalize(texture(material.texture_normal1, TexCoords).rgb);
+    // Use normal map if available and enabled, otherwise use vertex normal
+    vec3 normDir;
+    if (material.hasNormalMap && material.use_texture) {
+        normDir = normalize(texture(material.texture_normal1, TexCoords).rgb);
+    } else {
+        normDir = normalize(Normal);
+    }
     vec3 viewDir = normalize(lighting.viewPos.xyz - FragPos);
 
     vec3 result = vec3(0.0);

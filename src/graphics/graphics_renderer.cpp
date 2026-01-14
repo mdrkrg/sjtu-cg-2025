@@ -43,8 +43,8 @@ GraphicsRenderer::GraphicsRenderer(std::shared_ptr<GameManager> gameManager)
     : lightingShader(nullptr), modelShader(nullptr), modelSimpleShader(nullptr),
       modelSimpleInstancedShader(nullptr), modelInstancedShader(nullptr),
       lightCubeShader(nullptr), windowShader(nullptr), particleShader(nullptr),
-      debugShader(nullptr), windowDiffuseMap(0), floorDiffuseMap(0),
-      gameManager(gameManager), selectedObject(nullptr),
+      debugShader(nullptr), windowDiffuseMap(0), gameManager(gameManager),
+      selectedObject(nullptr),
       terrainMesh(std::make_shared<TerrainMesh>(1024, 1024, 0.2f)),
       orbAuraSystem(nullptr), testCubeSystem(nullptr), arrowLauncher(nullptr),
       cloud(nullptr) {
@@ -121,8 +121,13 @@ bool GraphicsRenderer::initialize() {
     return false;
   }
 
-  if (!setupRoomGeometry()) {
+  if (!setupGeometry()) {
     std::cout << "Failed to setup room geometry" << std::endl;
+    return false;
+  }
+
+  if (!setupRoomGameObjects()) {
+    std::cout << "Failed to setup room GameObjects" << std::endl;
     return false;
   }
 
@@ -222,7 +227,6 @@ void GraphicsRenderer::render(const glm::mat4 &projection,
 void GraphicsRenderer::renderDirect(const glm::mat4 &projection,
                                     const glm::mat4 &view,
                                     const glm::vec3 &cameraPosition) {
-  renderRoom(projection, view, cameraPosition);
   renderObjects(projection, view);
   renderLightCube(projection, view);
   // Render cloud
@@ -334,11 +338,22 @@ bool GraphicsRenderer::loadTextures() {
   windowDiffuseMap = loadTexture(texturePath / "window.png");
   std::println(std::clog, "Loaded window texture: {}", windowDiffuseMap);
 
-  floorDiffuseMap = loadTexture(texturePath / "dark_wooden_planks_4k.blend" /
-                                "textures" / "dark_wooden_planks_diff_4k.jpg");
-  std::println(std::clog, "Loaded floor texture: {}", floorDiffuseMap);
+  // Load floor texture
+  floorTexture.path = texturePath / "dark_wooden_planks_4k.blend" / "textures" /
+                      "dark_wooden_planks_diff_4k.jpg";
+  floorTexture.type = "texture_diffuse";
+  floorTexture.id = loadTexture(floorTexture.path);
+  std::println(std::clog, "Loaded floor texture: {}", floorTexture.id);
 
-  return windowDiffuseMap != 0 && floorDiffuseMap != 0;
+  // Load wall texture
+  wallTexture.path = texturePath / "decrepit_wallpaper_1k.blend" / "textures" /
+                     "decrepit_wallpaper_diff_1k.jpg";
+  wallTexture.type = "texture_diffuse";
+  wallTexture.id = loadTexture(wallTexture.path);
+
+  std::println(std::clog, "Loaded wall texture: {}", wallTexture.id);
+
+  return windowDiffuseMap != 0 && floorTexture.id != 0 && wallTexture.id != 0;
 }
 
 bool GraphicsRenderer::loadModels() {
@@ -404,7 +419,7 @@ bool GraphicsRenderer::loadModels() {
   }
 }
 
-bool GraphicsRenderer::setupRoomGeometry() {
+bool GraphicsRenderer::setupGeometry() {
   // Define vertices for a cube (used for room geometry)
   float vertices[] = {
       // positions                      // normals           // texture coords
@@ -451,31 +466,7 @@ bool GraphicsRenderer::setupRoomGeometry() {
       -0.5f, 0.5f,  -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, //
   };
 
-  // Extract vertices for different room components
-  float ceilingVertices[VERTEX_COUNT];
-  float floorVertices[VERTEX_COUNT];
-  float leftWallVertices[VERTEX_COUNT];
-  float rightWallVertices[VERTEX_COUNT];
-  float frontWallVertices[VERTEX_COUNT];
-
-  // Copy vertices for each component (this is simplified - in a real
-  // implementation you would extract the appropriate faces)
-  std::memcpy(ceilingVertices, vertices + VERTEX_COUNT * 5,
-              sizeof(ceilingVertices));
-  std::memcpy(floorVertices, vertices + VERTEX_COUNT * 4,
-              sizeof(floorVertices));
-  std::memcpy(rightWallVertices, vertices + VERTEX_COUNT * 3,
-              sizeof(rightWallVertices));
-  std::memcpy(leftWallVertices, vertices + VERTEX_COUNT * 2,
-              sizeof(leftWallVertices));
-  std::memcpy(frontWallVertices, vertices, sizeof(frontWallVertices));
-
   // Setup geometry components
-  setupGeometryComponent(ceiling, ceilingVertices, VERTEX_COUNT);
-  setupGeometryComponent(floor, floorVertices, VERTEX_COUNT);
-  setupGeometryComponent(leftWall, leftWallVertices, VERTEX_COUNT);
-  setupGeometryComponent(rightWall, rightWallVertices, VERTEX_COUNT);
-  setupGeometryComponent(frontWall, frontWallVertices, VERTEX_COUNT);
   setupGeometryComponent(lightCube, vertices,
                          VERTEX_COUNT * 6); // All vertices for the light cube
 
@@ -508,6 +499,113 @@ bool GraphicsRenderer::setupRoomGeometry() {
   glEnableVertexAttribArray(0);
   glBindVertexArray(0);
   debugCubeLines.vertexCount = 24; // 24 vertices for lines
+
+  return true;
+}
+
+bool GraphicsRenderer::setupRoomGameObjects() {
+  // Define materials for room components
+  Material wallMaterial(32.0f);
+  wallMaterial.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+  wallMaterial.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+  wallMaterial.specular = glm::vec3(0.1f, 0.1f, 0.1f);
+  wallMaterial.hasNormalMap = false;
+
+  Material floorMaterial(64.0f);
+  floorMaterial.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+  floorMaterial.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+  floorMaterial.specular = glm::vec3(0.3f, 0.3f, 0.3f);
+  floorMaterial.hasNormalMap = false;
+
+  // Room center is at (0.0f, 0.3f, 2.0f)
+  // Wall thickness: 0.1f
+
+  {
+    auto ceilingModel = ModelFactory::createWall(glm::vec3(3.0f, 0.1f, 1.5f),
+                                                 wallMaterial, "ceiling");
+    auto ceilingObj = std::make_unique<GameObject>(std::move(ceilingModel),
+                                                   modelShader, "ceiling");
+    ceilingObj->position =
+        glm::vec3(0.0f, 0.5f + 0.5f - 0.05f, 2.0f); // Top of room, centered
+    ceilingObj->scale = glm::vec3(1.0f);
+    ceilingObj->interactable = false;
+
+    if (ceilingObj->getModel() and floorTexture.id != 0) {
+      ceilingObj->getModel()->loadTexture(floorTexture);
+    }
+
+    gameManager->addObject(std::move(ceilingObj));
+  }
+
+  {
+    auto floorModel = ModelFactory::createWall(glm::vec3(3.0f, 0.1f, 1.5f),
+                                               floorMaterial, "floor");
+    auto floorObj = std::make_unique<GameObject>(std::move(floorModel),
+                                                 modelShader, "floor");
+    floorObj->position =
+        glm::vec3(0.0f, 0.2f - 0.5f + 0.05f, 2.0f); // Bottom of room, centered
+    floorObj->scale = glm::vec3(1.0f);
+    floorObj->interactable = false;
+
+    if (floorObj->getModel() && floorTexture.id != 0) {
+      floorObj->getModel()->loadTexture(floorTexture);
+    }
+
+    gameManager->addObject(std::move(floorObj));
+  }
+
+  {
+    auto leftWallModel = ModelFactory::createWall(glm::vec3(0.1f, 1.2f, 1.5f),
+                                                  wallMaterial, "left_wall");
+    auto leftWallObj = std::make_unique<GameObject>(std::move(leftWallModel),
+                                                    modelShader, "left_wall");
+    leftWallObj->position =
+        glm::vec3(-1.5f + 0.05f, 0.4f, 2.0f); // Left side, centered
+    leftWallObj->scale = glm::vec3(1.0f);
+    leftWallObj->interactable = false;
+
+    if (leftWallObj->getModel() and wallTexture.id != 0) {
+      leftWallObj->getModel()->loadTexture(wallTexture);
+    }
+
+    gameManager->addObject(std::move(leftWallObj));
+  }
+
+  {
+    auto rightWallModel = ModelFactory::createWall(glm::vec3(0.1f, 1.2f, 1.5f),
+                                                   wallMaterial, "right_wall");
+    auto rightWallObj = std::make_unique<GameObject>(std::move(rightWallModel),
+                                                     modelShader, "right_wall");
+    rightWallObj->position =
+        glm::vec3(1.5f - 0.05f, 0.4f, 2.0f); // Right side, centered
+    rightWallObj->scale = glm::vec3(1.0f);
+    rightWallObj->interactable = false;
+
+    if (rightWallObj->getModel() and wallTexture.id != 0) {
+      rightWallObj->getModel()->loadTexture(wallTexture);
+    }
+
+    gameManager->addObject(std::move(rightWallObj));
+  }
+
+  {
+    auto frontWallModel = ModelFactory::createWall(glm::vec3(3.0f, 1.3f, 0.1f),
+                                                   wallMaterial, "front_wall");
+    auto frontWallObj = std::make_unique<GameObject>(std::move(frontWallModel),
+                                                     modelShader, "front_wall");
+    frontWallObj->position =
+        glm::vec3(0.0f, 0.35f, 0.75f + 0.5f - 0.05f); // Front of room, centered
+    frontWallObj->scale = glm::vec3(1.0f);
+    frontWallObj->interactable = false;
+
+    if (frontWallObj->getModel() and wallTexture.id != 0) {
+      frontWallObj->getModel()->loadTexture(wallTexture);
+    }
+
+    gameManager->addObject(std::move(frontWallObj));
+  }
+
+  // TODO: Place window frame inside the front wall
 
   return true;
 }
@@ -552,121 +650,6 @@ void GraphicsRenderer::cleanupGeometryComponent(RoomGeometry &geometry) {
     geometry.VBO = 0;
   }
   geometry.vertexCount = 0;
-}
-
-void GraphicsRenderer::renderRoom(const glm::mat4 &projection,
-                                  const glm::mat4 &view,
-                                  const glm::vec3 &cameraPosition) {
-  lightingShader->use();
-
-  // Set common uniforms
-  lightingShader->setMat4("projection", projection);
-  lightingShader->setMat4("view", view);
-  // Lighting handled by UBO
-
-  glm::mat4 model = glm::mat4(1.0f);
-
-  // Render ceiling
-  lightingShader->setVec3("material.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-  lightingShader->setVec3("material.diffuse", glm::vec3(1.0f, 1.0f, 1.0f));
-  lightingShader->setVec3("material.specular", glm::vec3(0.1f, 0.1f, 0.1f));
-  lightingShader->setFloat("material.shininess", 64.0f);
-  lightingShader->setBool("material.use_texture", false);
-
-  model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
-  model = glm::scale(model, glm::vec3(2.0f, 1.0f, 1.0f));
-  lightingShader->setMat4("model", model);
-
-  glBindVertexArray(ceiling.VAO);
-  glDrawArrays(GL_TRIANGLES, 0, ceiling.vertexCount);
-
-  // Render floor
-  lightingShader->setVec3("material.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-  lightingShader->setVec3("material.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
-  lightingShader->setVec3("material.specular", glm::vec3(0.3f, 0.3f, 0.3f));
-  lightingShader->setFloat("material.shininess", 64.0f);
-  lightingShader->setBool("material.use_texture", true);
-  // Set texture samplers to use texture unit 0
-  lightingShader->setInt("material.texture_diffuse1", 0);
-  lightingShader->setInt("material.texture_specular1", 0);
-
-  model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
-  model = glm::scale(model, glm::vec3(2.0f, 1.0f, 1.0f));
-  lightingShader->setMat4("model", model);
-
-  // Bind floor texture to texture unit 0
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, floorDiffuseMap);
-  // Set texture scaling for floor (2x wide)
-  lightingShader->setVec2("texScale", glm::vec2(2.0f, 1.0f));
-  lightingShader->setVec2("texOffset", glm::vec2(0.0f, 0.0f));
-
-  glBindVertexArray(floor.VAO);
-  glDrawArrays(GL_TRIANGLES, 0, floor.vertexCount);
-
-  // Render left wall
-  lightingShader->setVec3("material.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-  lightingShader->setVec3("material.diffuse", glm::vec3(1.0f, 0.0f, 0.31f));
-  lightingShader->setVec3("material.specular", glm::vec3(1.0f, 0.0f, 0.31f));
-  lightingShader->setFloat("material.shininess", 64.0f);
-  lightingShader->setBool("material.use_texture", false);
-  // Reset texture scaling for walls
-  lightingShader->setVec2("texScale", glm::vec2(1.0f, 1.0f));
-  lightingShader->setVec2("texOffset", glm::vec2(0.0f, 0.0f));
-
-  model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
-  model = glm::translate(model, glm::vec3(-0.5f, 0.0f, 0.0f));
-  lightingShader->setMat4("model", model);
-
-  glBindVertexArray(leftWall.VAO);
-  glDrawArrays(GL_TRIANGLES, 0, leftWall.vertexCount);
-
-  // Render right wall
-  lightingShader->setVec3("material.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-  lightingShader->setVec3("material.diffuse", glm::vec3(1.0f, 0.0f, 0.31f));
-  lightingShader->setVec3("material.specular", glm::vec3(1.0f, 0.0f, 0.31f));
-  lightingShader->setFloat("material.shininess", 64.0f);
-  lightingShader->setBool("material.use_texture", false);
-
-  model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
-  model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f));
-  lightingShader->setMat4("model", model);
-
-  glBindVertexArray(rightWall.VAO);
-  glDrawArrays(GL_TRIANGLES, 0, rightWall.vertexCount);
-
-  // Render front wall with window
-  windowShader->use();
-  windowShader->setMat4("projection", projection);
-  windowShader->setMat4("view", view);
-
-  // Lighting handled by UBO (binding = 1)
-
-  windowShader->setVec3("material.ambient", glm::vec3(0.5f, 0.25f, 0.0f));
-  windowShader->setVec3("material.diffuse", glm::vec3(0.5f, 0.25f, 0.0f));
-  windowShader->setVec3("material.specular", glm::vec3(0.5f, 0.25f, 0.0f));
-  windowShader->setFloat("material.shininess", 64.0f);
-
-  model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, 0.3f, 2.0f));
-  model = glm::scale(model, glm::vec3(2.0f, 1.0f, 1.0f));
-  windowShader->setMat4("model", model);
-
-  // Texture parameters for window
-  windowShader->setVec2("texScale", glm::vec2(0.3f, 0.6f));
-  windowShader->setVec2("texOffset", glm::vec2(0.0f, 0.2f));
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, windowDiffuseMap);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  glBindVertexArray(frontWall.VAO);
-  glDrawArrays(GL_TRIANGLES, 0, frontWall.vertexCount);
 }
 
 void GraphicsRenderer::renderObjects(const glm::mat4 &projection,

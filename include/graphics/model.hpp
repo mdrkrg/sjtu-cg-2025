@@ -8,6 +8,7 @@ class Model {
 public:
   // Stores all textures loaded for this model to prevent duplicates
   // and keep them alive if needed.
+  // WARN: This unused for now
   std::vector<Texture> textures_loaded;
 
   std::vector<Mesh> meshes;
@@ -26,6 +27,14 @@ public:
   void DrawInstanced(Shader &shader, unsigned int instanceCount) {
     for (unsigned int i = 0; i < meshes.size(); i++)
       meshes[i].DrawInstanced(shader, instanceCount);
+  }
+
+  /// Load texture for this model
+  void loadTexture(const Texture &texture) {
+    textures_loaded.push_back(texture);
+    for (auto &mesh : meshes) {
+      mesh.textures.push_back(texture);
+    }
   }
 
   // Allow factory to access internals if strictly necessary,

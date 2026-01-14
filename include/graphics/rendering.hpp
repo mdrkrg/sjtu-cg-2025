@@ -22,6 +22,8 @@ inline void setMaterialToShader(const Shader &shader,
   } else {
     shader.setBool("material.emissive", false);
   }
+
+  shader.setBool("material.hasNormalMap", material.hasNormalMap);
 }
 
 /// Render a mesh with material and shader

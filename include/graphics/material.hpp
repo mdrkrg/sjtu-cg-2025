@@ -21,6 +21,9 @@ struct Material {
   glm::vec3 emissionColor{1.0f, 1.0f, 1.0f};
   float emissionStrength{1.0f};
 
+  // Normal map support
+  bool hasNormalMap{true};
+
   /// Constructor for uniform material
   Material(const glm::vec3 &ambient, const glm::vec3 &diffuse,
            const glm::vec3 &specular, float shininess = 32.0f)

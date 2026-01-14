@@ -78,7 +78,8 @@ private:
 
   // Textures
   unsigned int windowDiffuseMap;
-  unsigned int floorDiffuseMap;
+  Texture floorTexture{};
+  Texture wallTexture{};
 
   std::shared_ptr<GameManager> gameManager;
 
@@ -123,7 +124,8 @@ private:
   static constexpr size_t VERTEX_COUNT = 48;
 
   // Private methods
-  bool setupRoomGeometry();
+  bool setupGeometry();
+  bool setupRoomGameObjects();
   bool setupShaders();
   bool loadTextures();
   bool loadModels();
@@ -139,8 +141,6 @@ private:
                               size_t vertexCount);
   void cleanupGeometryComponent(RoomGeometry &geometry);
 
-  void renderRoom(const glm::mat4 &projection, const glm::mat4 &view,
-                  const glm::vec3 &cameraPosition);
   void renderObjects(const glm::mat4 &projection, const glm::mat4 &view);
   void renderLightCube(const glm::mat4 &projection, const glm::mat4 &view);
   void renderTerrain(const glm::mat4 &projection, const glm::mat4 &view,
