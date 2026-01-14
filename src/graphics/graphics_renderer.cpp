@@ -589,23 +589,105 @@ bool GraphicsRenderer::setupRoomGameObjects() {
   }
 
   {
-    auto frontWallModel = ModelFactory::createWall(glm::vec3(3.0f, 1.3f, 0.1f),
-                                                   wallMaterial, "front_wall");
-    auto frontWallObj = std::make_unique<GameObject>(std::move(frontWallModel),
-                                                     modelShader, "front_wall");
-    frontWallObj->position =
-        glm::vec3(0.0f, 0.35f, 0.75f + 0.5f - 0.05f); // Front of room, centered
-    frontWallObj->scale = glm::vec3(1.0f);
-    frontWallObj->interactable = false;
+    // Create four separate wall pieces to form a frame around the window
+    // Total wall: 3.0m wide, 1.3m high, 0.1m thick
+    // Window: 0.6m wide, 0.6m high, centered
+    const float windowWidth = 0.6f;
+    const float windowHeight = 0.6f;
+    const float wallZ = 0.75f + 0.5f - 0.05f;
 
-    if (frontWallObj->getModel() and wallTexture.id != 0) {
-      frontWallObj->getModel()->loadTexture(wallTexture);
+    { // Top piece
+      float topWallHeight = (1.3f - windowHeight) / 2.0f;
+      auto topWallModel = ModelFactory::createWall(
+          // Full width, height above window
+          glm::vec3(3.0f, topWallHeight, 0.1f), wallMaterial, "front_wall_top");
+      auto topWallObj = std::make_unique<GameObject>(
+          std::move(topWallModel), modelShader, "front_wall_top");
+      // Position: centered horizontally, above window
+      topWallObj->position = glm::vec3(0.0f, // Centered horizontally
+                                       0.35f + windowHeight / 2.0f +
+                                           topWallHeight / 2.0f, // Above window
+                                       wallZ);
+      topWallObj->scale = glm::vec3(1.0f);
+      topWallObj->interactable = false;
+
+      if (topWallObj->getModel() and wallTexture.id != 0) {
+        topWallObj->getModel()->loadTexture(wallTexture);
+      }
+
+      gameManager->addObject(std::move(topWallObj));
     }
 
-    gameManager->addObject(std::move(frontWallObj));
-  }
+    { // Bottom piece
+      float bottomWallHeight = (1.3f - windowHeight) / 2.0f;
+      auto bottomWallModel = ModelFactory::createWall(
+          // Full width, height below window
+          glm::vec3(3.0f, bottomWallHeight, 0.1f), wallMaterial,
+          "front_wall_bottom");
+      auto bottomWallObj = std::make_unique<GameObject>(
+          std::move(bottomWallModel), modelShader, "front_wall_bottom");
+      // Position: centered horizontally, below window
+      bottomWallObj->position = glm::vec3(
+          0.0f, // Centered horizontally
+          0.35f - windowHeight / 2.0f - bottomWallHeight / 2.0f, // Below window
+          wallZ);
+      bottomWallObj->scale = glm::vec3(1.0f);
+      bottomWallObj->interactable = false;
 
-  // TODO: Place window frame inside the front wall
+      if (bottomWallObj->getModel() and wallTexture.id != 0) {
+        bottomWallObj->getModel()->loadTexture(wallTexture);
+      }
+
+      gameManager->addObject(std::move(bottomWallObj));
+    }
+
+    { // Left piece
+      float leftWallWidth = (3.0f - windowWidth) / 2.0f;
+      auto leftWallModel = ModelFactory::createWall(
+          // Width left of window, window height
+          glm::vec3(leftWallWidth, windowWidth, 0.1f), wallMaterial,
+          "front_wall_left");
+      auto leftWallObj = std::make_unique<GameObject>(
+          std::move(leftWallModel), modelShader, "front_wall_left");
+      // Position: left of window, centered vertically with window
+      leftWallObj->position = glm::vec3(
+          -windowWidth / 2.0f - leftWallWidth / 2.0f, // Left of window
+          0.35f, // Centered vertically with window
+          wallZ);
+      leftWallObj->scale = glm::vec3(1.0f);
+      leftWallObj->interactable = false;
+
+      if (leftWallObj->getModel() and wallTexture.id != 0) {
+        leftWallObj->getModel()->loadTexture(wallTexture);
+      }
+
+      gameManager->addObject(std::move(leftWallObj));
+    }
+
+    // Right piece
+    {
+      float rightWallWidth = (3.0f - windowWidth) / 2.0f;
+      auto rightWallModel = ModelFactory::createWall(
+          glm::vec3(rightWallWidth, windowWidth,
+                    0.1f), // Width right of window, window height
+          wallMaterial, "front_wall_right");
+      auto rightWallObj = std::make_unique<GameObject>(
+          std::move(rightWallModel), modelShader, "front_wall_right");
+      // Position: right of window, centered vertically with window
+      rightWallObj->position = glm::vec3(
+          windowWidth / 2.0f + rightWallWidth / 2.0f, // Right of window
+          0.35f, // Centered vertically with window
+          wallZ);
+      rightWallObj->scale = glm::vec3(1.0f);
+      rightWallObj->interactable = false;
+
+      if (rightWallObj->getModel() and wallTexture.id != 0) {
+        rightWallObj->getModel()->loadTexture(wallTexture);
+      }
+
+      gameManager->addObject(std::move(rightWallObj));
+    }
+  }
 
   return true;
 }
