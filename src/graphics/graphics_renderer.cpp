@@ -406,6 +406,15 @@ bool GraphicsRenderer::loadModels() {
       gameManager->addObject(std::move(lamp));
     }
 
+    { // window
+      auto window = GameObject::createFromModelFile(
+          "resources/objects/window/window.fbx", modelSimpleShader, "window");
+      window->position = glm::vec3(0.0f, 0.35f, 0.75f + 0.5f - 0.05f);
+      window->scale = glm::vec3(0.0015f);
+      // Add to GameManager
+      gameManager->addObject(std::move(window));
+    }
+
     // Puzzle
     setupPuzzle();
 

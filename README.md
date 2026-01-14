@@ -93,3 +93,4 @@ CONTAINER_RUNTIME=podman bash ./run.sh
 
 - [地面木板纹理](https://polyhaven.com/a/dark_wooden_planks)
 - [墙纸纹理](https://polyhaven.com/a/decrepit_wallpaper)
+- [中式窗模型-Weiting Ke](https://sketchfab.com/3d-models/chinese-windows-b-fb645ed041f947c4918fa1d9020d24e2)
