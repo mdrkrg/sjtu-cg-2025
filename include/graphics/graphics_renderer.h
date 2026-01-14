@@ -52,6 +52,9 @@ public:
 
   void toggleDebug() { debugAABBsEnabled = not debugAABBsEnabled; }
 
+  // Arrow launcher access
+  std::shared_ptr<graphics::particles::ArrowLauncher> getArrowLauncher() const { return arrowLauncher; }
+
 private:
   /// Whether the update is paused
   bool paused = false;

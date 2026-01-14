@@ -51,6 +51,8 @@ public:
     return std::make_tuple(SCR_WIDTH, SCR_HEIGHT);
   }
 
+  friend InputHandler;
+
 private:
   explicit Application();
   /// Application singleton

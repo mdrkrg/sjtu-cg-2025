@@ -32,10 +32,12 @@ void InputHandler::install(std::shared_ptr<GLFWwindow> window) {
 
   glfwSetFramebufferSizeCallback(window.get(),
                                  [](GLFWwindow *w, int width, int height) {
+                                   (void)w;
                                    glViewport(0, 0, width, height);
                                  });
   glfwSetScrollCallback(
       window.get(), [](GLFWwindow *w, double xoffset, double yoffset) {
+        (void)xoffset;
         static_cast<InputHandler *>(glfwGetWindowUserPointer(w))
             ->scrollCallback(yoffset);
       });
@@ -43,6 +45,9 @@ void InputHandler::install(std::shared_ptr<GLFWwindow> window) {
 
 void InputHandler::keyCallback(GLFWwindow *window, int key, int scancode,
                                int action, int mods) {
+  (void)window;
+  (void)scancode;
+  (void)mods;
   if (action == GLFW_PRESS) {
     pressedKeys.insert(key);
   } else if (action == GLFW_RELEASE) {
@@ -79,6 +84,31 @@ void InputHandler::update(float deltaTime) {
   if (pressed(GLFW_KEY_TAB)) {
     toggleCursor();
     pressedKeys.erase(GLFW_KEY_TAB);
+  }
+
+  // Arrow launcher controls
+  auto arrowLauncher = Application::getInstance()->renderer->getArrowLauncher();
+  if (arrowLauncher and arrowLauncher->isInitialized()) {
+    // T: Toggle continuous fire
+    if (pressed(GLFW_KEY_T)) {
+      static bool continuousFireEnabled = false;
+      continuousFireEnabled = not continuousFireEnabled;
+      if (continuousFireEnabled) {
+        arrowLauncher->startContinuousFire(5.0f);
+        std::println(std::clog, "Continuous fire enabled (5 arrows/sec)");
+      } else {
+        arrowLauncher->stopContinuousFire();
+        std::println(std::clog, "Continuous fire disabled");
+      }
+      pressedKeys.erase(GLFW_KEY_T);
+    }
+
+    // K: Clear all emitters
+    if (pressed(GLFW_KEY_K)) {
+      arrowLauncher->clearEmitters();
+      std::println(std::clog, "Removed all arrow emitters");
+      pressedKeys.erase(GLFW_KEY_K);
+    }
   }
 
   if (not cloud) {
@@ -195,6 +225,7 @@ void InputHandler::mouseCallback(double xpos, double ypos) {
 
 void InputHandler::mouseButtonCallback(GLFWwindow *window, int button,
                                        int action, int mods) {
+  (void)mods;
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
     if (!cursorCaptured) {
       double xpos, ypos;
@@ -204,6 +235,14 @@ void InputHandler::mouseButtonCallback(GLFWwindow *window, int button,
             getMouseRay(static_cast<float>(xpos), static_cast<float>(ypos));
         onMouseClick(ray);
       }
+    }
+  } else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+    // Create arrow emitter at camera position with camera direction
+    auto arrowLauncher =
+        Application::getInstance()->renderer->getArrowLauncher();
+    if (arrowLauncher and arrowLauncher->isInitialized()) {
+      arrowLauncher->addEmitter(camera.Position, camera.Front, 5.0f, 2.0f);
+      std::println(std::clog, "Added arrow emitter at camera position");
     }
   }
 }
