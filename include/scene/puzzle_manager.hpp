@@ -16,6 +16,8 @@ public:
     }
   }
 
+  void releaseOne() { clickCount -= 1; }
+
   void registerPuzzleCallback(callback_id id,
                               std::function<void()> &&callback) {
     puzzleCallbacks[id] = std::move(callback);

@@ -364,7 +364,7 @@ bool GraphicsRenderer::loadModels() {
 
       // Add lighting behaviour with callback
       auto lampBehaviour = std::make_unique<LampLightingBehaviour>(
-          lightManager, glm::vec3(0.8f, 0.8f, 0.6f), 0.2f, 0.5f,
+          lightManager, glm::vec3(0.8f, 0.8f, 0.6f), 0.8f, 0.5f,
           [this](GameObject *lampObj, bool on) {
             if (not postProcessingManager) {
               return;

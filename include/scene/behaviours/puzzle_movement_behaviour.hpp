@@ -5,6 +5,7 @@
 #include "scene/game_object_behaviour.hpp"
 #include <glm/glm.hpp>
 #include <iostream>
+#include <print>
 
 /// Puzzle piece movement behaviour (Strategy Pattern)
 /// Moves object to target position when selected, with animation
@@ -17,7 +18,7 @@ public:
                           float moveDuration = 1.0f)
       : puzzleManager(puzzleManager), targetPosition(targetPosition),
         targetRotation(targetRotation), moveDuration(moveDuration),
-        isAtTarget(false), isMoving(false) {
+        isMoving(false) {
     std::cout << "PuzzleMovementBehaviour created with target position ("
               << targetPosition.x << ", " << targetPosition.y << ", "
               << targetPosition.z << ")" << std::endl;
@@ -30,13 +31,13 @@ public:
       return;
     }
 
-    if (isAtTarget) {
+    if (toggled) {
       std::cout << "Puzzle piece " << obj->getName()
                 << " is already at target position" << std::endl;
       // Could move back to original position
-      // glm::vec3 originalPos = ...; // Would need to store original position
-      // obj->animateTo(originalPos, originalRot, moveDuration);
-      // isAtTarget = false;
+      isMoving = true;
+      toggled = false;
+      obj->animateTo(originalPosition, originalRotation, moveDuration);
       return;
     }
 
@@ -48,18 +49,17 @@ public:
     // Use GameObject's built-in animation system
     obj->animateTo(targetPosition, targetRotation, moveDuration);
     isMoving = true;
-    isAtTarget = false;
+    toggled = true;
 
-    // Store original position for potential return
+    // Store original position for return
     originalPosition = obj->position;
     originalRotation = obj->rotation;
   }
 
   void onHover(GameObject *obj, bool enter) override {
     if (enter) {
-      std::cout << "Hovering over puzzle piece " << obj->getName() << " ("
-                << (isAtTarget ? "at target" : "not at target") << ")"
-                << std::endl;
+      std::println("Hovering over puzzle piece {} ({})", obj->getName(),
+                   toggled ? "toggled" : "not toggled");
     }
   }
 
@@ -67,38 +67,18 @@ public:
     // Check if animation just completed
     if (isMoving && !obj->isAnimating()) {
       isMoving = false;
-      isAtTarget = true;
       std::cout << "Puzzle piece " << obj->getName()
                 << " reached target position" << std::endl;
 
-      // Could trigger puzzle completion check here
-      puzzleManager->checkCompletion();
+      if (toggled) {
+        puzzleManager->checkCompletion();
+      } else {
+        puzzleManager->releaseOne();
+      }
     }
-
-    // Could add hover/selection highlight effect here
-    // For example: slight bobbing animation when hovered
-  }
-
-  void onPreRender(GameObject *obj) override {
-    // Could change material color based on state
-    // if (isAtTarget) -> green tint
-    // if (isMoving) -> yellow tint
-    // else -> default color
-
-    // In full implementation:
-    // obj->material.diffuse = stateColor;
-  }
-
-  void onPostRender(GameObject *obj) override {
-    // Reset any temporary modifications
   }
 
   const char *getName() const override { return "PuzzleMovementBehaviour"; }
-
-  // Getters
-  bool getIsAtTarget() const { return isAtTarget; }
-  bool getIsMoving() const { return isMoving; }
-  glm::vec3 getTargetPosition() const { return targetPosition; }
 
   // Setters
   void setTargetPosition(const glm::vec3 &newTarget) {
@@ -113,6 +93,6 @@ private:
   glm::vec3 originalPosition;
   glm::vec3 originalRotation;
   float moveDuration;
-  bool isAtTarget;
   bool isMoving;
+  bool toggled;
 };
