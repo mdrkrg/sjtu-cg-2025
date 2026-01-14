@@ -40,12 +40,14 @@ struct ModelParticle : public Particle {
     transform = glm::translate(transform, position);
 
     // Apply rotation (Euler angles in degrees)
-    transform = glm::rotate(transform, glm::radians(rotation.x),
-                            glm::vec3{1.0f, 0.0f, 0.0f});
-    transform = glm::rotate(transform, glm::radians(rotation.y),
-                            glm::vec3{0.0f, 1.0f, 0.0f});
+    // Note: glm::eulerAngles returns angles for ZYX rotation order
+    // So we apply rotations in Z, Y, X order (roll, yaw, pitch)
     transform = glm::rotate(transform, glm::radians(rotation.z),
                             glm::vec3{0.0f, 0.0f, 1.0f});
+    transform = glm::rotate(transform, glm::radians(rotation.y),
+                            glm::vec3{0.0f, 1.0f, 0.0f});
+    transform = glm::rotate(transform, glm::radians(rotation.x),
+                            glm::vec3{1.0f, 0.0f, 0.0f});
 
     // Apply scale (using size for uniform scaling)
     transform = glm::scale(transform, glm::vec3{size});
