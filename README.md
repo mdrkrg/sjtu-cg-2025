@@ -98,3 +98,4 @@ CONTAINER_RUNTIME=podman bash ./run.sh
 - [盆栽-AllQuad](https://sketchfab.com/3d-models/free-livistona-chinensis-fan-palm-f59bab2a81244b869e1ca5aefd4ad94a)
 - [鼎-StephenSun](https://sketchfab.com/3d-models/chinese-ding-c79865c2b8bb414d8b88bd599e72eb42)
 - [石狮-Game industry veteran](https://sketchfab.com/3d-models/stone-chinese-lion-small-4517f1db90604deba67052c934116206)
+- [地毯-Valter Medeiros](https://sketchfab.com/3d-models/floor-carpet-d147288801294fb0a9218795a9e9aae8)

@@ -32,7 +32,7 @@ const glm::mat4 GraphicsRenderer::terrainModel = glm::scale(
     glm::vec3(0.24f));
 
 // Position on right wall (behind bookcase)
-static constexpr glm::vec3 panelPosition = glm::vec3(0.98f, 0.15f, 2.0f);
+static constexpr glm::vec3 panelPosition = glm::vec3(1.22f, 0.15f, 2.0f);
 static constexpr glm::vec3 cavityPosition =
     panelPosition + glm::vec3(0.01f, 0.2f, 0.0f);
 static constexpr glm::vec3 cavityArrowPosition =
@@ -177,6 +177,7 @@ bool GraphicsRenderer::initialize() {
         "wall_cavity",
         "plant",
         "lion",
+        "carpet",
     };
     if (excluded.contains(obj->getName())) {
       continue;
@@ -864,17 +865,6 @@ void GraphicsRenderer::setupPuzzle() {
   // Cubes for animation testing using factory
   const auto createCube = getCreateCube(gameManager, modelSimpleShader);
 
-  auto createPuzzleCube = [&](glm::vec3 position, glm::vec3 color,
-                              float size = 0.1f, const std::string &name = "") {
-    auto cubeObj = createCube(position, color, size, name);
-
-    // Add animation behaviour: when selected, move up by 0.2f
-    cubeObj->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
-        gameManager->getPuzzleManager(),
-        position + glm::vec3(0.0f, 0.2f, 0.0f)));
-    return cubeObj;
-  };
-
   // Puzzle
   {
     auto plant = GameObject::createFromModelFile(
@@ -891,7 +881,7 @@ void GraphicsRenderer::setupPuzzle() {
   {
     auto lion = GameObject::createFromModelFile(
         "resources/objects/lion/scene.gltf", modelShader, "lion");
-    lion->position = glm::vec3(0.24f, 0.12f, 2.25f);
+    lion->position = glm::vec3(0.24f, 0.11f, 2.25f);
     lion->rotation = glm::vec3(-90.0f, 0.0f, -90.0f);
     lion->scale = glm::vec3(0.03f);
     lion->addBehaviour(std::make_unique<PuzzleMovementBehaviour>(
@@ -913,13 +903,18 @@ void GraphicsRenderer::setupPuzzle() {
     gameManager->addObject(std::move(chineseDing));
   }
 
-  auto hiddenCube =
-      createPuzzleCube(glm::vec3(0.3f, 0.2f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f),
-                       0.1f, "hidden_cube");
-
-  hiddenCube->addBehaviour(std::make_unique<HiddenCellBehaviour>(
-      gameManager->getPuzzleManager(), hiddenCube->position,
-      glm::vec3{90.0f, 0.0f, 0.0f}));
+  {
+    auto carpet = GameObject::createFromModelFile(
+        "resources/objects/carpet/carpet1.fbx", modelShader, "carpet");
+    carpet->position = glm::vec3(0.15f, -0.2f, 2.0f);
+    carpet->rotation = glm::vec3(-90.0f, 0.0f, 90.0f);
+    carpet->interactable = false;
+    carpet->scale = glm::vec3(0.01f);
+    carpet->addBehaviour(std::make_unique<HiddenCellBehaviour>(
+        gameManager->getPuzzleManager(),
+        carpet->position + glm::vec3{0.0f, 0.0f, -0.3f}, carpet->rotation));
+    gameManager->addObject(std::move(carpet));
+  }
 
   // Floor hidden compartment with spirit orb
   setupFloorCompartment();
@@ -927,7 +922,7 @@ void GraphicsRenderer::setupPuzzle() {
 
 void GraphicsRenderer::setupFloorCompartment() {
   // Position on floor near puzzle cubes
-  const glm::vec3 floorPosition = glm::vec3(0.0f, -0.2f, 2.0f); // Floor level
+  const glm::vec3 floorPosition = glm::vec3(0.2f, -0.2f, 2.0f);
   const glm::vec3 cavityPosition = floorPosition;
   const glm::vec3 orbPosition = cavityPosition; // Orb inside cavity
 
@@ -1021,12 +1016,10 @@ void GraphicsRenderer::setupFloorCompartment() {
 }
 
 void GraphicsRenderer::setupTrap() {
-  const auto createCube = getCreateCube(gameManager, modelSimpleShader);
-
   { // Bookcase
     auto bookcase = GameObject::createFromModelFile(
         "resources/objects/bookcase/bookcase1.obj", modelShader, "book_case");
-    bookcase->position = glm::vec3(0.92f, 0.15f, 2.0f);
+    bookcase->position = glm::vec3(1.2f, 0.15f, 2.0f);
     bookcase->scale = glm::vec3(0.04f);
     bookcase->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
     bookcase->interactable = false;
