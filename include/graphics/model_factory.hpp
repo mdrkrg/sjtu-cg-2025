@@ -155,6 +155,27 @@ inline ModelWithMaterials ModelFactory::createWall(const glm::vec3 &size,
     scaledVertex.Position.x *= size.x;
     scaledVertex.Position.y *= size.y;
     scaledVertex.Position.z *= size.z;
+
+    // Scale texture coordinates based on wall dimensions for repeating textures
+    // Front/back: scale by width (x) and height (y)
+    // Left/right: scale by depth (z) and height (y)
+    // Top/bottom: scale by width (x) and depth (z)
+
+    // Determine which face this vertex belongs to based on its normal
+    if (glm::abs(scaledVertex.Normal.z) > 0.5f) {
+      // Front/back face
+      scaledVertex.TexCoords.x *= size.x;
+      scaledVertex.TexCoords.y *= size.y;
+    } else if (glm::abs(scaledVertex.Normal.x) > 0.5f) {
+      // Left/right face
+      scaledVertex.TexCoords.x *= size.z;
+      scaledVertex.TexCoords.y *= size.y;
+    } else {
+      // Top/bottom
+      scaledVertex.TexCoords.x *= size.x;
+      scaledVertex.TexCoords.y *= size.z;
+    }
+
     scaledVertices.push_back(scaledVertex);
   }
 
