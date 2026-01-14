@@ -26,6 +26,7 @@ pkgs.stdenv.mkDerivation rec {
     glm
     libGL
     libGLU
+    libepoxy.dev
     glfw
     wayland
     libxkbcommon
